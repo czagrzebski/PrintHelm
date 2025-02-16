@@ -1,9 +1,10 @@
 services:
-  sqlserver:
-    image: 'mcr.microsoft.com/mssql/server:latest'
+  mysql:
+    image: 'mysql:latest'
     environment:
-      - 'ACCEPT_EULA=yes'
-      - 'MSSQL_PID=express'
-      - 'MSSQL_SA_PASSWORD=verYs3cret'
+      - 'MYSQL_DATABASE=mydatabase'
+      - 'MYSQL_PASSWORD=secret'
+      - 'MYSQL_ROOT_PASSWORD=verysecret'
+      - 'MYSQL_USER=myuser'
     ports:
-      - '1433'
+      - '3306'
