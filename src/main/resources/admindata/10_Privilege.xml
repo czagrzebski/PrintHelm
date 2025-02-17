@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PrivilegeData>
+    <Privilege name="START_PRINT">
+        <Description>Start a new print</Description>
+    </Privilege>
+    <Privilege name="PAUSE_PRINT">
+        <Description>Pause a print</Description>
+    </Privilege>
+    <Privilege name="STOP_PRINT">
+        <Description>Stop a print</Description>
+    </Privilege>
+    <Privilege name="MANAGE_PRINTER">
+        <Description>Add, edit, or remove printers</Description>
+    </Privilege>
+    <Privilege name="VIEW_PRINTER">
+        <Description>View printer status</Description>
+    </Privilege>
+    <Privilege name="CREATE_PRINT_JOB">
+        <Description>Create a new print job</Description>
+    </Privilege>
+    <Privilege name="UPDATE_PRINT_JOB">
+        <Description>Update a print job</Description>
+    </Privilege>
+    <Privilege name="DELETE_PRINT_JOB">
+        <Description>Delete a print job</Description>
+    </Privilege>
+    <Privilege name="VIEW_PRINT_JOB">
+        <Description>View a print job</Description>
+    </Privilege>
+    <Privilege name="MANAGE_USER">
+        <Description>Create, edit, or delete users</Description>
+    </Privilege>
+    <Privilege name="MANAGE_APP_SETTING">
+        <Description>Manage application settings</Description>
+    </Privilege>
+</PrivilegeData>

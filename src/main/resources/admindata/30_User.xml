@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<UserData>
+    <User name="admin">
+        <FirstName>admin</FirstName>
+        <LastName></LastName>
+        <Credential>changeme123</Credential>
+        <Roles>
+            <Role name="ROLE_ADMIN"/>
+        </Roles>
+    </User>
+</UserData>
