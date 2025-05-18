@@ -1,0 +1,147 @@
+openapi: 3.0.3
+info:
+  title: PrintHelm API
+  version: 1.0.0
+  description: PrintHelm API for managing user authentication and operations.
+
+servers:
+  - url: https://printhelm.czagrzebski.dev/api/v1
+    description: Production server
+
+paths:
+
+  # === AuthController ===
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: User login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiLoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiAuthResponse'
+        '401':
+          description: Unauthorized
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      operationId: refresh
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiAuthResponse'
+        '401':
+          description: Invalid refresh token
+
+  # === UserController ===
+  /user/createUser:
+    post:
+      tags:
+        - User
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUserResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+components:
+  schemas:
+    ApiLoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    ApiCreateUserRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        firstName:
+            type: string
+        lastName:
+            type: string
+
+    ApiRefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    ApiAuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/ApiUserResponse'
+        accessToken:
+          type: string
+
+    ApiUserResponse:
+      type: object
+      properties:
+        userId:
+          type: long
+        username:
+          type: string
+        email:
+          type: string
+
+    ApiErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+      required: [ timestamp, status, error, message, path ]
