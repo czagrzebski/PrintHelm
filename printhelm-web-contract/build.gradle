@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id "org.openapi.generator" version "7.12.0"
+}
+
+group = 'com.czagrzebski'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // just import spring web not boot
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.4.1'
+    implementation("io.swagger.core.v3:swagger-annotations:2.2.30")
+    implementation("io.swagger.core.v3:swagger-core:2.2.30")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+// OpenAPI Generator configuration
+openApiGenerate {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/src/main/resources/openapi.yaml")
+    outputDir.set("$buildDir/generated")
+    apiPackage.set("com.czagrzebski.printhelm.api")
+    modelPackage.set("com.czagrzebski.printhelm.model")
+    invokerPackage.set("com.czagrzebski.printhelm.invoker")
+    configOptions.put("dateLibrary", "java8")
+    configOptions.put("useSpringBoot3", "true")
+    configOptions.put("interfaceOnly", "true")
+    configOptions.put("skipDefaultInterface", "true")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "$buildDir/generated/src/main/java"
+        }
+    }
+}
+
+compileJava.dependsOn tasks.openApiGenerate
+
+test {
+    useJUnitPlatform()
+}
