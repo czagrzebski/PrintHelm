@@ -1,8 +1,8 @@
 package com.czagrzebski.printhelm.web.specification;
 
-import com.czagrzebski.printhelm.web.model.Privilege;
-import com.czagrzebski.printhelm.web.model.Role;
-import com.czagrzebski.printhelm.web.model.User;
+import com.czagrzebski.printhelm.web.domain.Privilege;
+import com.czagrzebski.printhelm.web.domain.Role;
+import com.czagrzebski.printhelm.web.domain.User;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;

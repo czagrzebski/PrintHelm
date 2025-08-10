@@ -24,7 +24,7 @@ dependencies {
 // OpenAPI Generator configuration
 openApiGenerate {
     generatorName.set("spring")
-    inputSpec.set("$projectDir/src/main/resources/openapi.yaml")
+    inputSpec.set("$projectDir/src/main/resources/printhelm-web-openapi.yaml")
     outputDir.set("$buildDir/generated")
     apiPackage.set("com.czagrzebski.printhelm.api")
     modelPackage.set("com.czagrzebski.printhelm.model")

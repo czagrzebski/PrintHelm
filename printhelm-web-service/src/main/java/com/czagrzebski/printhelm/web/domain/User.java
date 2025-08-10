@@ -1,4 +1,4 @@
-package com.czagrzebski.printhelm.web.model;
+package com.czagrzebski.printhelm.web.domain;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Column;
@@ -103,7 +103,7 @@ public class User {
         this.lastname = lastname;
     }
 
-    public boolean isActive() {
+    public boolean getIsActive() {
         return isActive;
     }
 

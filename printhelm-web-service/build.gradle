@@ -26,6 +26,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     implementation 'org.mapstruct:mapstruct:1.6.3'
+    implementation("org.springframework.integration:spring-integration-core:6.4.4")
+    implementation "org.springframework.integration:spring-integration-mqtt:6.4.4"
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
     //developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     runtimeOnly 'com.mysql:mysql-connector-j'

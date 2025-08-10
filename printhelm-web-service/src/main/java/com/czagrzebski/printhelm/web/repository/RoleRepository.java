@@ -1,6 +1,6 @@
 package com.czagrzebski.printhelm.web.repository;
 
-import com.czagrzebski.printhelm.web.model.Role;
+import com.czagrzebski.printhelm.web.domain.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoleRepository extends JpaRepository<Role, Long> {
