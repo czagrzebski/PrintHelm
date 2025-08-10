@@ -6,10 +6,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 
-import javax.annotation.processing.Generated;
-
-import javax.annotation.processing.Generated;
-
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 public class Application {
 	private static final Logger logger = LogManager.getLogger(Application.class);

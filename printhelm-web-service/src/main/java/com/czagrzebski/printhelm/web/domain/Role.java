@@ -1,4 +1,4 @@
-package com.czagrzebski.printhelm.web.model;
+package com.czagrzebski.printhelm.web.domain;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;

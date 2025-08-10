@@ -1,18 +1,16 @@
 package com.czagrzebski.printhelm.web.handler;
 
 import com.czagrzebski.printhelm.model.ApiErrorResponse;
-import com.czagrzebski.printhelm.web.controller.UserController;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -31,6 +29,15 @@ public class GlobalExceptionHandler {
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
     }
+
+    // unauthorized
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadCredentials(
+            BadCredentialsException ex, HttpServletRequest request) {
+        logger.error("Bad credentials: ", ex);
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password", request.getRequestURI());
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleAllUncaught(

@@ -1,9 +1,9 @@
 package com.czagrzebski.printhelm.web.listener;
 
 import com.czagrzebski.printhelm.web.admindata.AdminDataImporter;
-import com.czagrzebski.printhelm.web.model.Privilege;
-import com.czagrzebski.printhelm.web.model.Role;
-import com.czagrzebski.printhelm.web.model.User;
+import com.czagrzebski.printhelm.web.domain.Privilege;
+import com.czagrzebski.printhelm.web.domain.Role;
+import com.czagrzebski.printhelm.web.domain.User;
 import com.czagrzebski.printhelm.web.repository.PrivilegeRepository;
 import com.czagrzebski.printhelm.web.repository.RoleRepository;
 import com.czagrzebski.printhelm.web.repository.UserRepository;
@@ -29,9 +29,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Component
-public class StartupDataLoader implements ApplicationListener<ContextRefreshedEvent> {
+public class StartupListener implements ApplicationListener<ContextRefreshedEvent> {
 
-    private static final Logger logger = LogManager.getLogger(StartupDataLoader.class);
+    private static final Logger logger = LogManager.getLogger(StartupListener.class);
     boolean setupComplete = false;
     private final ApplicationContext appContext;
     private final UserRepository userRepository;
@@ -39,8 +39,8 @@ public class StartupDataLoader implements ApplicationListener<ContextRefreshedEv
     private final PrivilegeRepository privilegeRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public StartupDataLoader(UserRepository userRepository, RoleRepository roleRepository,
-                             PrivilegeRepository privilegeRepository, PasswordEncoder passwordEncoder, ApplicationContext appContext) {
+    public StartupListener(UserRepository userRepository, RoleRepository roleRepository,
+                           PrivilegeRepository privilegeRepository, PasswordEncoder passwordEncoder, ApplicationContext appContext) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.privilegeRepository = privilegeRepository;
@@ -52,7 +52,7 @@ public class StartupDataLoader implements ApplicationListener<ContextRefreshedEv
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if(!setupComplete) {
-            logger.info("Loading default admin data into the database");
+            logger.info("Checking for admin database upgrade...");
             try {
                 HashMap<String, NodeList> adminDataXML = AdminDataImporter.getImportedAdminDataFromXML();
                 importPrivileges(adminDataXML.get("PRIVILEGE"));
@@ -156,6 +156,7 @@ public class StartupDataLoader implements ApplicationListener<ContextRefreshedEv
     private Privilege createPrivilegeIfNotFoundOrUpdate(String privilegeName, String privilegeDescription) {
         Privilege privilege = privilegeRepository.findByPrivilegeName(privilegeName);
         if (privilege == null) {
+            logger.info("Database upgrade: creating privilege {}", privilegeName);
             privilege = new Privilege(privilegeName, privilegeDescription);
         } else {
             privilege.setPrivilegeDescription(privilegeDescription);
@@ -169,6 +170,7 @@ public class StartupDataLoader implements ApplicationListener<ContextRefreshedEv
 
         Role role = roleRepository.findByRoleName(roleName);
         if (role == null) {
+            logger.info("Database upgrade: creating role {}", roleName);
             role = new Role(roleName, roleDescription, privileges);
         } else {
             role.setRoleDescription(roleDescription);
@@ -182,6 +184,7 @@ public class StartupDataLoader implements ApplicationListener<ContextRefreshedEv
             String username, String password, String firstName, String lastName, Set<Role> roles) {
         User user = userRepository.findByUsername(username);
         if (user == null) {
+            logger.info("Database upgrade: creating user {}", username);
             user = new User(username, passwordEncoder.encode(password), firstName, lastName);
             user.setUserRoles(roles);
             user.setActive(true);

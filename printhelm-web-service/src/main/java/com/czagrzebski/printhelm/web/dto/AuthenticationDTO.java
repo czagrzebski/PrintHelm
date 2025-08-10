@@ -1,13 +1,24 @@
 package com.czagrzebski.printhelm.web.dto;
 
+import com.czagrzebski.printhelm.web.domain.User;
+
 public class AuthenticationDTO {
 
+    private User user;
     private String username;
     private String accessToken;
     private String refreshToken;
     private String password;
 
     public AuthenticationDTO() {
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getUsername() {

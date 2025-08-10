@@ -2,14 +2,16 @@ openapi: 3.0.3
 info:
   title: PrintHelm API
   version: 1.0.0
-  description: PrintHelm API for managing user authentication and operations.
-
+  description: PrintHelm API OpenAPI Specification
 servers:
   - url: https://printhelm.czagrzebski.dev/api/v1
     description: Production server
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+  - url: https://staging.printhelm.czagrzebski.dev/api/v1
+    description: Staging server
 
 paths:
-
   # === AuthController ===
   /auth/login:
     post:
@@ -75,7 +77,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-
 components:
   schemas:
     ApiLoginRequest:
@@ -88,7 +89,6 @@ components:
           type: string
         password:
           type: string
-
     ApiCreateUserRequest:
       type: object
       required:
@@ -103,7 +103,10 @@ components:
             type: string
         lastName:
             type: string
-
+        roles:
+            type: array
+            items:
+              $ref: '#/components/schemas/ApiRole'
     ApiRefreshRequest:
       type: object
       required:
@@ -111,7 +114,6 @@ components:
       properties:
         refreshToken:
           type: string
-
     ApiAuthResponse:
       type: object
       properties:
@@ -119,7 +121,6 @@ components:
           $ref: '#/components/schemas/ApiUserResponse'
         accessToken:
           type: string
-
     ApiUserResponse:
       type: object
       properties:
@@ -127,9 +128,12 @@ components:
           type: long
         username:
           type: string
-        email:
-          type: string
-
+        isActive:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiRole'
     ApiErrorResponse:
       type: object
       properties:
@@ -145,3 +149,12 @@ components:
         path:
           type: string
       required: [ timestamp, status, error, message, path ]
+    ApiRole:
+      type: object
+      properties:
+        roleId:
+          type: long
+        name:
+          type: string
+        description:
+          type: string

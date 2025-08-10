@@ -1,8 +1,8 @@
 package com.czagrzebski.printhelm.web.service;
 
-import com.czagrzebski.printhelm.web.model.Privilege;
-import com.czagrzebski.printhelm.web.model.Role;
-import com.czagrzebski.printhelm.web.model.User;
+import com.czagrzebski.printhelm.web.domain.Privilege;
+import com.czagrzebski.printhelm.web.domain.Role;
+import com.czagrzebski.printhelm.web.domain.User;
 import com.czagrzebski.printhelm.web.repository.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,25 +31,26 @@ public class UserDetailsServiceImpl implements UserDetailsService {
        if(user == null) {
            throw new UsernameNotFoundException("Unable to find user");
        }
-       var privileges = getPrivileges(user.getUserRoles());
-       List<GrantedAuthority> authorities =
-               privileges.stream().map(SimpleGrantedAuthority::new)
+       var authorities = getAuthorities(user.getUserRoles());
+       List<GrantedAuthority> grantedAuthorities =
+               authorities.stream().map(SimpleGrantedAuthority::new)
                        .collect(Collectors.toUnmodifiableList());
+
        return new org.springframework.security.core.userdetails.User(
                user.getUsername(),
                user.getPasswordHash(),
-               authorities
+               grantedAuthorities
        );
     }
 
-    public List<String> getPrivileges(Collection<Role> roles) {
-        List<String> privileges = new ArrayList<>();
+    public List<String> getAuthorities(Collection<Role> roles) {
+        List<String> authorities = new ArrayList<>();
         for(Role role : roles) {
             var rolePrivileges = role.getPrivileges();
             for(Privilege privilege : rolePrivileges) {
-                privileges.add(privilege.getPrivilegeName());
+                authorities.add(privilege.getPrivilegeName());
             }
         }
-        return privileges;
+        return authorities;
     }
 }

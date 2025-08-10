@@ -1,6 +1,6 @@
 package com.czagrzebski.printhelm.web.repository;
 
-import com.czagrzebski.printhelm.web.model.User;
+import com.czagrzebski.printhelm.web.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
