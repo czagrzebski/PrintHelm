@@ -22,7 +22,7 @@ public class User {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private Long userId;
 
-    @ManyToMany
+    @ManyToMany(fetch = jakarta.persistence.FetchType.EAGER)
     @JsonManagedReference
     @JoinTable(
             name="UserRole",

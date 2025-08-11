@@ -4,6 +4,7 @@ import com.czagrzebski.printhelm.web.domain.Privilege;
 import com.czagrzebski.printhelm.web.domain.Role;
 import com.czagrzebski.printhelm.web.domain.User;
 import com.czagrzebski.printhelm.web.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +27,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
        User user = userRepository.findByUsername(username);
        if(user == null) {
@@ -50,6 +52,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             for(Privilege privilege : rolePrivileges) {
                 authorities.add(privilege.getPrivilegeName());
             }
+            authorities.add(role.getRoleName());
         }
         return authorities;
     }
