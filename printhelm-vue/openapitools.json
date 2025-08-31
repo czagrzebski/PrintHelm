@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.14.0",
+    "generators": {
+      "v1.0": {
+        "generatorName": "typescript-axios",
+        "output": "./src/client/#{name}",
+        "glob": "../printhelm-web-contract/src/main/resources/*.{json,yaml}",
+        "additionalProperties": {
+          "ngVersion": "6.1.7",
+          "npmName": "restClient",
+          "supportsES6": "true",
+          "npmVersion": "6.9.0",
+          "withInterfaces": true
+        }
+      }
+    }
+  }
+}

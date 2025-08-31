@@ -15,6 +15,7 @@ jobs:
       contents: read
       packages: write
 
+    # cancel any in-progress runs of this workflow on the same ref (branch or tag)
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
@@ -35,7 +36,6 @@ jobs:
       # Checkout repo
       - name: Checkout source
         uses: actions/checkout@v4
-
 
       - name: Set version tags
         id: vars
@@ -59,16 +59,29 @@ jobs:
       - name: Build Spring Boot runnable JAR
         run: ./gradlew :printhelm-web-service:bootJar
 
-      - name: Build Docker image
+      - name: Build Service Docker image
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-service:${TAG}
           echo "Building image: $IMAGE"
           docker build \
             --build-arg JAR_FILE=${JAR_FILE} \
+            -f printhelm-web-service/Dockerfile \
             -t $IMAGE \
-            -f Dockerfile .
+            .
           if [ -n "${LATEST:-}" ]; then
             docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-service:latest
+          fi
+
+      - name: Build Frontend Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-frontend:${TAG}
+          echo "Building image: $IMAGE"
+          docker build \
+            -f printhelm-vue/Dockerfile \
+            -t $IMAGE \
+            .
+          if [ -n "${LATEST:-}" ]; then
+            docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
           fi
 
       - name: Authenticate to GCR
@@ -78,10 +91,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker image
+      - name: Push Service Docker image
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-service:${TAG}
           docker push $IMAGE
           if [ -n "${LATEST:-}" ]; then
             docker push ghcr.io/${{ github.repository_owner }}/printhelm-service:latest
+          fi
+
+      - name : Push Frontend Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-frontend:${TAG}
+          docker push $IMAGE
+          if [ -n "${LATEST:-}" ]; then
+            docker push ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
           fi

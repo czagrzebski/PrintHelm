@@ -4,20 +4,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode LOCAL",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
-    "build-only": "vite build",
+    "build-only": "vite build --mode dev",
     "type-check": "vue-tsc --build",
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
     "lint:eslint": "eslint . --fix",
     "lint": "run-s lint:*",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "generateApi": "openapi-generator-cli generate -i ../printhelm-web-contract/src/main/resources/printhelm-web-openapi.yaml -g typescript-axios -o printhelm-web/src/client",
+    "generateApiDocker": "openapi-generator-cli generate -i printhelm-web-openapi.yaml -g typescript-axios -o ./src/client"
   },
   "dependencies": {
-    "@primeuix/themes": "^1.1.1",
+    "@openapitools/openapi-generator-cli": "^2.23.1",
+    "@primeuix/themes": "^1.2.3",
+    "axios": "^1.12.2",
     "pinia": "^3.0.1",
-    "primevue": "^4.3.4",
+    "primevue": "^4.3.9",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
