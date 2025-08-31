@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PrintHelm Authenticated Socket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+    <h1>PrintHelm Authenticated Socket Test</h1>
+    <pre id="output"></pre>
+
+    <script>
+        const JWT_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc1NjU5OTk5NCwiZXhwIjoxNzU2NjAxNzk0fQ.TYBv7bxwXK2oClfzPY4rtkPwrB2imDrB21mfmhqhdQ48LeOm-8CzhIH4w0rHMlXYwLt2Oti1ohmqgfkXCGqzDg"; // Replace with your JWT
+        const output = document.getElementById("output");
+
+        // Connect to Spring SockJS endpoint
+        const socket = new SockJS("http://192.168.1.135:5125/ws");
+        const stompClient = Stomp.over(socket);
+
+        // Optional: disable debug logging
+        stompClient.debug = null;
+
+        //test
+
+        stompClient.connect(
+            {'Authorization': 'Bearer ' + JWT_TOKEN}, 
+            function(frame) {
+                console.log("Connected: " + frame);
+                output.textContent += "Connected\n";
+
+                // Subscribe to the topic
+                stompClient.subscribe("/topic/printer/1/state", function(message) {
+                    try {
+                        const data = JSON.parse(message.body);
+                        console.log("Received:", data);
+                        output.textContent = JSON.stringify(data, null, 2) + "\n";
+                    } catch(e) {
+                        console.log("Received non-JSON message:", message.body);
+                        output.textContent + "Received: " + message.body + "\n";
+                    }
+                });
+            },
+            function(error) {
+                console.error("STOMP connection error:", error);
+                output.textContent += "Connection error: " + error + "\n";
+            }
+        );
+    </script>
+</body>
+</html>

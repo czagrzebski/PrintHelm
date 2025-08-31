@@ -1,7 +1,9 @@
 package com.czagrzebski.printhelm.web.domain.connection;
 
 
+import com.czagrzebski.printhelm.model.ConnectionType;
 import com.czagrzebski.printhelm.web.domain.Printer;
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,13 +20,34 @@ public abstract class ConnectionConfig {
     @Id
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "printer_id", referencedColumnName = "printer_id")
+    @OneToOne(mappedBy = "connectionConfig")
     private Printer printer;
 
-    public abstract ConnectionType getConnectionType();
+    public Long getId() {
+        return id;
+    }
 
-    public enum ConnectionType {
-        MQTT, CLOUD
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Printer getPrinter() {
+        return printer;
+    }
+
+    public void setPrinter(Printer printer) {
+        this.printer = printer;
+    }
+
+    public ConnectionType getConnectionType() {
+        return ConnectionType.valueOf(
+                this.getClass()
+                        .getAnnotation(jakarta.persistence.DiscriminatorValue.class)
+                        .value()
+        );
+    }
+
+    public void setConnectionType(ConnectionType connectionType) {
+        // No-op, required by JPA
     }
 }

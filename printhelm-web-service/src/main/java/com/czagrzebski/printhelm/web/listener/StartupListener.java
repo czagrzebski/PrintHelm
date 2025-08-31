@@ -1,9 +1,13 @@
 package com.czagrzebski.printhelm.web.listener;
 
+import com.czagrzebski.printhelm.model.ConnectionType;
 import com.czagrzebski.printhelm.web.admindata.AdminDataImporter;
+import com.czagrzebski.printhelm.web.connection.MqttConnectionManager;
 import com.czagrzebski.printhelm.web.domain.Privilege;
 import com.czagrzebski.printhelm.web.domain.Role;
 import com.czagrzebski.printhelm.web.domain.User;
+import com.czagrzebski.printhelm.web.domain.connection.ConnectionConfig;
+import com.czagrzebski.printhelm.web.repository.PrinterRepository;
 import com.czagrzebski.printhelm.web.repository.PrivilegeRepository;
 import com.czagrzebski.printhelm.web.repository.RoleRepository;
 import com.czagrzebski.printhelm.web.repository.UserRepository;
@@ -38,32 +42,41 @@ public class StartupListener implements ApplicationListener<ContextRefreshedEven
     private final RoleRepository roleRepository;
     private final PrivilegeRepository privilegeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PrinterRepository printerRepository;
+    private final MqttConnectionManager mqttConnectionManager;
 
     public StartupListener(UserRepository userRepository, RoleRepository roleRepository,
-                           PrivilegeRepository privilegeRepository, PasswordEncoder passwordEncoder, ApplicationContext appContext) {
+                           PrivilegeRepository privilegeRepository, PasswordEncoder passwordEncoder, ApplicationContext appContext, PrinterRepository printerRepository, MqttConnectionManager mqttConnectionManager) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.privilegeRepository = privilegeRepository;
         this.passwordEncoder = passwordEncoder;
         this.appContext = appContext;
+        this.printerRepository = printerRepository;
+        this.mqttConnectionManager = mqttConnectionManager;
     }
 
     @Transactional
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if(!setupComplete) {
-            logger.info("Checking for admin database upgrade...");
-            try {
-                HashMap<String, NodeList> adminDataXML = AdminDataImporter.getImportedAdminDataFromXML();
-                importPrivileges(adminDataXML.get("PRIVILEGE"));
-                importRoles(adminDataXML.get("ROLE"));
-                importUsers(adminDataXML.get("USER"));
-                logger.info("Admin data load complete!");
-                setupComplete = true;
-            } catch (Exception e) {
-                logger.info("Failed to load admin data on startup. Terminating application! {}", e.toString());
-                SpringApplication.exit(appContext, () -> -1);
-            }
+            loadAdminData();
+            connectPrintersOnStartup();
+            setupComplete = true;
+        }
+    }
+
+    private void loadAdminData() {
+        try {
+            logger.info("Checking for admin data to load on startup...");
+            HashMap<String, NodeList> adminDataXML = AdminDataImporter.getImportedAdminDataFromXML();
+            importPrivileges(adminDataXML.get("PRIVILEGE"));
+            importRoles(adminDataXML.get("ROLE"));
+            importUsers(adminDataXML.get("USER"));
+            logger.info("Admin data load complete!");
+        } catch (Exception e) {
+            logger.info("Failed to load admin data on startup. Terminating application! {}", e.toString());
+            SpringApplication.exit(appContext, () -> -1);
         }
     }
 
@@ -212,5 +225,23 @@ public class StartupListener implements ApplicationListener<ContextRefreshedEven
         XPath xpath = xPathFactory.newXPath();
         XPathExpression expr = xpath.compile(expression);
         return (NodeList) expr.evaluate(node, XPathConstants.NODESET);
+    }
+
+    private void connectPrintersOnStartup() {
+        logger.info("Connecting to printers");
+        printerRepository.findAll().forEach(printer -> {
+            try {
+                if (printer.getConnectionConfig() != null && printer.getConnectionConfig().getConnectionType() == ConnectionType.MQTT) {
+                    mqttConnectionManager.connect(printer);
+                    logger.info("Connected to printer [ID={}]", printer.getPrinterId());
+                } else {
+                    logger.warn("Printer [ID={}] is not configured for MQTT connection", printer.getPrinterId());
+                }
+            } catch (Exception e) {
+                logger.error("Failed to connect to printer [ID={}]: {}", printer.getPrinterId(), e.getMessage());
+            }
+        });
+
+        logger.info("Printer connection process completed.");
     }
 }

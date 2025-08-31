@@ -77,8 +77,100 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+  # == PrinterController ===
+  /printer/createPrinter:
+    post:
+      tags:
+        - Printer
+      summary: Create a new printer
+      operationId: createPrinter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreatePrinterRequest'
+      responses:
+        '201':
+          description: Printer created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  printerId:
+                    type: long
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
 components:
   schemas:
+    PrinterType:
+      type: string
+      enum: [BAMBULAB, PRUSA, ANYCUBIC, EPAX, ELEGOO, OTHER]
+    ConnectionType:
+      type: string
+      enum: [USB, NETWORK, SERIAL, BLUETOOTH, MQTT]
+    ApiCreatePrinterRequest:
+      type: object
+      required:
+        - printerName
+        - type
+        - model
+        - connectionConfig
+      properties:
+        printerName:
+          type: string
+        printerType:
+          $ref: '#/components/schemas/PrinterType'
+        printerModel:
+          type: string
+        location:
+            type: string
+        serialNumber:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/ApiConnectionConfig'
+    ApiConnectionConfig:
+      type: object
+      required:
+        - printerId
+        - connectionType
+      allOf:
+          - $ref: '#/components/schemas/ApiMqttConnectionConfig'
+      properties:
+        connectionType:
+            $ref: '#/components/schemas/ConnectionType'
+    ApiMqttConnectionConfig:
+      type: object
+      required:
+        - brokerUrl
+        - topic
+      properties:
+        brokerUrl:
+          type: string
+        topic:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+    ApiAddPrinterConnectionRequest:
+      type: object
+      required:
+        - printerId
+        - connectionType
+      properties:
+        printerId:
+          type: long
+        connectionType:
+          type: string
+          enum: [USB, NETWORK, SERIAL, BLUETOOTH]
+        details:
+          type: string
     ApiLoginRequest:
       type: object
       required:
@@ -158,3 +250,101 @@ components:
           type: string
         description:
           type: string
+    ApiPrinterState:
+      type: object
+      properties:
+        printerId:
+          type: long
+        currentLayer:
+          type: integer
+        totalLayers:
+          type: integer
+        state:
+          type: string
+        bedTemp:
+          type: number
+          format: float
+        bedTargetTemp:
+          type: number
+          format: float
+        nozzleTargetTemp:
+          type: number
+          format: float
+        nozzleDiameter:
+          type: number
+          format: float
+        subtask:
+          type: string
+        nozzleTemp:
+          type: number
+          format: float
+        ipAddress:
+          type: string
+        file:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        progress:
+          type: number
+        wifiSignalStrength:
+          type: string
+        subtaskName:
+          type: string
+        nozzleType:
+          type: string
+        materialSystem:
+          $ref: '#/components/schemas/ApiMaterialSystem'
+        fans:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiFan'
+        lights:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiLight'
+    ApiMaterialSystem:
+      type: object
+      properties:
+        humidity:
+          type: string
+        temperature:
+          type: string
+        materials:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMaterial'
+    ApiFan:
+        type: object
+        properties:
+          name:
+            type: string
+          speed:
+            type: string
+    ApiLight:
+      type: object
+      properties:
+        name:
+          type: string
+        state:
+          type: string
+    ApiMaterial:
+        type: object
+        properties:
+          loaded:
+            type: boolean
+          name:
+            type: string
+          color:
+            type: string
+          type:
+            type: string
+          totalWeightGrams:
+            type: number
+            format: float
+          costPerGram:
+            type: number
+            format: float
+          timestamp:
+            type: string
+            format: date-time
