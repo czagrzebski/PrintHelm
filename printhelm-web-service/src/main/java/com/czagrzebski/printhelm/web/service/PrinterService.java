@@ -1,6 +1,8 @@
 package com.czagrzebski.printhelm.web.service;
 
 import com.czagrzebski.printhelm.model.ApiCreatePrinterRequest;
+import com.czagrzebski.printhelm.model.ApiUpdatePrinterRequest;
+import java.util.List;
 import com.czagrzebski.printhelm.model.ConnectionType;
 import com.czagrzebski.printhelm.model.PrinterType;
 import com.czagrzebski.printhelm.web.connection.MqttConnectionManager;
@@ -15,6 +17,7 @@ import com.czagrzebski.printhelm.web.repository.PrinterRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PrinterService {
@@ -45,7 +48,6 @@ public class PrinterService {
                 connectionConfig.setClientId(mqttConnectionManager.generateClientId(printer.getPrinterName(), printer.getPrinterId()));
                 printer.setConnectionConfig(connectionConfig);
             } else {
-                // If no connection config is provided, we can set a default or throw an error
                 logger.warn("No MQTT connection configuration provided for BambuLab printer. Defaulting to no connection.");
                 printer.setConnectionConfig(null);
             }
@@ -57,9 +59,50 @@ public class PrinterService {
         }
     }
 
+    @Transactional
+    public Printer updatePrinter(long id, ApiUpdatePrinterRequest request) {
+        Printer printer = getPrinterById(id);
+
+        if (request.getPrinterName() != null) printer.setPrinterName(request.getPrinterName());
+        if (request.getPrinterModel() != null) printer.setPrinterModel(request.getPrinterModel());
+        printer.setLocation(request.getLocation());
+        printer.setSerialNumber(request.getSerialNumber());
+
+        if (request.getConnectionConfig() != null) {
+            mqttConnectionManager.disconnect(id);
+            MQTTConnectionConfig newConfig = connectionConfigurationMapper.apiConnectionConfigToMqttConnectionConfig(request.getConnectionConfig());
+            newConfig.setClientId(mqttConnectionManager.generateClientId(printer.getPrinterName(), id));
+            printer.setConnectionConfig(newConfig);
+            printerRepository.save(printer);
+            try {
+                mqttConnectionManager.connect(printer);
+            } catch (Exception e) {
+                logger.warn("Failed to reconnect printer [ID={}] after update: {}", id, e.getMessage());
+            }
+        } else {
+            printerRepository.save(printer);
+        }
+
+        return printer;
+    }
+
+    @Transactional
+    public void deletePrinter(long id) {
+        Printer printer = getPrinterById(id);
+        mqttConnectionManager.disconnect(id);
+        printerRepository.delete(printer);
+    }
+
+    public List<Printer> getAllPrinters() {
+        return printerRepository.findAll();
+    }
+
+    public Printer getPrinterById(long id) {
+        return printerRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Printer not found: " + id));
+    }
+
     public static String generateClientId(String printerName, long printerId) {
         return "printhelm-" + printerName.replaceAll("[^a-zA-Z0-9]", "-").toLowerCase() + "-" + printerId;
     }
-
-
 }

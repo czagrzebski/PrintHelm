@@ -69,6 +69,28 @@ public class AuthenticationController implements AuthApi {
         }
     }
 
+    @Override
+    public ResponseEntity<Void> logout() {
+        try {
+            logger.info("Logging out user");
+            // Clear the refresh token cookie
+            ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (requestAttributes != null) {
+                HttpServletResponse servletResponse = requestAttributes.getResponse();
+                if (servletResponse != null) {
+                    Cookie cookie = new Cookie("refreshToken", null);
+                    cookie.setHttpOnly(true);
+                    cookie.setMaxAge(0); // Delete the cookie
+                    servletResponse.addCookie(cookie);
+                }
+            }
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            logger.info("Failed to logout user");
+            throw e;
+        }
+    }
+
     private String getRefreshTokenFromCookie() {
         ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (requestAttributes != null) {

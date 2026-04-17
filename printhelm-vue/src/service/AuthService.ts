@@ -8,13 +8,19 @@ class AuthService {
     const data: ApiLoginRequest = { username, password }
     const response = await api.post<ApiAuthResponse>('/auth/login', data)
     this.authStore.setToken(response.data.accessToken ?? null)
+    if (response.data.user) {
+      this.authStore.setUserInfo(response.data.user)
+    }
     return response
   }
 
   async logout() {
-    const store = this.authStore
-    store.setToken(null)
-    return await api.post('/auth/logout')
+    try {
+      await api.post('/auth/logout')
+    } finally {
+      const store = this.authStore
+      store.setToken(null)
+    }
   }
 
   private get authStore() {

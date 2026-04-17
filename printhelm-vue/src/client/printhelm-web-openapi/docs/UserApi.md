@@ -17,7 +17,7 @@ import {
     UserApi,
     Configuration,
     ApiCreateUserRequest
-} from 'restClient';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UserApi(configuration);

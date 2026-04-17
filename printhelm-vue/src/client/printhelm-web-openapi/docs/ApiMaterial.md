@@ -16,7 +16,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ApiMaterial } from 'restClient';
+import { ApiMaterial } from './api';
 
 const instance: ApiMaterial = {
     loaded,

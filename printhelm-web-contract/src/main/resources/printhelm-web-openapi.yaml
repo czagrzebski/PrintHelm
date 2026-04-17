@@ -51,6 +51,18 @@ paths:
         '401':
           description: Invalid refresh token
 
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: User logout
+      operationId: logout
+      responses:
+        '200':
+          description: Successful logout
+        '401':
+          description: Unauthorized
+
   # === UserController ===
   /user/createUser:
     post:
@@ -77,7 +89,243 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+  /user:
+    get:
+      tags:
+        - User
+      summary: Get all users
+      operationId: getUsers
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiUserResponse'
+        '403':
+          description: Forbidden
+  /user/me:
+    get:
+      tags:
+        - User
+      summary: Get current authenticated user
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUserResponse'
+  /user/me/password:
+    put:
+      tags:
+        - User
+      summary: Change own password
+      operationId: changeMyPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed
+        '400':
+          description: Bad Request
+  /user/{id}:
+    get:
+      tags:
+        - User
+      summary: Get user by ID
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUserResponse'
+        '404':
+          description: Not found
+    put:
+      tags:
+        - User
+      summary: Update a user
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiUpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUserResponse'
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - User
+      summary: Delete a user
+      operationId: deleteUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          description: Not found
+  /user/{id}/password:
+    put:
+      tags:
+        - User
+      summary: Admin reset user password
+      operationId: adminResetPassword
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiAdminResetPasswordRequest'
+      responses:
+        '204':
+          description: Password reset
+        '404':
+          description: Not found
+  # === RoleController ===
+  /role:
+    get:
+      tags:
+        - Role
+      summary: Get all roles
+      operationId: getRoles
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiRole'
   # == PrinterController ===
+  /printer:
+    get:
+      tags:
+        - Printer
+      summary: Get all printers
+      operationId: getPrinters
+      responses:
+        '200':
+          description: List of printers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiPrinterResponse'
+        '401':
+          description: Unauthorized
+  /printer/{id}:
+    get:
+      tags:
+        - Printer
+      summary: Get a printer by ID
+      operationId: getPrinterById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Printer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPrinterResponse'
+        '404':
+          description: Not found
+    put:
+      tags:
+        - Printer
+      summary: Update a printer
+      operationId: updatePrinter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiUpdatePrinterRequest'
+      responses:
+        '200':
+          description: Printer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPrinterResponse'
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - Printer
+      summary: Delete a printer
+      operationId: deletePrinter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Printer deleted
+        '404':
+          description: Not found
   /printer/createPrinter:
     post:
       tags:
@@ -217,8 +465,30 @@ components:
       type: object
       properties:
         userId:
-          type: long
+          type: integer
+          format: int64
         username:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        isActive:
+          type: boolean
+        mustChangePassword:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiRole'
+    ApiUpdateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        firstName:
+          type: string
+        lastName:
           type: string
         isActive:
           type: boolean
@@ -226,6 +496,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiRole'
+    ApiChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+    ApiAdminResetPasswordRequest:
+      type: object
+      required:
+        - newPassword
+      properties:
+        newPassword:
+          type: string
+        mustChangePassword:
+          type: boolean
     ApiErrorResponse:
       type: object
       properties:
@@ -291,8 +580,50 @@ components:
           type: string
         subtaskName:
           type: string
+        subtaskId:
+          type: string
         nozzleType:
           type: string
+        remainTime:
+          type: integer
+          description: Estimated remaining print time in minutes
+        gcodeState:
+          type: string
+          description: Raw gcode execution state reported by the printer
+        printType:
+          type: string
+          description: Type of print job (local, cloud, etc.)
+        taskId:
+          type: string
+        jobId:
+          type: string
+        projectId:
+          type: string
+        profileId:
+          type: string
+        modelId:
+          type: string
+        sdcard:
+          type: boolean
+          description: Whether an SD card is inserted
+        homeFlag:
+          type: integer
+          description: Bitmask of homed axes reported by the printer
+        spdLvl:
+          type: integer
+          description: Speed level preset (1=silent, 2=standard, 3=sport, 4=ludicrous)
+        spdMag:
+          type: integer
+          description: Speed magnitude as a percentage
+        printError:
+          type: integer
+          description: Print error code (0 = no error)
+        mcPrintErrorCode:
+          type: string
+          description: Motion controller print error code
+        failReason:
+          type: string
+          description: Human-readable failure reason if print failed
         materialSystem:
           $ref: '#/components/schemas/ApiMaterialSystem'
         fans:
@@ -303,6 +634,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiLight'
+        ipcam:
+          $ref: '#/components/schemas/ApiIpcam'
+        xcam:
+          $ref: '#/components/schemas/ApiXcam'
+        upgradeState:
+          $ref: '#/components/schemas/ApiUpgradeState'
     ApiMaterialSystem:
       type: object
       properties:
@@ -328,6 +665,37 @@ components:
           type: string
         state:
           type: string
+    ApiUpdatePrinterRequest:
+      type: object
+      properties:
+        printerName:
+          type: string
+        printerModel:
+          type: string
+        location:
+          type: string
+        serialNumber:
+          type: string
+        connectionConfig:
+          $ref: '#/components/schemas/ApiConnectionConfig'
+    ApiPrinterResponse:
+      type: object
+      properties:
+        printerId:
+          type: integer
+          format: int64
+        printerName:
+          type: string
+        printerModel:
+          type: string
+        printerType:
+          $ref: '#/components/schemas/PrinterType'
+        location:
+          type: string
+        serialNumber:
+          type: string
+        connectionConfig:
+          $ref: '#/components/schemas/ApiConnectionConfig'
     ApiMaterial:
         type: object
         properties:
@@ -348,3 +716,98 @@ components:
           timestamp:
             type: string
             format: date-time
+          remain:
+            type: integer
+            description: Estimated filament remaining (%)
+          trayDiameter:
+            type: string
+            description: Filament diameter (e.g. "1.75")
+          trayWeight:
+            type: string
+            description: Spool weight in grams as reported by AMS tag
+          trayUuid:
+            type: string
+            description: RFID UUID of the tray tag
+          nozzleTempMin:
+            type: string
+            description: Minimum recommended nozzle temperature for this filament
+          nozzleTempMax:
+            type: string
+            description: Maximum recommended nozzle temperature for this filament
+          recommendedBedTemp:
+            type: string
+            description: Recommended bed temperature for this filament
+          dryingTemp:
+            type: string
+            description: Recommended drying temperature
+          dryingTime:
+            type: string
+            description: Recommended drying time in hours
+    ApiIpcam:
+      type: object
+      properties:
+        resolution:
+          type: string
+        rtspUrl:
+          type: string
+        timelapse:
+          type: string
+          description: Timelapse recording mode (e.g. "timelapse_off")
+        ipcamRecord:
+          type: string
+          description: Camera recording state
+        ipcamDev:
+          type: string
+          description: Camera device identifier
+    ApiXcam:
+      type: object
+      description: AI-based visual monitoring settings (X1 series)
+      properties:
+        firstLayerInspector:
+          type: boolean
+          description: First layer inspection enabled
+        buildplateMarkerDetector:
+          type: boolean
+          description: Build plate marker detection enabled
+        spaghettiDetector:
+          type: boolean
+          description: Spaghetti failure detection enabled
+        printingMonitor:
+          type: boolean
+          description: General printing monitor enabled
+        printHalt:
+          type: boolean
+          description: Whether the printer will halt on a detected failure
+        haltPrintSensitivity:
+          type: string
+          description: Sensitivity level for halt-on-failure (low / medium / high)
+        allowSkipParts:
+          type: boolean
+          description: Allow skipping failed objects
+    ApiUpgradeState:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Current upgrade status (e.g. IDLE, DOWNLOADING, INSTALLING)
+        progress:
+          type: string
+          description: Upgrade progress percentage as a string
+        otaNewVersionNumber:
+          type: string
+          description: Available OTA firmware version
+        amsNewVersionNumber:
+          type: string
+          description: Available AMS firmware version
+        ahbNewVersionNumber:
+          type: string
+          description: Available AHB firmware version
+        extNewVersionNumber:
+          type: string
+          description: Available extruder firmware version
+        message:
+          type: string
+          description: Human-readable status message
+        forceUpgrade:
+          type: boolean
+          description: Whether this upgrade is mandatory

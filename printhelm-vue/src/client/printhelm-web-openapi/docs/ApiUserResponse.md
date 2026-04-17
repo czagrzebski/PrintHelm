@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ApiUserResponse } from 'restClient';
+import { ApiUserResponse } from './api';
 
 const instance: ApiUserResponse = {
     userId,

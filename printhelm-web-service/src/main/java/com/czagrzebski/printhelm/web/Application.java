@@ -12,8 +12,11 @@ public class Application {
 
 	public static void main(String[] args) {
 		logger.info("Starting PrintHelm Web Service");
+		setActiveProfile();
+		SpringApplication.run(Application.class, args);
+	}
 
-		// set the profile based on environment variable
+	private static void setActiveProfile() {
 		String profile = System.getProperty("spring.profiles.active");
 		if (profile != null && !profile.isEmpty()) {
 			System.setProperty("spring.profiles.active", profile);
@@ -21,8 +24,6 @@ public class Application {
 		} else {
 			logger.info("No active profile set, using default configuration");
 		}
-
-		SpringApplication.run(Application.class, args);
 	}
 
 }

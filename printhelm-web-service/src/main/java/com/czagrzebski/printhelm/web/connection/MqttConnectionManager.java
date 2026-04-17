@@ -102,7 +102,17 @@ public class MqttConnectionManager {
         mqttClients.put(printer.getPrinterId(), mqttClient);
     }
 
-    // Add this method to your MqttConnectionManager
+    public void publish(Long printerId, String topic, String payload, int qos) throws MqttException {
+        MqttClient client = mqttClients.get(printerId);
+        if (client == null || !client.isConnected()) {
+            throw new IllegalStateException("Printer [ID=" + printerId + "] is not connected");
+        }
+        MqttMessage message = new MqttMessage(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        message.setQos(qos);
+        client.publish(topic, message);
+        logger.debug("Published to topic={} for printer [ID={}]", topic, printerId);
+    }
+
     public void disconnect(Long printerId) {
         MqttClient client = mqttClients.remove(printerId);
         if (client != null && client.isConnected()) {

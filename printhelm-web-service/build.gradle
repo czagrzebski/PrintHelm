@@ -41,6 +41,8 @@ dependencies {
     //testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation 'commons-net:commons-net:3.10.0'
+
     // use the contract project as a dependency
     implementation project(':printhelm-web-contract')
 }

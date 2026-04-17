@@ -29,7 +29,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ApiPrinterState } from 'restClient';
+import { ApiPrinterState } from './api';
 
 const instance: ApiPrinterState = {
     printerId,
