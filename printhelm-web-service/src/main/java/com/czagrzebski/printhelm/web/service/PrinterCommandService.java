@@ -48,19 +48,43 @@ public class PrinterCommandService {
         publish(printerId, printCommand("gcode_line", "G28\n"), 0);
     }
 
-    public void printFile(long printerId, String filename, int[] amsMapping) throws MqttException {
+    public void printFile(long printerId, String filename, int[] amsMapping, boolean flowCali, boolean vibrationCali, boolean layerInspect) throws MqttException {
         PrinterCommandValidator.validateFilename(filename);
         boolean useAms = amsMapping != null && amsMapping.length > 0;
-        String mapping = useAms ? java.util.Arrays.toString(amsMapping) : "";
+
+        // ams_mapping must be a JSON array, not a quoted string
+        StringBuilder amsMappingJson = new StringBuilder("[");
+        if (useAms) {
+            for (int i = 0; i < amsMapping.length; i++) {
+                if (i > 0) amsMappingJson.append(",");
+                amsMappingJson.append(amsMapping[i]);
+            }
+        }
+        amsMappingJson.append("]");
+
+        // .3mf files need the internal plate gcode path; .gcode files are addressed directly
+        String param = filename.toLowerCase().endsWith(".3mf") ? "Metadata/plate_1.gcode" : filename;
+        String url = "file:///mnt/sdcard/" + filename;
+
         String payload = String.format(
                 "{\"print\":{\"sequence_id\":\"0\",\"command\":\"project_file\"," +
-                "\"param\":\"%s\",\"url\":\"file:///mnt/sdcard\",\"project_id\":\"0\"," +
+                "\"param\":\"%s\",\"url\":\"%s\",\"project_id\":\"0\"," +
                 "\"profile_id\":\"0\",\"task_id\":\"0\",\"subtask_id\":\"0\",\"subtask_name\":\"\"," +
                 "\"file\":\"\",\"md5\":\"\",\"timelapse\":false,\"bed_type\":\"auto\"," +
-                "\"bed_levelling\":true,\"flow_cali\":false,\"vibration_cali\":false," +
-                "\"layer_inspect\":false,\"use_ams\":%b,\"ams_mapping\":\"%s\"}}",
-                escape(filename), useAms, escape(mapping));
+                "\"bed_levelling\":true,\"flow_cali\":%b,\"vibration_cali\":%b," +
+                "\"layer_inspect\":%b,\"use_ams\":%b,\"ams_mapping\":%s}}",
+                escape(param), escape(url), flowCali, vibrationCali, layerInspect, useAms, amsMappingJson);
         publish(printerId, payload, 1);
+    }
+
+    public void setNozzleTemp(long printerId, int temp) throws MqttException {
+        PrinterCommandValidator.validateNozzleTemp(temp);
+        publish(printerId, printCommand("gcode_line", "M104 S" + temp + "\n"), 0);
+    }
+
+    public void setBedTemp(long printerId, int temp) throws MqttException {
+        PrinterCommandValidator.validateBedTemp(temp);
+        publish(printerId, printCommand("gcode_line", "M140 S" + temp + "\n"), 0);
     }
 
     public void setLight(long printerId, String ledNode, String mode) throws MqttException {

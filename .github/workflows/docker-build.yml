@@ -8,17 +8,19 @@ on:
     branches:
       - '**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  prepare:
     runs-on: self-hosted
     permissions:
       contents: read
-      packages: write
 
-    # cancel any in-progress runs of this workflow on the same ref (branch or tag)
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      latest: ${{ steps.vars.outputs.latest }}
 
     steps:
       - name: Clean Docker
@@ -33,7 +35,6 @@ jobs:
       - name: Clean Gradle
         run: rm -rf ~/.gradle/caches/
 
-      # Checkout repo
       - name: Checkout source
         uses: actions/checkout@v4
 
@@ -41,15 +42,25 @@ jobs:
         id: vars
         run: |
           if [[ "${GITHUB_REF_NAME}" =~ ^release/ ]]; then
-            VERSION="${GITHUB_REF_NAME#release/}"  # extract "1.2.0" from "release/1.2.0"
-            echo "TAG=${VERSION}" >> $GITHUB_ENV
-            echo "LATEST=latest" >> $GITHUB_ENV
+            VERSION="${GITHUB_REF_NAME#release/}"
+            echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+            echo "latest=latest" >> $GITHUB_OUTPUT
           else
             BRANCH=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | tr '/' '-')
-            echo "TAG=${BRANCH}" >> $GITHUB_ENV
+            echo "tag=${BRANCH}" >> $GITHUB_OUTPUT
           fi
 
-      # Setup Java
+  build-service:
+    needs: prepare
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -59,50 +70,53 @@ jobs:
       - name: Build Spring Boot runnable JAR
         run: ./gradlew :printhelm-web-service:bootJar
 
-      - name: Build Service Docker image
-        run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-service:${TAG}
-          echo "Building image: $IMAGE"
-          docker build \
-            --build-arg JAR_FILE=${JAR_FILE} \
-            -f printhelm-web-service/Dockerfile \
-            -t $IMAGE \
-            .
-          if [ -n "${LATEST:-}" ]; then
-            docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-service:latest
-          fi
-
-      - name: Build Frontend Docker image
-        run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-frontend:${TAG}
-          echo "Building image: $IMAGE"
-          docker build \
-            -f printhelm-vue/Dockerfile \
-            -t $IMAGE \
-            .
-          if [ -n "${LATEST:-}" ]; then
-            docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
-          fi
-
-      - name: Authenticate to GCR
+      - name: Authenticate to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Service Docker image
+      - name: Build and push Service Docker image
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          LATEST: ${{ needs.prepare.outputs.latest }}
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-service:${TAG}
+          docker build -f printhelm-web-service/Dockerfile -t $IMAGE .
           docker push $IMAGE
-          if [ -n "${LATEST:-}" ]; then
+          if [ -n "${LATEST}" ]; then
+            docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-service:latest
             docker push ghcr.io/${{ github.repository_owner }}/printhelm-service:latest
           fi
 
-      - name : Push Frontend Docker image
+  build-frontend:
+    needs: prepare
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Frontend Docker image
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          LATEST: ${{ needs.prepare.outputs.latest }}
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-frontend:${TAG}
+          docker build -f printhelm-vue/Dockerfile -t $IMAGE .
           docker push $IMAGE
-          if [ -n "${LATEST:-}" ]; then
+          if [ -n "${LATEST}" ]; then
+            docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
             docker push ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
           fi

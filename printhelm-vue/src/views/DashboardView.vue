@@ -153,9 +153,7 @@ onMounted(fetchPrinters)
     </div>
 
     <Card class="printers-card">
-      <template #title>
-        <span class="card-title">Printers</span>
-      </template>
+      <template #title>Printers</template>
       <template #content>
         <div v-if="error" class="error-msg">{{ error }}</div>
         <DataTable
@@ -170,7 +168,7 @@ onMounted(fetchPrinters)
           class="clickable-rows"
           @row-click="onRowClick"
         >
-          <Column field="printerName" header="Name" frozen style="min-width:130px" />
+          <Column field="printerName" header="Name" style="min-width:130px" />
           <Column field="printerModel" header="Model" style="min-width:110px" />
           <Column field="printerType" header="Type" style="min-width:100px" />
           <Column field="location" header="Location" style="min-width:100px">
@@ -323,14 +321,6 @@ onMounted(fetchPrinters)
 .printers-card {
   flex: 1;
   min-height: 0;
-}
-
-.card-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ph-text-muted);
 }
 
 .progress-cell {

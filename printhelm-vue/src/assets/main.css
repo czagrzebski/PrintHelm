@@ -13,3 +13,205 @@ a:hover {
 .clickable-rows :deep(tr) {
   cursor: pointer;
 }
+
+/* ── PrimeVue dialog global dark theme ───────────────────────────────── */
+.p-dialog {
+  background: #162830 !important;
+  border: 1px solid var(--ph-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6) !important;
+  color: var(--ph-text) !important;
+}
+
+.p-dialog-header {
+  background: #162830 !important;
+  color: var(--ph-text) !important;
+  border-bottom: 1px solid var(--ph-border) !important;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 0.875rem 1.25rem !important;
+}
+
+.p-dialog-title {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: var(--ph-text) !important;
+}
+
+.p-dialog-close-button {
+  color: var(--ph-text-muted) !important;
+}
+
+.p-dialog-close-button:hover {
+  color: var(--ph-text) !important;
+  background: rgba(255,255,255,0.07) !important;
+}
+
+.p-dialog-content {
+  background: #162830 !important;
+  color: var(--ph-text) !important;
+  padding: 1.25rem !important;
+}
+
+.p-dialog-footer {
+  background: #162830 !important;
+  border-top: 1px solid var(--ph-border) !important;
+  border-radius: 0 0 12px 12px !important;
+  padding: 0.75rem 1.25rem !important;
+}
+
+/* ── PrimeVue Card dark theme ────────────────────────────────── */
+.p-card {
+  background: #162830 !important;
+  border: 1px solid var(--ph-border) !important;
+  border-radius: 12px !important;
+  color: var(--ph-text) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+.p-card-body {
+  padding: 1.25rem !important;
+}
+
+.p-card-title {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--ph-text-muted) !important;
+  padding-bottom: 0.875rem !important;
+  border-bottom: 1px solid var(--ph-border) !important;
+  margin-bottom: 0.875rem !important;
+}
+
+.p-card-content {
+  color: var(--ph-text) !important;
+  padding: 0 !important;
+}
+
+/* ── PrimeVue DataTable dark theme ───────────────────────────── */
+.p-datatable {
+  background: transparent !important;
+  color: var(--ph-text) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: rgba(15, 32, 39, 0.6) !important;
+  color: var(--ph-text-muted) !important;
+  border-color: var(--ph-border) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 0.625rem 0.875rem !important;
+  white-space: nowrap !important;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  background: transparent !important;
+  color: var(--ph-text) !important;
+  border-color: transparent !important;
+  transition: background 0.12s !important;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: transparent !important;
+  border-bottom: 1px solid var(--ph-border) !important;
+  color: var(--ph-text) !important;
+  font-size: 0.875rem !important;
+  padding: 0.625rem 0.875rem !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover > td {
+  background: rgba(34, 211, 238, 0.04) !important;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-highlight > td {
+  background: rgba(34, 211, 238, 0.08) !important;
+  color: var(--ph-text) !important;
+}
+
+.p-datatable .p-datatable-loading-overlay {
+  background: rgba(15, 32, 39, 0.7) !important;
+}
+
+.p-datatable .p-datatable-empty-message > td {
+  color: var(--ph-text-muted) !important;
+  text-align: center !important;
+  padding: 2rem !important;
+  font-size: 0.875rem !important;
+}
+
+.p-datatable .p-sortable-column:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--ph-text) !important;
+}
+
+.p-datatable .p-sortable-column.p-highlight {
+  color: var(--ph-accent) !important;
+  background: rgba(34, 211, 238, 0.06) !important;
+}
+
+/* ── PrimeVue Tabs dark theme ────────────────────────────────── */
+.p-tablist {
+  background: transparent !important;
+  border-bottom: 1px solid var(--ph-border) !important;
+}
+
+.p-tab {
+  background: transparent !important;
+  color: var(--ph-text-muted) !important;
+  border-color: transparent !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  padding: 0.625rem 1rem !important;
+  transition: color 0.15s !important;
+}
+
+.p-tab:hover {
+  color: var(--ph-text) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.p-tab[data-p-active='true'],
+.p-tab.p-tab-active {
+  color: var(--ph-accent) !important;
+  border-color: var(--ph-accent) !important;
+}
+
+.p-tabpanels {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.p-tabpanel {
+  background: transparent !important;
+  color: var(--ph-text) !important;
+}
+
+/* ── PrimeVue Tag dark refinements ───────────────────────────── */
+.p-tag {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  border-radius: 6px !important;
+  padding: 0.2rem 0.5rem !important;
+}
+
+/* ── PrimeVue ProgressBar dark theme ─────────────────────────── */
+.p-progressbar {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 99px !important;
+}
+
+.p-progressbar-value {
+  background: var(--ph-accent) !important;
+  border-radius: 99px !important;
+}

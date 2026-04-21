@@ -58,6 +58,20 @@ public final class PrinterCommandValidator {
         }
     }
 
+    public static void validateNozzleTemp(int temp) {
+        if (temp < 0 || temp > 300) {
+            throw new IllegalArgumentException(
+                    "Nozzle temperature " + temp + "°C is out of range. Must be 0–300°C (0 = off).");
+        }
+    }
+
+    public static void validateBedTemp(int temp) {
+        if (temp < 0 || temp > 110) {
+            throw new IllegalArgumentException(
+                    "Bed temperature " + temp + "°C is out of range. Must be 0–110°C (0 = off).");
+        }
+    }
+
     public static void validateFilename(String filename) {
         if (filename == null || filename.isBlank()) {
             throw new IllegalArgumentException("Filename must not be empty.");

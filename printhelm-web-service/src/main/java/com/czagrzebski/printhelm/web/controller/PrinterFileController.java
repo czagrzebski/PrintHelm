@@ -2,6 +2,7 @@ package com.czagrzebski.printhelm.web.controller;
 
 import com.czagrzebski.printhelm.web.service.PrinterFileService;
 import com.czagrzebski.printhelm.web.service.PrinterFileService.PrinterFileDTO;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +31,15 @@ public class PrinterFileController {
             @RequestParam("file") MultipartFile file) throws IOException {
         fileService.uploadFile(id, file.getOriginalFilename(), file.getInputStream());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{filename:.+}")
+    public ResponseEntity<byte[]> downloadFile(
+            @PathVariable long id,
+            @PathVariable String filename) throws IOException {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(fileService.downloadFile(id, filename));
     }
 
     @DeleteMapping("/{filename}")

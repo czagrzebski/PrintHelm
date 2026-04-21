@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import CameraPlayer from '@/components/CameraPlayer.vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
@@ -10,6 +11,7 @@ import { usePrinterSocket } from '@/composables/usePrinterSocket'
 import { usePrinterCommands } from '@/composables/usePrinterCommands'
 import { usePrinterFiles } from '@/composables/usePrinterFiles'
 import { useHomingGuard } from '@/composables/useHomingGuard'
+import PrintJobInfoDialog from '@/components/PrintJobInfoDialog.vue'
 import type { ApiPrinterState, ApiFan, ApiLight, ApiMaterial, ApiIpcam, ApiXcam, ApiUpgradeState } from '@/client/printhelm-web-openapi'
 
 const route = useRoute()
@@ -39,40 +41,83 @@ const error = ref('')
 const cameraError = ref(false)
 const cameraLoading = ref(true)
 const cameraExpanded = ref(false)
+const streamKey = ref(0)
 
 // ── Controls ──────────────────────────────────────────────────────────────
 const commands = usePrinterCommands(printerId)
 const homingGuard = useHomingGuard(printerId, commands)
-const activeSpeed = ref(2) // 1=silent 2=standard 3=sport 4=ludicrous
 const moveStep = ref(10)
+const nozzleTempInput = ref<number | null>(null)
+const bedTempInput = ref<number | null>(null)
+
+async function applyNozzleTemp() {
+  if (nozzleTempInput.value == null) return
+  await commands.setNozzleTemp(nozzleTempInput.value)
+  if (state.value) state.value.nozzleTargetTemp = nozzleTempInput.value
+  nozzleTempInput.value = null
+}
+
+async function applyBedTemp() {
+  if (bedTempInput.value == null) return
+  await commands.setBedTemp(bedTempInput.value)
+  if (state.value) state.value.bedTargetTemp = bedTempInput.value
+  bedTempInput.value = null
+}
 const MOVE_STEPS = [0.1, 1, 10, 100]
 
 // ── Files ────────────────────────────────────────────────────────────────
 const { files, loading: filesLoading, uploading, uploadProgress, error: filesError, fetchFiles, uploadFile, deleteFile } = usePrinterFiles(printerId)
 const isDragging = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const fileSearch = ref('')
+const fileSort = ref<'name' | 'size' | 'date'>('name')
+const fileSortAsc = ref(true)
+const fileTypeFilter = ref<'all' | '.3mf' | '.gcode'>('all')
+
+const filteredFiles = computed(() => {
+  let result = files.value
+  if (fileTypeFilter.value !== 'all')
+    result = result.filter(f => f.name.toLowerCase().endsWith(fileTypeFilter.value))
+  if (fileSearch.value.trim()) {
+    const q = fileSearch.value.toLowerCase()
+    result = result.filter(f => f.name.toLowerCase().includes(q))
+  }
+  return [...result].sort((a, b) => {
+    let cmp = 0
+    if (fileSort.value === 'name') cmp = a.name.localeCompare(b.name)
+    else if (fileSort.value === 'size') cmp = a.sizeBytes - b.sizeBytes
+    else cmp = new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime()
+    return fileSortAsc.value ? cmp : -cmp
+  })
+})
+
+function setSort(key: 'name' | 'size' | 'date') {
+  if (fileSort.value === key) fileSortAsc.value = !fileSortAsc.value
+  else { fileSort.value = key; fileSortAsc.value = true }
+}
+
+// ── Print job info dialog ─────────────────────────────────────────────────
+const showPrintInfo = ref(false)
+const infoFile = ref<string | null>(null)
 
 // ── Print dialog ──────────────────────────────────────────────────────────
 const showPrintDialog = ref(false)
 const selectedFile = ref<string | null>(null)
-const selectedAmsSlots = ref<number[]>([])
+const selectedAmsSlot = ref<number | null>(null)
+const printFlowCali = ref(true)
+const printVibrationCali = ref(true)
+const printLayerInspect = ref(true)
 
 function openPrintDialog(filename: string) {
   selectedFile.value = filename
-  selectedAmsSlots.value = []
+  selectedAmsSlot.value = null
   showPrintDialog.value = true
-}
-
-function toggleAmsSlot(index: number) {
-  const i = selectedAmsSlots.value.indexOf(index)
-  if (i === -1) selectedAmsSlots.value.push(index)
-  else selectedAmsSlots.value.splice(i, 1)
 }
 
 async function confirmPrint() {
   if (!selectedFile.value) return
   try {
-    await commands.printFile(selectedFile.value, selectedAmsSlots.value)
+    await commands.printFile(selectedFile.value, selectedAmsSlot.value != null ? [selectedAmsSlot.value] : [], printFlowCali.value, printVibrationCali.value, printLayerInspect.value)
     showPrintDialog.value = false
   } catch { /* error shown via commands.error */ }
 }
@@ -97,9 +142,9 @@ function onFileInputChange(event: Event) {
 
 function onCameraLoad() { cameraLoading.value = false }
 function onCameraError() { cameraError.value = true; cameraLoading.value = false }
-function retryCamera() { cameraError.value = false; cameraLoading.value = true }
+function retryCamera() { cameraError.value = false; cameraLoading.value = true; streamKey.value++ }
 
-const streamUrl = computed(() => `${BASE_URL}/printer/${printerId}/stream`)
+const streamUrl = computed(() => `/hls/printer/${printerId}/stream/index.m3u8`)
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -143,10 +188,18 @@ const statusSeverity = computed(() => {
   return 'warn'
 })
 
+const isPrinting = computed(() => state.value?.state?.toLowerCase().includes('print') ?? false)
+
+const isGcodeRunning = computed(() => state.value?.gcodeState?.toUpperCase() === 'RUNNING')
+
 const progressValue = computed(() => state.value?.progress ?? 0)
 
 const materials = computed<ApiMaterial[]>(
   () => state.value?.materialSystem?.materials ?? [],
+)
+
+const activeMaterial = computed<ApiMaterial | null>(
+  () => materials.value.find(m => m.loaded) ?? null,
 )
 
 const fans = computed<ApiFan[]>(() => state.value?.fans ?? [])
@@ -290,6 +343,16 @@ onUnmounted(() => {
                 <span class="stat-key">GCode</span>
                 <span class="stat-val" style="font-size:0.78rem;font-family:monospace">{{ state?.gcodeState || '—' }}</span>
               </div>
+              <div v-if="activeMaterial" class="stat-item">
+                <span class="stat-key">Material</span>
+                <span class="stat-val stat-val--material">
+                  <span
+                    class="active-material-dot"
+                    :style="{ background: materialColor(activeMaterial.color) }"
+                  />
+                  {{ activeMaterial.name || activeMaterial.type || '—' }}
+                </span>
+              </div>
             </div>
 
             <div v-if="(state?.printError != null && state.printError !== 0) || state?.failReason" class="ctrl-error" style="margin-top:0.75rem">
@@ -334,19 +397,6 @@ onUnmounted(() => {
               <i class="mdi mdi-home-outline" />
               <span>Home</span>
             </button>
-          </div>
-          <div class="ctrl-speed">
-            <span class="ctrl-speed-label">Speed</span>
-            <div class="ctrl-speed-chips">
-              <button
-                v-for="sp in [{pct:50,level:1},{pct:75,level:2},{pct:100,level:3},{pct:125,level:4}]"
-                :key="sp.pct"
-                class="speed-chip"
-                :class="{ 'speed-chip--active': activeSpeed === sp.level }"
-                :disabled="commands.loading.value"
-                @click="commands.setSpeed(sp.level).then(() => { activeSpeed = sp.level })"
-              >{{ sp.pct }}%</button>
-            </div>
           </div>
         </div>
 
@@ -393,6 +443,7 @@ onUnmounted(() => {
         <div class="section-card">
           <div class="section-label">
             <i class="mdi mdi-folder-outline" /> Files
+            <span v-if="files.length" class="file-count-badge">{{ files.length }}</span>
             <button class="ctrl-icon-btn" style="margin-left:auto" title="Refresh" @click="fetchFiles">
               <i class="mdi mdi-refresh" :class="{ 'mdi-spin': filesLoading }" />
             </button>
@@ -402,41 +453,85 @@ onUnmounted(() => {
             <i class="mdi mdi-alert-circle-outline" /> {{ filesError }}
           </div>
 
+          <!-- Search + upload toolbar -->
+          <div class="file-toolbar">
+            <input
+              v-model="fileSearch"
+              type="text"
+              class="file-search-input"
+              placeholder="Search files…"
+            />
+            <button class="ctrl-btn" style="flex-shrink:0" @click="fileInputRef?.click()">
+              <i class="mdi mdi-upload" />
+              Upload
+            </button>
+          </div>
+          <input ref="fileInputRef" type="file" accept=".gcode,.3mf" style="display:none" @change="onFileInputChange" />
+
+          <!-- Filter + sort row -->
+          <div class="file-controls">
+            <div class="file-type-chips">
+              <button class="file-chip" :class="{ 'file-chip--active': fileTypeFilter === 'all' }" @click="fileTypeFilter = 'all'">All</button>
+              <button class="file-chip" :class="{ 'file-chip--active': fileTypeFilter === '.3mf' }" @click="fileTypeFilter = '.3mf'">.3mf</button>
+              <button class="file-chip" :class="{ 'file-chip--active': fileTypeFilter === '.gcode' }" @click="fileTypeFilter = '.gcode'">.gcode</button>
+            </div>
+            <div class="file-sort-chips">
+              <button class="file-chip" :class="{ 'file-chip--active': fileSort === 'name' }" @click="setSort('name')">
+                Name<i v-if="fileSort === 'name'" class="mdi" :class="fileSortAsc ? 'mdi-arrow-up' : 'mdi-arrow-down'" />
+              </button>
+              <button class="file-chip" :class="{ 'file-chip--active': fileSort === 'size' }" @click="setSort('size')">
+                Size<i v-if="fileSort === 'size'" class="mdi" :class="fileSortAsc ? 'mdi-arrow-up' : 'mdi-arrow-down'" />
+              </button>
+              <button class="file-chip" :class="{ 'file-chip--active': fileSort === 'date' }" @click="setSort('date')">
+                Date<i v-if="fileSort === 'date'" class="mdi" :class="fileSortAsc ? 'mdi-arrow-up' : 'mdi-arrow-down'" />
+              </button>
+            </div>
+          </div>
+
           <!-- Upload progress -->
           <div v-if="uploading" class="upload-progress">
             <span class="upload-progress-label">Uploading… {{ uploadProgress }}%</span>
             <div class="upload-bar"><div class="upload-bar-fill" :style="{ width: uploadProgress + '%' }" /></div>
           </div>
 
-          <!-- Drop zone -->
+          <!-- Compact drop zone -->
           <div
-            class="file-dropzone"
+            class="file-dropzone file-dropzone--compact"
             :class="{ 'file-dropzone--active': isDragging }"
             @dragover.prevent="isDragging = true"
             @dragleave="isDragging = false"
             @drop.prevent="onFileDrop"
           >
-            <i class="mdi mdi-cloud-upload-outline file-drop-icon" />
-            <span class="file-drop-text">Drop .3mf or .gcode here</span>
-            <span class="file-drop-sub">or <button class="file-browse-btn" @click="fileInputRef?.click()">browse</button></span>
+            <i class="mdi mdi-cloud-upload-outline" />
+            <span>Drop .3mf or .gcode here</span>
           </div>
-          <input ref="fileInputRef" type="file" accept=".gcode,.3mf" style="display:none" @change="onFileInputChange" />
 
           <!-- File list -->
-          <div class="file-list">
+          <div class="file-list file-list--scrollable">
             <div v-if="filesLoading && !files.length" class="empty-state">
               <span class="page-spinner" style="width:18px;height:18px;border-width:2px" /> Loading files…
             </div>
             <div v-else-if="!files.length" class="empty-state">
               <i class="mdi mdi-folder-open-outline" /> No files on printer
             </div>
-            <div v-for="file in files" :key="file.name" class="file-row">
+            <div v-else-if="fileSearch && !filteredFiles.length" class="empty-state">
+              <i class="mdi mdi-magnify-close" /> No files matching "{{ fileSearch }}"
+            </div>
+            <div v-for="file in filteredFiles" :key="file.name" class="file-row">
               <i class="mdi mdi-file-cad-box file-row-icon" />
               <div class="file-row-info">
                 <span class="file-row-name">{{ file.name }}</span>
                 <span class="file-row-meta">{{ fmtFileSize(file.sizeBytes) }}</span>
               </div>
               <div class="file-row-actions">
+                <button
+                  v-if="file.name.toLowerCase().endsWith('.3mf')"
+                  class="ctrl-icon-btn"
+                  title="View job info"
+                  @click="infoFile = file.name; showPrintInfo = true"
+                >
+                  <i class="mdi mdi-information-outline" />
+                </button>
                 <button class="ctrl-icon-btn" title="Print this file" @click="openPrintDialog(file.name)">
                   <i class="mdi mdi-play-circle-outline" />
                 </button>
@@ -539,13 +634,13 @@ onUnmounted(() => {
               <span class="camera-spinner" />
               <span class="camera-loading-text">Connecting…</span>
             </div>
-            <img
+            <CameraPlayer
               v-if="!cameraError"
               v-show="!cameraLoading"
+              :key="streamKey"
               :src="streamUrl"
               class="camera-feed"
-              alt="Live camera feed"
-              @load="onCameraLoad"
+              @ready="onCameraLoad"
               @error="onCameraError"
             />
             <div v-if="cameraError" class="camera-placeholder">
@@ -583,18 +678,18 @@ onUnmounted(() => {
           <div class="move-grid">
             <div class="move-xy">
               <div class="jog-cross">
-                <button class="jog-btn jog-top"    :disabled="commands.loading.value" @click="homingGuard.requestJog('Y', -moveStep)"><i class="mdi mdi-arrow-up" /></button>
-                <button class="jog-btn jog-left"   :disabled="commands.loading.value" @click="homingGuard.requestJog('X', -moveStep)"><i class="mdi mdi-arrow-left" /></button>
-                <button class="jog-btn jog-home"   :disabled="commands.loading.value" @click="homingGuard.home()"><i class="mdi mdi-home-outline" /></button>
-                <button class="jog-btn jog-right"  :disabled="commands.loading.value" @click="homingGuard.requestJog('X',  moveStep)"><i class="mdi mdi-arrow-right" /></button>
-                <button class="jog-btn jog-bottom" :disabled="commands.loading.value" @click="homingGuard.requestJog('Y',  moveStep)"><i class="mdi mdi-arrow-down" /></button>
+                <button class="jog-btn jog-top"    :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.requestJog('Y', -moveStep)"><i class="mdi mdi-arrow-up" /></button>
+                <button class="jog-btn jog-left"   :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.requestJog('X', -moveStep)"><i class="mdi mdi-arrow-left" /></button>
+                <button class="jog-btn jog-home"   :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.home()"><i class="mdi mdi-home-outline" /></button>
+                <button class="jog-btn jog-right"  :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.requestJog('X',  moveStep)"><i class="mdi mdi-arrow-right" /></button>
+                <button class="jog-btn jog-bottom" :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.requestJog('Y',  moveStep)"><i class="mdi mdi-arrow-down" /></button>
               </div>
               <span class="move-axis-label">X / Y</span>
             </div>
             <div class="move-z">
-              <button class="jog-btn" :disabled="commands.loading.value" @click="homingGuard.requestJog('Z', -moveStep)"><i class="mdi mdi-arrow-up" /></button>
-              <button class="jog-btn jog-home" :disabled="commands.loading.value" @click="homingGuard.home()"><i class="mdi mdi-home-outline" /></button>
-              <button class="jog-btn" :disabled="commands.loading.value" @click="homingGuard.requestJog('Z',  moveStep)"><i class="mdi mdi-arrow-down" /></button>
+              <button class="jog-btn" :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.requestJog('Z', -moveStep)"><i class="mdi mdi-arrow-up" /></button>
+              <button class="jog-btn jog-home" :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.home()"><i class="mdi mdi-home-outline" /></button>
+              <button class="jog-btn" :disabled="commands.loading.value || isPrinting || isGcodeRunning" @click="homingGuard.requestJog('Z',  moveStep)"><i class="mdi mdi-arrow-down" /></button>
               <span class="move-axis-label">Z</span>
             </div>
           </div>
@@ -619,6 +714,23 @@ onUnmounted(() => {
                 <span v-if="state?.nozzleType">{{ state.nozzleType }}</span>
                 <span v-if="state?.nozzleDiameter">Ø{{ state.nozzleDiameter }}mm</span>
               </div>
+              <div class="temp-set-row">
+                <input
+                  v-model.number="nozzleTempInput"
+                  type="number"
+                  class="temp-input"
+                  placeholder="°C"
+                  min="0"
+                  max="300"
+                  :disabled="commands.loading.value"
+                  @keydown.enter="applyNozzleTemp"
+                />
+                <button
+                  class="temp-set-btn"
+                  :disabled="commands.loading.value || nozzleTempInput == null"
+                  @click="applyNozzleTemp"
+                >Set</button>
+              </div>
             </div>
 
             <div class="temp-card" :class="{ 'temp-card--warm': (state?.bedTemp ?? 0) > 30 }">
@@ -629,6 +741,23 @@ onUnmounted(() => {
                 <span class="temp-label">Bed</span>
                 <span class="temp-current">{{ fmtTemp(state?.bedTemp) }}</span>
                 <span class="temp-target">→ {{ fmtTemp(state?.bedTargetTemp) }}</span>
+              </div>
+              <div class="temp-set-row">
+                <input
+                  v-model.number="bedTempInput"
+                  type="number"
+                  class="temp-input"
+                  placeholder="°C"
+                  min="0"
+                  max="110"
+                  :disabled="commands.loading.value"
+                  @keydown.enter="applyBedTemp"
+                />
+                <button
+                  class="temp-set-btn"
+                  :disabled="commands.loading.value || bedTempInput == null"
+                  @click="applyBedTemp"
+                >Set</button>
               </div>
             </div>
           </div>
@@ -702,12 +831,31 @@ onUnmounted(() => {
           v-for="(mat, i) in materials"
           :key="i"
           class="ams-slot-btn"
-          :class="{ 'ams-slot-btn--selected': selectedAmsSlots.includes(i) }"
-          @click="toggleAmsSlot(i)"
+          :class="{ 'ams-slot-btn--selected': selectedAmsSlot === i }"
+          @click="selectedAmsSlot = selectedAmsSlot === i ? null : i"
         >
           <div class="ams-slot-color" :style="{ background: materialColor(mat.color) }" />
           <span class="ams-slot-name">{{ mat.name ?? `Slot ${i + 1}` }}</span>
         </button>
+      </div>
+
+      <div class="dialog-section-label" style="margin-top:1rem">Calibration</div>
+      <div class="print-toggles">
+        <label class="print-toggle">
+          <span class="print-toggle-label">Flow Calibration</span>
+          <input type="checkbox" v-model="printFlowCali" class="print-toggle-input" />
+          <span class="print-toggle-track" />
+        </label>
+        <label class="print-toggle">
+          <span class="print-toggle-label">Vibration Calibration</span>
+          <input type="checkbox" v-model="printVibrationCali" class="print-toggle-input" />
+          <span class="print-toggle-track" />
+        </label>
+        <label class="print-toggle">
+          <span class="print-toggle-label">Layer Inspection</span>
+          <input type="checkbox" v-model="printLayerInspect" class="print-toggle-input" />
+          <span class="print-toggle-track" />
+        </label>
       </div>
 
       <div v-if="commands.error.value" class="ctrl-error" style="margin-top:0.75rem">
@@ -777,6 +925,16 @@ onUnmounted(() => {
       </template>
     </Dialog>
 
+    <!-- Print job info dialog -->
+    <Teleport to="body">
+      <PrintJobInfoDialog
+        v-if="showPrintInfo && infoFile"
+        :printer-id="printerId"
+        :filename="infoFile"
+        @close="showPrintInfo = false; infoFile = null"
+      />
+    </Teleport>
+
     <!-- Camera fullscreen overlay -->
     <Teleport to="body">
       <div v-if="cameraExpanded" class="camera-overlay" @click.self="cameraExpanded = false">
@@ -792,13 +950,13 @@ onUnmounted(() => {
               <span class="camera-spinner camera-spinner--lg" />
               <span class="camera-loading-text">Connecting…</span>
             </div>
-            <img
+            <CameraPlayer
               v-if="!cameraError"
               v-show="!cameraLoading"
+              :key="streamKey"
               :src="streamUrl"
               class="camera-overlay-feed"
-              alt="Live camera feed"
-              @load="onCameraLoad"
+              @ready="onCameraLoad"
               @error="onCameraError"
             />
             <div v-if="cameraError" class="camera-overlay-unavailable">
@@ -1238,6 +1396,7 @@ onUnmounted(() => {
 }
 
 /* ── Print progress ─────────────────────────────────────────────────── */
+
 .file-name {
   display: flex;
   align-items: center;
@@ -1309,6 +1468,20 @@ onUnmounted(() => {
   font-size: 1rem;
   font-weight: 600;
   color: var(--ph-text);
+}
+
+.stat-val--material {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.active-material-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
 }
 
 /* ── Temperatures ───────────────────────────────────────────────────── */
@@ -1392,6 +1565,61 @@ onUnmounted(() => {
   border-radius: 4px;
   background: rgba(255,255,255,0.06);
   color: var(--ph-text-muted);
+}
+
+.temp-set-row {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+}
+
+.temp-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--ph-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--ph-text);
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.temp-input:focus {
+  border-color: var(--ph-accent, #38bdf8);
+}
+
+.temp-input:disabled {
+  opacity: 0.45;
+}
+
+.temp-input::-webkit-inner-spin-button,
+.temp-input::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+
+.temp-set-btn {
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid rgba(56,189,248,0.35);
+  background: rgba(56,189,248,0.08);
+  color: var(--ph-accent, #38bdf8);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.temp-set-btn:not(:disabled):hover {
+  background: rgba(56,189,248,0.16);
+}
+
+.temp-set-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* ── Fans ───────────────────────────────────────────────────────────── */
@@ -1645,6 +1873,45 @@ onUnmounted(() => {
 }
 
 /* ── File manager ────────────────────────────────────────────────────── */
+.file-count-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(56,189,248,0.12);
+  color: var(--ph-accent, #38bdf8);
+  border: 1px solid rgba(56,189,248,0.2);
+  line-height: 1.5;
+}
+
+.file-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.file-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid var(--ph-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--ph-text);
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.file-search-input:focus {
+  border-color: var(--ph-accent, #38bdf8);
+}
+
+.file-search-input::placeholder {
+  color: var(--ph-text-muted);
+  opacity: 0.6;
+}
+
 .file-dropzone {
   border: 1.5px dashed var(--ph-border);
   border-radius: 10px;
@@ -1653,9 +1920,23 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   transition: border-color 0.15s, background 0.15s;
   cursor: default;
+}
+
+.file-dropzone--compact {
+  flex-direction: row;
+  justify-content: center;
+  padding: 0.45rem 0.75rem;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--ph-text-muted);
+}
+
+.file-dropzone--compact i {
+  font-size: 0.95rem;
+  opacity: 0.5;
 }
 
 .file-dropzone--active {
@@ -1663,39 +1944,63 @@ onUnmounted(() => {
   background: rgba(56,189,248,0.05);
 }
 
-.file-drop-icon {
-  font-size: 1.75rem;
-  color: var(--ph-text-muted);
-  opacity: 0.5;
-}
-
-.file-drop-text {
-  font-size: 0.82rem;
-  color: var(--ph-text-muted);
-}
-
-.file-drop-sub {
-  font-size: 0.75rem;
-  color: var(--ph-text-muted);
-  opacity: 0.7;
-}
-
-.file-browse-btn {
-  background: none;
-  border: none;
-  color: var(--ph-accent, #38bdf8);
-  cursor: pointer;
-  font-size: inherit;
-  padding: 0;
-  text-decoration: underline;
-}
-
-.file-browse-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .file-list {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+}
+
+.file-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.file-type-chips,
+.file-sort-chips {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 5px;
+  border: 1px solid var(--ph-border);
+  background: rgba(255,255,255,0.03);
+  color: var(--ph-text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.file-chip:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--ph-text);
+}
+
+.file-chip--active {
+  border-color: rgba(56,189,248,0.4);
+  color: var(--ph-accent, #38bdf8);
+  background: rgba(56,189,248,0.08);
+}
+
+.file-chip i {
+  font-size: 0.65rem;
+}
+
+.file-list--scrollable {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  padding-right: 2px;
 }
 
 .file-row {
@@ -1830,6 +2135,67 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── Print calibration toggles ───────────────────────────────────────── */
+.print-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.print-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 0.4rem 0.625rem;
+  border-radius: 7px;
+  border: 1px solid var(--ph-border);
+  background: rgba(255,255,255,0.03);
+}
+
+.print-toggle-label {
+  font-size: 0.82rem;
+  color: var(--ph-text);
+}
+
+.print-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.print-toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.print-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.print-toggle-input:checked + .print-toggle-track {
+  background: var(--ph-accent, #22d3ee);
+}
+
+.print-toggle-input:checked + .print-toggle-track::after {
+  transform: translateX(16px);
 }
 
 .dialog-body-text {

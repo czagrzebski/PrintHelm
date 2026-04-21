@@ -79,7 +79,6 @@ public class MqttConnectionManager {
             @Override
             public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
                 String payload = new String(mqttMessage.getPayload());
-                logger.info("Message arrived for printer [ID={}]: Topic={}", printer.getPrinterId(), s);
                 eventPublisher.publishEvent(new MqttPrinterMessageReceivedEvent(printer.getPrinterId(), payload, s, printer.getPrinterType()));
             }
 

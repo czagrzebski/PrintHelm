@@ -3,6 +3,7 @@ package com.czagrzebski.printhelm.web.controller;
 import com.czagrzebski.printhelm.api.PrinterApi;
 import com.czagrzebski.printhelm.model.ApiCreatePrinterRequest;
 import com.czagrzebski.printhelm.model.ApiPrinterResponse;
+import com.czagrzebski.printhelm.model.ApiTempRequest;
 import com.czagrzebski.printhelm.model.ApiUpdatePrinterRequest;
 import com.czagrzebski.printhelm.model.CreatePrinter201Response;
 import com.czagrzebski.printhelm.web.mapper.ConnectionConfigurationMapper;
@@ -56,5 +57,15 @@ public class PrinterController implements PrinterApi {
     public ResponseEntity<Void> deletePrinter(Long id) {
         printerService.deletePrinter(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> setNozzleTemp(Long id, ApiTempRequest apiTempRequest) {
+        return ResponseEntity.status(501).build();
+    }
+
+    @Override
+    public ResponseEntity<Void> setBedTemp(Long id, ApiTempRequest apiTempRequest) {
+        return ResponseEntity.status(501).build();
     }
 }

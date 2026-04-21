@@ -1,4 +1,4 @@
-import { onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import { BASE_URL } from '@/api/Configuration'
@@ -9,8 +9,13 @@ type StateCallback = (printerId: number, state: ApiPrinterState) => void
 
 export function usePrinterSocket() {
   let client: Client | null = null
+  let savedIds: number[] = []
+  let savedCallback: StateCallback | null = null
 
   function connect(printerIds: number[], onState: StateCallback) {
+    savedIds = printerIds
+    savedCallback = onState
+
     const authStore = useAuthStore()
     const wsUrl = BASE_URL.replace('/api', '/ws')
 
@@ -42,7 +47,24 @@ export function usePrinterSocket() {
     client = null
   }
 
-  onUnmounted(disconnect)
+  function onPageHide(e: PageTransitionEvent) {
+    if (e.persisted) disconnect()
+  }
+
+  function onPageShow(e: PageTransitionEvent) {
+    if (e.persisted && savedIds.length && savedCallback) connect(savedIds, savedCallback)
+  }
+
+  onMounted(() => {
+    window.addEventListener('pagehide', onPageHide)
+    window.addEventListener('pageshow', onPageShow)
+  })
+
+  onUnmounted(() => {
+    disconnect()
+    window.removeEventListener('pagehide', onPageHide)
+    window.removeEventListener('pageshow', onPageShow)
+  })
 
   return { connect, disconnect }
 }

@@ -326,6 +326,60 @@ paths:
           description: Printer deleted
         '404':
           description: Not found
+  /printer/{id}/command/nozzle-temp:
+    post:
+      tags:
+        - Printer
+      summary: Set nozzle target temperature
+      operationId: setNozzleTemp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiTempRequest'
+      responses:
+        '204':
+          description: Command sent
+        '400':
+          description: Temperature out of range (0–300°C)
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/bed-temp:
+    post:
+      tags:
+        - Printer
+      summary: Set bed target temperature
+      operationId: setBedTemp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiTempRequest'
+      responses:
+        '204':
+          description: Command sent
+        '400':
+          description: Temperature out of range (0–110°C)
+        '409':
+          description: Printer not connected
+
   /printer/createPrinter:
     post:
       tags:
@@ -515,6 +569,15 @@ components:
           type: string
         mustChangePassword:
           type: boolean
+    ApiTempRequest:
+      type: object
+      required:
+        - temp
+      properties:
+        temp:
+          type: integer
+          description: Target temperature in °C. 0 turns off heating.
+
     ApiErrorResponse:
       type: object
       properties:

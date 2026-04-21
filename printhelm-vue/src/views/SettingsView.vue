@@ -765,7 +765,7 @@ onMounted(async () => {
 }
 
 .section-title {
-  font-size: 0.9rem; font-weight: 600; text-transform: uppercase;
+  font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--ph-text-muted);
 }
 

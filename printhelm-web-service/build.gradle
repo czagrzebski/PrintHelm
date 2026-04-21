@@ -54,3 +54,7 @@ springBoot {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.named('bootRun') {
+    jvmArgs = ['--add-opens', 'java.base/sun.security.ssl=ALL-UNNAMED']
+}

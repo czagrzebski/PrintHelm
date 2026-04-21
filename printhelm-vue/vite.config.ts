@@ -18,4 +18,13 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  server: {
+    proxy: {
+      '/hls': {
+        target: 'http://localhost:8080',
+        rewrite: (path) => path.replace(/^\/hls/, '/api'),
+        changeOrigin: true,
+      },
+    },
+  },
 })

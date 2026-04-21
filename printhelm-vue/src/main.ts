@@ -13,6 +13,8 @@ import ToastService from 'primevue/toastservice'
 import Aura from '@primeuix/themes/aura'
 import { definePreset } from '@primeuix/themes'
 import { setupAxiosInterceptors } from './api/Configuration'
+import Particles from '@tsparticles/vue3'
+import { loadSlim } from '@tsparticles/slim'
 
 const PrintHelmTheme = definePreset(Aura, {
   semantic: {
@@ -78,5 +80,10 @@ app.use(PrimeVue, {
   },
 })
 app.use(ToastService)
+app.use(Particles, {
+  init: async (engine: Parameters<typeof loadSlim>[0]) => {
+    await loadSlim(engine)
+  },
+})
 
 app.mount('#app')

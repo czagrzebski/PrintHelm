@@ -26,10 +26,12 @@ export function usePrinterCommands(printerId: number) {
     stopPrint: () => send('stop'),
     pausePrint: () => send('pause'),
     resumePrint: () => send('resume'),
-    setSpeed: (level: number) => send('speed', { speed: level }),
     jog: (axis: string, distance: number) => send('jog', { axis, distance }),
     home: () => send('home'),
     setLight: (node: string, mode: 'on' | 'off') => send('light', { node, mode }),
-    printFile: (filename: string, amsMapping: number[]) => send('print', { filename, amsMapping }),
+    printFile: (filename: string, amsMapping: number[], flowCali: boolean, vibrationCali: boolean, layerInspect: boolean) =>
+      send('print', { filename, amsMapping, flowCali, vibrationCali, layerInspect }),
+    setNozzleTemp: (temp: number) => send('nozzle-temp', { temp }),
+    setBedTemp: (temp: number) => send('bed-temp', { temp }),
   }
 }

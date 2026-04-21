@@ -18,7 +18,8 @@ public class PrinterCommandController {
     record SpeedRequest(int speed) {}
     record JogRequest(String axis, double distance) {}
     record LightRequest(String node, String mode) {}
-    record PrintFileRequest(String filename, int[] amsMapping) {}
+    record PrintFileRequest(String filename, int[] amsMapping, boolean flowCali, boolean vibrationCali, boolean layerInspect) {}
+    record TempRequest(int temp) {}
 
     @PostMapping("/stop")
     public ResponseEntity<Void> stop(@PathVariable long id) throws MqttException {
@@ -56,6 +57,18 @@ public class PrinterCommandController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/nozzle-temp")
+    public ResponseEntity<Void> nozzleTemp(@PathVariable long id, @RequestBody TempRequest req) throws MqttException {
+        commandService.setNozzleTemp(id, req.temp());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bed-temp")
+    public ResponseEntity<Void> bedTemp(@PathVariable long id, @RequestBody TempRequest req) throws MqttException {
+        commandService.setBedTemp(id, req.temp());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/light")
     public ResponseEntity<Void> light(@PathVariable long id, @RequestBody LightRequest req) throws MqttException {
         commandService.setLight(id, req.node(), req.mode());
@@ -64,7 +77,7 @@ public class PrinterCommandController {
 
     @PostMapping("/print")
     public ResponseEntity<Void> printFile(@PathVariable long id, @RequestBody PrintFileRequest req) throws MqttException {
-        commandService.printFile(id, req.filename(), req.amsMapping());
+        commandService.printFile(id, req.filename(), req.amsMapping(), req.flowCali(), req.vibrationCali(), req.layerInspect());
         return ResponseEntity.noContent().build();
     }
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
@@ -14,6 +13,50 @@ const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
+
+const particlesOptions = {
+  fullScreen: { enable: false },
+  background: { color: { value: 'transparent' } },
+  fpsLimit: 60,
+  particles: {
+    number: { value: 60, density: { enable: true } },
+    color: { value: ['#22d3ee', '#0891b2', '#67e8f9'] },
+    shape: { type: 'circle' },
+    opacity: {
+      value: { min: 0.1, max: 0.4 },
+      animation: { enable: true, speed: 0.5, sync: false },
+    },
+    size: {
+      value: { min: 1, max: 3 },
+      animation: { enable: true, speed: 2, sync: false },
+    },
+    links: {
+      enable: true,
+      distance: 140,
+      color: '#22d3ee',
+      opacity: 0.12,
+      width: 1,
+    },
+    move: {
+      enable: true,
+      speed: 0.6,
+      direction: 'none' as const,
+      random: true,
+      straight: false,
+      outModes: { default: 'out' as const },
+    },
+  },
+  interactivity: {
+    events: {
+      onHover: { enable: true, mode: 'grab' },
+      onClick: { enable: false },
+    },
+    modes: {
+      grab: { distance: 120, links: { opacity: 0.3 } },
+    },
+  },
+  detectRetina: true,
+}
 
 async function login() {
   if (!username.value || !password.value) return
@@ -32,18 +75,22 @@ async function login() {
 
 <template>
   <div class="login-container">
-    <Card class="login-card">
-      <template #header>
-        <div class="login-header">
-          <div class="login-icon-wrap">
-            <i class="mdi mdi-printer-3d" />
-          </div>
-          <h1 class="login-title">PrintHelm</h1>
-          <p class="login-subtitle">Sign in to your account</p>
-        </div>
-      </template>
+    <vue-particles
+      id="login-particles"
+      class="particles-canvas"
+      :options="particlesOptions"
+    />
 
-      <template #content>
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-icon-wrap">
+          <i class="mdi mdi-printer-3d" />
+        </div>
+        <h1 class="login-title">PrintHelm</h1>
+        <p class="login-subtitle">Sign in to your account</p>
+      </div>
+
+      <div class="login-body">
         <form class="login-form" @submit.prevent="login">
           <Message v-if="errorMessage" severity="error" :closable="false" class="login-error">
             {{ errorMessage }}
@@ -81,10 +128,11 @@ async function login() {
             icon="pi pi-sign-in"
             :loading="loading"
             fluid
+            class="login-btn"
           />
         </form>
-      </template>
-    </Card>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -96,54 +144,81 @@ async function login() {
   justify-content: center;
   background: linear-gradient(160deg, var(--ph-bg-darkest) 0%, var(--ph-bg-mid) 55%, var(--ph-bg-light) 100%);
   padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
 }
 
 .login-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 400px;
-  background: rgba(15, 32, 39, 0.75) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--ph-border) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5) !important;
+  max-width: 420px;
+  background: rgba(15, 32, 39, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 20px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  overflow: hidden;
 }
 
 .login-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 2rem 0;
+  padding: 2.5rem 2rem 1.5rem;
   text-align: center;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.06) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.08);
 }
 
 .login-icon-wrap {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 14px;
-  background: var(--ph-accent-dim);
-  border: 1px solid rgba(34, 211, 238, 0.25);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(8, 145, 178, 0.15) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.15);
 }
 
 .login-icon-wrap i {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   color: var(--ph-accent);
 }
 
 .login-title {
-  font-size: 1.5rem;
+  font-size: 1.625rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  margin: 0 0 0.25rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.375rem;
   color: var(--ph-text);
+  text-shadow: 0 0 32px rgba(34, 211, 238, 0.25);
 }
 
 .login-subtitle {
   font-size: 0.875rem;
   color: var(--ph-text-muted);
   margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.login-body {
+  padding: 1.75rem 2rem 2rem;
 }
 
 .login-form {
@@ -163,10 +238,14 @@ async function login() {
 }
 
 .field label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ph-text-muted);
+}
+
+.login-btn {
+  margin-top: 0.25rem;
 }
 </style>
