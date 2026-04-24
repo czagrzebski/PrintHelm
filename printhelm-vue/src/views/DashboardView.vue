@@ -137,7 +137,12 @@ onMounted(fetchPrinters)
     </div>
 
     <div class="stats-grid">
-      <Card v-for="stat in stats" :key="stat.label" class="stat-card">
+      <Card
+        v-for="(stat, i) in stats"
+        :key="stat.label"
+        class="stat-card"
+        :style="{ animationDelay: `${i * 0.07}s` }"
+      >
         <template #content>
           <div class="stat-content">
             <div class="stat-icon" :style="{ background: stat.bg, color: stat.color, borderColor: stat.color + '33' }">
@@ -259,6 +264,7 @@ onMounted(fetchPrinters)
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  animation: fade-up 0.3s ease-out both;
 }
 
 .page-title {
@@ -278,6 +284,32 @@ onMounted(fetchPrinters)
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
+}
+
+/* Stat card: staggered entry + hover lift */
+.stat-card {
+  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4) !important;
+}
+
+.printers-card {
+  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stat-content {

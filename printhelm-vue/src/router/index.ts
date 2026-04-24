@@ -30,6 +30,21 @@ const router = createRouter({
           component: () => import('../views/PrinterView.vue'),
         },
         {
+          path: 'job-orders',
+          name: 'job-orders',
+          component: () => import('../views/JobOrderView.vue'),
+        },
+        {
+          path: 'job-orders/:id',
+          name: 'job-order',
+          component: () => import('../views/JobOrderDetailView.vue'),
+        },
+        {
+          path: 'queue',
+          name: 'queue',
+          component: () => import('../views/PrintQueueView.vue'),
+        },
+        {
           path: 'settings',
           name: 'settings',
           component: () => import('../views/SettingsView.vue'),

@@ -17,6 +17,34 @@
   font-weight: normal;
 }
 
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ph-bg-darkest);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.25);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--ph-bg-darkest);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.25) var(--ph-bg-darkest);
+}
+
 body {
   min-height: 100vh;
   color: var(--ph-text);

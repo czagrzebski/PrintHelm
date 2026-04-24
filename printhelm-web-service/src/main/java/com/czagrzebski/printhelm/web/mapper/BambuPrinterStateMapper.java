@@ -78,7 +78,8 @@ public abstract class BambuPrinterStateMapper {
 
     @Named("state")
     protected String getStateFromMcStage(PrintDTO printDTO) {
-        return BambuLabPrinter.PrintStage.fromCode(printDTO.getStgCur()).getDescription();
+        BambuLabPrinter.PrintStage stage = BambuLabPrinter.PrintStage.fromCode(printDTO.getStgCur());
+        return stage != null ? stage.getDescription() : "Unknown (" + printDTO.getStgCur() + ")";
     }
 
     @Named("fans")

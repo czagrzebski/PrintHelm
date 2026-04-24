@@ -62,6 +62,16 @@ const PrintHelmTheme = definePreset(Aura, {
       },
     },
   },
+  components: {
+    tabs: {
+      tablist: {
+        background: 'transparent',
+      },
+      tabpanel: {
+        background: 'transparent',
+      },
+    },
+  },
 })
 
 const app = createApp(App)

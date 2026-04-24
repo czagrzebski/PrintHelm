@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { api } from '@/api/Configuration'
 import type { AxiosError } from 'axios'
+import type { ApiJogRequest, ApiLightRequest, ApiPrintFileRequest, ApiSpeedRequest, ApiTempRequest } from '@/client/printhelm-web-openapi'
 
 export function usePrinterCommands(printerId: number) {
   const loading = ref(false)
@@ -26,12 +27,13 @@ export function usePrinterCommands(printerId: number) {
     stopPrint: () => send('stop'),
     pausePrint: () => send('pause'),
     resumePrint: () => send('resume'),
-    jog: (axis: string, distance: number) => send('jog', { axis, distance }),
+    setSpeed: (speed: number) => send('speed', { speed } satisfies ApiSpeedRequest),
+    jog: (axis: string, distance: number) => send('jog', { axis, distance } satisfies ApiJogRequest),
     home: () => send('home'),
-    setLight: (node: string, mode: 'on' | 'off') => send('light', { node, mode }),
+    setLight: (node: string, mode: ApiLightRequest['mode']) => send('light', { node, mode } satisfies ApiLightRequest),
     printFile: (filename: string, amsMapping: number[], flowCali: boolean, vibrationCali: boolean, layerInspect: boolean) =>
-      send('print', { filename, amsMapping, flowCali, vibrationCali, layerInspect }),
-    setNozzleTemp: (temp: number) => send('nozzle-temp', { temp }),
-    setBedTemp: (temp: number) => send('bed-temp', { temp }),
+      send('print', { filename, amsMapping, flowCali, vibrationCali, layerInspect } satisfies ApiPrintFileRequest),
+    setNozzleTemp: (temp: number) => send('nozzle-temp', { temp } satisfies ApiTempRequest),
+    setBedTemp: (temp: number) => send('bed-temp', { temp } satisfies ApiTempRequest),
   }
 }

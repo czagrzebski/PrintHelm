@@ -1,15 +1,13 @@
 import { ref } from 'vue'
 import { api } from '@/api/Configuration'
 import type { AxiosError } from 'axios'
+import type { ApiPrinterFile } from '@/client/printhelm-web-openapi'
+import { printerFilesApi } from '@/api/PrinterApi'
 
-export interface PrinterFile {
-  name: string
-  sizeBytes: number
-  lastModified: string
-}
+export type { ApiPrinterFile }
 
 export function usePrinterFiles(printerId: number) {
-  const files = ref<PrinterFile[]>([])
+  const files = ref<ApiPrinterFile[]>([])
   const loading = ref(false)
   const uploading = ref(false)
   const uploadProgress = ref(0)
@@ -19,7 +17,7 @@ export function usePrinterFiles(printerId: number) {
     loading.value = true
     error.value = null
     try {
-      const res = await api.get<PrinterFile[]>(`/printer/${printerId}/files`)
+      const res = await api.get<ApiPrinterFile[]>(`/printer/${printerId}/files`)
       files.value = res.data
     } catch (e) {
       error.value = extractError(e)
@@ -61,10 +59,27 @@ export function usePrinterFiles(printerId: number) {
     }
   }
 
+  async function downloadFile(name: string) {
+    error.value = null
+    try {
+      const res = await printerFilesApi.downloadPrinterFile(printerId, name, { responseType: 'blob' })
+      const blob = res.data as unknown as Blob
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = name
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      error.value = extractError(e)
+      throw e
+    }
+  }
+
   function extractError(e: unknown): string {
     const axiosErr = e as AxiosError<string>
     return axiosErr.response?.data ?? axiosErr.message ?? 'Unknown error'
   }
 
-  return { files, loading, uploading, uploadProgress, error, fetchFiles, uploadFile, deleteFile }
+  return { files, loading, uploading, uploadProgress, error, fetchFiles, uploadFile, deleteFile, downloadFile }
 }

@@ -326,10 +326,137 @@ paths:
           description: Printer deleted
         '404':
           description: Not found
+  # === PrinterCommandController ===
+  /printer/{id}/command/stop:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Stop the current print
+      operationId: stopPrint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/pause:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Pause the current print
+      operationId: pausePrint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/resume:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Resume the current print
+      operationId: resumePrint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/speed:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Set print speed level
+      operationId: setSpeed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiSpeedRequest'
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/jog:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Jog an axis
+      operationId: jogAxis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiJogRequest'
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/home:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Home all axes
+      operationId: homeAxes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
   /printer/{id}/command/nozzle-temp:
     post:
       tags:
-        - Printer
+        - PrinterCommands
       summary: Set nozzle target temperature
       operationId: setNozzleTemp
       parameters:
@@ -356,7 +483,7 @@ paths:
   /printer/{id}/command/bed-temp:
     post:
       tags:
-        - Printer
+        - PrinterCommands
       summary: Set bed target temperature
       operationId: setBedTemp
       parameters:
@@ -379,6 +506,517 @@ paths:
           description: Temperature out of range (0–110°C)
         '409':
           description: Printer not connected
+
+  /printer/{id}/command/light:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Set light state
+      operationId: setLight
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiLightRequest'
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  /printer/{id}/command/print:
+    post:
+      tags:
+        - PrinterCommands
+      summary: Start a print job
+      operationId: startPrint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiPrintFileRequest'
+      responses:
+        '204':
+          description: Command sent
+        '409':
+          description: Printer not connected
+
+  # === PrinterFileController ===
+  /printer/{id}/files:
+    get:
+      tags:
+        - PrinterFiles
+      summary: List files on printer storage
+      operationId: listPrinterFiles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiPrinterFile'
+        '502':
+          description: Error communicating with printer
+    post:
+      tags:
+        - PrinterFiles
+      summary: Upload a file to printer storage
+      operationId: uploadPrinterFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '204':
+          description: File uploaded
+        '400':
+          description: Bad request
+        '502':
+          description: Error communicating with printer
+
+  /printer/{id}/files/{filename}:
+    get:
+      tags:
+        - PrinterFiles
+      summary: Download a file from printer storage
+      operationId: downloadPrinterFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '502':
+          description: Error communicating with printer
+    delete:
+      tags:
+        - PrinterFiles
+      summary: Delete a file from printer storage
+      operationId: deletePrinterFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: File deleted
+        '502':
+          description: Error communicating with printer
+
+  # === PrintQueueController ===
+  /printer/{printerId}/queue:
+    get:
+      tags:
+        - PrintQueue
+      summary: Get the print queue for a printer
+      operationId: getPrinterQueue
+      parameters:
+        - name: printerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Ordered list of queued job orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiJobOrderResponse'
+        '404':
+          description: Printer not found
+    post:
+      tags:
+        - PrintQueue
+      summary: Assign a job order to a printer's queue
+      operationId: addJobToQueue
+      parameters:
+        - name: printerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiQueueJobRequest'
+      responses:
+        '201':
+          description: Job assigned to queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '400':
+          description: Bad request (e.g. job not in READY_TO_PRINT status)
+        '409':
+          description: Job already assigned to a printer
+    patch:
+      tags:
+        - PrintQueue
+      summary: Reorder jobs in the print queue
+      operationId: reorderQueue
+      parameters:
+        - name: printerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiQueueReorderRequest'
+      responses:
+        '204':
+          description: Queue reordered
+        '400':
+          description: Bad request
+
+  /printer/{printerId}/queue/{jobOrderId}:
+    delete:
+      tags:
+        - PrintQueue
+      summary: Remove a job order from the print queue
+      operationId: removeJobFromQueue
+      parameters:
+        - name: printerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: jobOrderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Job removed from queue
+        '404':
+          description: Not found
+
+  /printer/{printerId}/queue/{jobOrderId}/start:
+    post:
+      tags:
+        - PrintQueue
+      summary: Start printing a queued job
+      operationId: startQueuedJob
+      parameters:
+        - name: printerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: jobOrderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiQueueStartRequest'
+      responses:
+        '204':
+          description: Print started
+        '400':
+          description: Bad request
+        '409':
+          description: Printer already printing or printer not connected
+
+  # === JobOrderController ===
+  /job-order:
+    get:
+      tags:
+        - JobOrder
+      summary: Get all job orders
+      operationId: getJobOrders
+      responses:
+        '200':
+          description: List of job orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiJobOrderResponse'
+    post:
+      tags:
+        - JobOrder
+      summary: Create a new job order
+      operationId: createJobOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateJobOrderRequest'
+      responses:
+        '201':
+          description: Job order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '400':
+          description: Bad Request
+  /job-order/{id}:
+    get:
+      tags:
+        - JobOrder
+      summary: Get a job order by ID
+      operationId: getJobOrderById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Job order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '404':
+          description: Not found
+    put:
+      tags:
+        - JobOrder
+      summary: Update a job order
+      operationId: updateJobOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiUpdateJobOrderRequest'
+      responses:
+        '200':
+          description: Job order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '404':
+          description: Not found
+    delete:
+      tags:
+        - JobOrder
+      summary: Delete a job order
+      operationId: deleteJobOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Job order deleted
+        '404':
+          description: Not found
+
+  /job-order/{id}/part-file:
+    post:
+      tags:
+        - JobOrder
+      summary: Upload 3D part file for a job order
+      operationId: uploadJobOrderPartFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded; returns updated job order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '404':
+          description: Job order not found
+    get:
+      tags:
+        - JobOrder
+      summary: Download 3D part file for a job order
+      operationId: downloadJobOrderPartFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order or file not found
+
+  /job-order/{id}/gcode-file:
+    post:
+      tags:
+        - JobOrder
+      summary: Upload GCode file for a job order
+      operationId: uploadJobOrderGcodeFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded; returns updated job order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '404':
+          description: Job order not found
+    get:
+      tags:
+        - JobOrder
+      summary: Download GCode file for a job order
+      operationId: downloadJobOrderGcodeFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order or file not found
 
   /printer/createPrinter:
     post:
@@ -408,8 +1046,159 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+
+  # === NotificationController ===
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get all notifications
+      operationId: getAllNotifications
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiNotification'
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get count of unacknowledged notifications
+      operationId: getUnreadNotificationCount
+      responses:
+        '200':
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiUnreadCountResponse'
+
+  /notifications/acknowledge-all:
+    put:
+      tags:
+        - Notifications
+      summary: Acknowledge all notifications
+      operationId: acknowledgeAllNotifications
+      responses:
+        '204':
+          description: All notifications acknowledged
+
+  /notifications/clear-acknowledged:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete all acknowledged notifications
+      operationId: clearAcknowledgedNotifications
+      responses:
+        '204':
+          description: Acknowledged notifications cleared
+
+  /notifications/printer/{printerId}:
+    get:
+      tags:
+        - Notifications
+      summary: Get notifications for a specific printer
+      operationId: getNotificationsByPrinter
+      parameters:
+        - name: printerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of notifications for the printer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiNotification'
+
+  /notifications/{id}/acknowledge:
+    put:
+      tags:
+        - Notifications
+      summary: Acknowledge a single notification
+      operationId: acknowledgeNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Notification acknowledged
+        '404':
+          description: Not found
+
+  /notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      operationId: deleteNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Notification deleted
+        '404':
+          description: Not found
+
 components:
   schemas:
+    NotificationType:
+      type: string
+      enum: [PRINT_JOB_STARTED, PRINT_STARTED, PRINT_PAUSED, PRINT_RESUMED, PRINT_COMPLETED, PRINT_STOPPED, PRINT_FAILED, PRINT_ERROR, JOB_QUEUED]
+    NotificationSeverity:
+      type: string
+      enum: [INFO, WARNING, ERROR]
+    ApiNotification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        printerId:
+          type: integer
+          format: int64
+        printerName:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        severity:
+          $ref: '#/components/schemas/NotificationSeverity'
+        title:
+          type: string
+        message:
+          type: string
+        file:
+          type: string
+        acknowledged:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    ApiUnreadCountResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
     PrinterType:
       type: string
       enum: [BAMBULAB, PRUSA, ANYCUBIC, EPAX, ELEGOO, OTHER]
@@ -874,3 +1663,231 @@ components:
         forceUpgrade:
           type: boolean
           description: Whether this upgrade is mandatory
+    ApiSpeedRequest:
+      type: object
+      required:
+        - speed
+      properties:
+        speed:
+          type: integer
+          description: Speed level preset (1=silent, 2=standard, 3=sport, 4=ludicrous)
+    ApiJogRequest:
+      type: object
+      required:
+        - axis
+        - distance
+      properties:
+        axis:
+          type: string
+          description: Axis to jog (X, Y, Z)
+        distance:
+          type: number
+          format: double
+          description: Distance to move in mm (positive or negative)
+    ApiLightRequest:
+      type: object
+      required:
+        - node
+        - mode
+      properties:
+        node:
+          type: string
+          description: Light node identifier
+        mode:
+          type: string
+          enum: ["on", "off"]
+          description: Desired light state
+    ApiPrintFileRequest:
+      type: object
+      required:
+        - filename
+        - amsMapping
+        - flowCali
+        - vibrationCali
+        - layerInspect
+      properties:
+        filename:
+          type: string
+          description: Filename of the gcode to print
+        amsMapping:
+          type: array
+          items:
+            type: integer
+          description: AMS tray index mapping for each filament slot
+        flowCali:
+          type: boolean
+          description: Enable flow rate calibration before print
+        vibrationCali:
+          type: boolean
+          description: Enable vibration calibration before print
+        layerInspect:
+          type: boolean
+          description: Enable first-layer inspection
+    ApiPrinterFile:
+      type: object
+      required:
+        - name
+        - sizeBytes
+        - lastModified
+      properties:
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        lastModified:
+          type: string
+          format: date-time
+    ApiJobOrderStatus:
+      type: string
+      enum: [SUBMITTED, REVIEW, DESIGN, SETUP, READY_TO_PRINT, PRINTING, PRINT_FINISHED]
+    ApiCreateJobOrderRequest:
+      type: object
+      required:
+        - customerName
+      properties:
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        description:
+          type: string
+    ApiUpdateJobOrderRequest:
+      type: object
+      properties:
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/ApiJobOrderStatus'
+        requirements:
+          type: string
+        requiresCustomDesign:
+          type: boolean
+    ApiJobOrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/ApiJobOrderStatus'
+        requirements:
+          type: string
+          description: Reviewer-written requirements for the print job
+        requiresCustomDesign:
+          type: boolean
+          description: Whether a custom design phase is needed
+        mongoPartFileId:
+          type: string
+          description: MongoDB ObjectId of the 3D part file
+        partFilename:
+          type: string
+          description: Original filename of the uploaded 3D part file
+        mongoGcodeFileId:
+          type: string
+          description: MongoDB ObjectId of the gcode file
+        gcodeFilename:
+          type: string
+          description: Original filename of the uploaded GCode file
+        createdAt:
+          type: string
+          format: date-time
+        assignedPrinterId:
+          type: integer
+          format: int64
+          description: ID of the printer this job is queued on
+        queuePosition:
+          type: integer
+          format: int32
+          description: Position in the printer's queue (1-indexed)
+        assignedFilename:
+          type: string
+          description: Gcode filename on the printer's SD card
+        gcodeMetadata:
+          $ref: '#/components/schemas/ApiGcodeMetadata'
+          description: Parsed metadata from .3mf upload (null if not a .3mf or not yet uploaded)
+    ApiGcodeFilamentInfo:
+      type: object
+      properties:
+        slotIndex:
+          type: integer
+          format: int32
+          description: 0-based AMS slot index from the .3mf file
+        type:
+          type: string
+          description: Material type (PLA, PETG, etc.)
+        color:
+          type: string
+          description: Hex color code (#RRGGBB)
+    ApiGcodeMetadata:
+      type: object
+      properties:
+        multiColor:
+          type: boolean
+          description: Whether the print uses more than one filament
+        colorCount:
+          type: integer
+          format: int32
+          description: Number of distinct filament slots used
+        filaments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiGcodeFilamentInfo'
+    ApiQueueJobRequest:
+      type: object
+      required:
+        - jobOrderId
+      properties:
+        jobOrderId:
+          type: integer
+          format: int64
+    ApiQueueStartRequest:
+      type: object
+      required:
+        - amsMapping
+        - flowCali
+        - vibrationCali
+        - layerInspect
+      properties:
+        amsMapping:
+          type: array
+          items:
+            type: integer
+            format: int32
+        flowCali:
+          type: boolean
+        vibrationCali:
+          type: boolean
+        layerInspect:
+          type: boolean
+    ApiQueueReorderEntry:
+      type: object
+      required:
+        - jobOrderId
+        - position
+      properties:
+        jobOrderId:
+          type: integer
+          format: int64
+        position:
+          type: integer
+          format: int32
+    ApiQueueReorderRequest:
+      type: object
+      required:
+        - entries
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiQueueReorderEntry'

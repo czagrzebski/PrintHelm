@@ -157,6 +157,31 @@ export interface ApiConnectionConfig {
 /**
  * 
  * @export
+ * @interface ApiCreateJobOrderRequest
+ */
+export interface ApiCreateJobOrderRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiCreateJobOrderRequest
+     */
+    'customerName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiCreateJobOrderRequest
+     */
+    'customerEmail'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiCreateJobOrderRequest
+     */
+    'description'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiCreatePrinterRequest
  */
 export interface ApiCreatePrinterRequest {
@@ -295,6 +320,56 @@ export interface ApiFan {
 /**
  * 
  * @export
+ * @interface ApiGcodeFilamentInfo
+ */
+export interface ApiGcodeFilamentInfo {
+    /**
+     * 0-based AMS slot index from the .3mf file
+     * @type {number}
+     * @memberof ApiGcodeFilamentInfo
+     */
+    'slotIndex'?: number;
+    /**
+     * Material type (PLA, PETG, etc.)
+     * @type {string}
+     * @memberof ApiGcodeFilamentInfo
+     */
+    'type'?: string;
+    /**
+     * Hex color code (#RRGGBB)
+     * @type {string}
+     * @memberof ApiGcodeFilamentInfo
+     */
+    'color'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiGcodeMetadata
+ */
+export interface ApiGcodeMetadata {
+    /**
+     * Whether the print uses more than one filament
+     * @type {boolean}
+     * @memberof ApiGcodeMetadata
+     */
+    'multiColor'?: boolean;
+    /**
+     * Number of distinct filament slots used
+     * @type {number}
+     * @memberof ApiGcodeMetadata
+     */
+    'colorCount'?: number;
+    /**
+     * 
+     * @type {Array<ApiGcodeFilamentInfo>}
+     * @memberof ApiGcodeMetadata
+     */
+    'filaments'?: Array<ApiGcodeFilamentInfo>;
+}
+/**
+ * 
+ * @export
  * @interface ApiIpcam
  */
 export interface ApiIpcam {
@@ -332,6 +407,149 @@ export interface ApiIpcam {
 /**
  * 
  * @export
+ * @interface ApiJobOrderResponse
+ */
+export interface ApiJobOrderResponse {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'orderId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'customerName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'customerEmail'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'description'?: string;
+    /**
+     * 
+     * @type {ApiJobOrderStatus}
+     * @memberof ApiJobOrderResponse
+     */
+    'status'?: ApiJobOrderStatus;
+    /**
+     * Reviewer-written requirements for the print job
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'requirements'?: string;
+    /**
+     * Whether a custom design phase is needed
+     * @type {boolean}
+     * @memberof ApiJobOrderResponse
+     */
+    'requiresCustomDesign'?: boolean;
+    /**
+     * MongoDB ObjectId of the 3D part file
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'mongoPartFileId'?: string;
+    /**
+     * Original filename of the uploaded 3D part file
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'partFilename'?: string;
+    /**
+     * MongoDB ObjectId of the gcode file
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'mongoGcodeFileId'?: string;
+    /**
+     * Original filename of the uploaded GCode file
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'gcodeFilename'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'createdAt'?: string;
+    /**
+     * ID of the printer this job is queued on
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'assignedPrinterId'?: number;
+    /**
+     * Position in the printer\'s queue (1-indexed)
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'queuePosition'?: number;
+    /**
+     * Gcode filename on the printer\'s SD card
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'assignedFilename'?: string;
+    /**
+     * 
+     * @type {ApiGcodeMetadata}
+     * @memberof ApiJobOrderResponse
+     */
+    'gcodeMetadata'?: ApiGcodeMetadata;
+}
+
+
+/**
+ * 
+ * @export
+ * @enum {string}
+ */
+
+export const ApiJobOrderStatus = {
+    Submitted: 'SUBMITTED',
+    Review: 'REVIEW',
+    Design: 'DESIGN',
+    Setup: 'SETUP',
+    ReadyToPrint: 'READY_TO_PRINT',
+    Printing: 'PRINTING',
+    PrintFinished: 'PRINT_FINISHED'
+} as const;
+
+export type ApiJobOrderStatus = typeof ApiJobOrderStatus[keyof typeof ApiJobOrderStatus];
+
+
+/**
+ * 
+ * @export
+ * @interface ApiJogRequest
+ */
+export interface ApiJogRequest {
+    /**
+     * Axis to jog (X, Y, Z)
+     * @type {string}
+     * @memberof ApiJogRequest
+     */
+    'axis': string;
+    /**
+     * Distance to move in mm (positive or negative)
+     * @type {number}
+     * @memberof ApiJogRequest
+     */
+    'distance': number;
+}
+/**
+ * 
+ * @export
  * @interface ApiLight
  */
 export interface ApiLight {
@@ -348,6 +566,33 @@ export interface ApiLight {
      */
     'state'?: string;
 }
+/**
+ * 
+ * @export
+ * @interface ApiLightRequest
+ */
+export interface ApiLightRequest {
+    /**
+     * Light node identifier
+     * @type {string}
+     * @memberof ApiLightRequest
+     */
+    'node': string;
+    /**
+     * Desired light state
+     * @type {string}
+     * @memberof ApiLightRequest
+     */
+    'mode': ApiLightRequestModeEnum;
+}
+
+export const ApiLightRequestModeEnum = {
+    On: 'on',
+    Off: 'off'
+} as const;
+
+export type ApiLightRequestModeEnum = typeof ApiLightRequestModeEnum[keyof typeof ApiLightRequestModeEnum];
+
 /**
  * 
  * @export
@@ -525,6 +770,137 @@ export interface ApiMqttConnectionConfig {
      * @memberof ApiMqttConnectionConfig
      */
     'password'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiNotification
+ */
+export interface ApiNotification {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiNotification
+     */
+    'id'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiNotification
+     */
+    'printerId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiNotification
+     */
+    'printerName'?: string;
+    /**
+     * 
+     * @type {NotificationType}
+     * @memberof ApiNotification
+     */
+    'type'?: NotificationType;
+    /**
+     * 
+     * @type {NotificationSeverity}
+     * @memberof ApiNotification
+     */
+    'severity'?: NotificationSeverity;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiNotification
+     */
+    'title'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiNotification
+     */
+    'message'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiNotification
+     */
+    'file'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiNotification
+     */
+    'acknowledged'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiNotification
+     */
+    'createdAt'?: string;
+}
+
+
+/**
+ * 
+ * @export
+ * @interface ApiPrintFileRequest
+ */
+export interface ApiPrintFileRequest {
+    /**
+     * Filename of the gcode to print
+     * @type {string}
+     * @memberof ApiPrintFileRequest
+     */
+    'filename': string;
+    /**
+     * AMS tray index mapping for each filament slot
+     * @type {Array<number>}
+     * @memberof ApiPrintFileRequest
+     */
+    'amsMapping': Array<number>;
+    /**
+     * Enable flow rate calibration before print
+     * @type {boolean}
+     * @memberof ApiPrintFileRequest
+     */
+    'flowCali': boolean;
+    /**
+     * Enable vibration calibration before print
+     * @type {boolean}
+     * @memberof ApiPrintFileRequest
+     */
+    'vibrationCali': boolean;
+    /**
+     * Enable first-layer inspection
+     * @type {boolean}
+     * @memberof ApiPrintFileRequest
+     */
+    'layerInspect': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiPrinterFile
+ */
+export interface ApiPrinterFile {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiPrinterFile
+     */
+    'name': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterFile
+     */
+    'sizeBytes': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiPrinterFile
+     */
+    'lastModified': string;
 }
 /**
  * 
@@ -821,6 +1197,82 @@ export interface ApiPrinterState {
 /**
  * 
  * @export
+ * @interface ApiQueueJobRequest
+ */
+export interface ApiQueueJobRequest {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiQueueJobRequest
+     */
+    'jobOrderId': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiQueueReorderEntry
+ */
+export interface ApiQueueReorderEntry {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiQueueReorderEntry
+     */
+    'jobOrderId': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiQueueReorderEntry
+     */
+    'position': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiQueueReorderRequest
+ */
+export interface ApiQueueReorderRequest {
+    /**
+     * 
+     * @type {Array<ApiQueueReorderEntry>}
+     * @memberof ApiQueueReorderRequest
+     */
+    'entries': Array<ApiQueueReorderEntry>;
+}
+/**
+ * 
+ * @export
+ * @interface ApiQueueStartRequest
+ */
+export interface ApiQueueStartRequest {
+    /**
+     * 
+     * @type {Array<number>}
+     * @memberof ApiQueueStartRequest
+     */
+    'amsMapping': Array<number>;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiQueueStartRequest
+     */
+    'flowCali': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiQueueStartRequest
+     */
+    'vibrationCali': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiQueueStartRequest
+     */
+    'layerInspect': boolean;
+}
+/**
+ * 
+ * @export
  * @interface ApiRefreshRequest
  */
 export interface ApiRefreshRequest {
@@ -856,6 +1308,90 @@ export interface ApiRole {
      */
     'description'?: string;
 }
+/**
+ * 
+ * @export
+ * @interface ApiSpeedRequest
+ */
+export interface ApiSpeedRequest {
+    /**
+     * Speed level preset (1=silent, 2=standard, 3=sport, 4=ludicrous)
+     * @type {number}
+     * @memberof ApiSpeedRequest
+     */
+    'speed': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiTempRequest
+ */
+export interface ApiTempRequest {
+    /**
+     * Target temperature in °C. 0 turns off heating.
+     * @type {number}
+     * @memberof ApiTempRequest
+     */
+    'temp': number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiUnreadCountResponse
+ */
+export interface ApiUnreadCountResponse {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiUnreadCountResponse
+     */
+    'count'?: number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiUpdateJobOrderRequest
+ */
+export interface ApiUpdateJobOrderRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'customerName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'customerEmail'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'description'?: string;
+    /**
+     * 
+     * @type {ApiJobOrderStatus}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'status'?: ApiJobOrderStatus;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'requirements'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'requiresCustomDesign'?: boolean;
+}
+
+
 /**
  * 
  * @export
@@ -1119,6 +1655,42 @@ export interface CreatePrinter201Response {
  * @enum {string}
  */
 
+export const NotificationSeverity = {
+    Info: 'INFO',
+    Warning: 'WARNING',
+    Error: 'ERROR'
+} as const;
+
+export type NotificationSeverity = typeof NotificationSeverity[keyof typeof NotificationSeverity];
+
+
+/**
+ * 
+ * @export
+ * @enum {string}
+ */
+
+export const NotificationType = {
+    PrintJobStarted: 'PRINT_JOB_STARTED',
+    PrintStarted: 'PRINT_STARTED',
+    PrintPaused: 'PRINT_PAUSED',
+    PrintResumed: 'PRINT_RESUMED',
+    PrintCompleted: 'PRINT_COMPLETED',
+    PrintStopped: 'PRINT_STOPPED',
+    PrintFailed: 'PRINT_FAILED',
+    PrintError: 'PRINT_ERROR',
+    JobQueued: 'JOB_QUEUED'
+} as const;
+
+export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
+
+
+/**
+ * 
+ * @export
+ * @enum {string}
+ */
+
 export const PrinterType = {
     Bambulab: 'BAMBULAB',
     Prusa: 'PRUSA',
@@ -1361,6 +1933,1617 @@ export class AuthApi extends BaseAPI {
      */
     public refresh(options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).refresh(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * JobOrderApi - axios parameter creator
+ * @export
+ */
+export const JobOrderApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Create a new job order
+         * @param {ApiCreateJobOrderRequest} apiCreateJobOrderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createJobOrder: async (apiCreateJobOrderRequest: ApiCreateJobOrderRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiCreateJobOrderRequest' is not null or undefined
+            assertParamExists('createJobOrder', 'apiCreateJobOrderRequest', apiCreateJobOrderRequest)
+            const localVarPath = `/job-order`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiCreateJobOrderRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteJobOrder: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteJobOrder', 'id', id)
+            const localVarPath = `/job-order/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Download GCode file for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderGcodeFile: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderGcodeFile', 'id', id)
+            const localVarPath = `/job-order/{id}/gcode-file`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Download 3D part file for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderPartFile: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderPartFile', 'id', id)
+            const localVarPath = `/job-order/{id}/part-file`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get a job order by ID
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrderById: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getJobOrderById', 'id', id)
+            const localVarPath = `/job-order/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get all job orders
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrders: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/job-order`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update a job order
+         * @param {number} id 
+         * @param {ApiUpdateJobOrderRequest} apiUpdateJobOrderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateJobOrder: async (id: number, apiUpdateJobOrderRequest: ApiUpdateJobOrderRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateJobOrder', 'id', id)
+            // verify required parameter 'apiUpdateJobOrderRequest' is not null or undefined
+            assertParamExists('updateJobOrder', 'apiUpdateJobOrderRequest', apiUpdateJobOrderRequest)
+            const localVarPath = `/job-order/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiUpdateJobOrderRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Upload GCode file for a job order
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadJobOrderGcodeFile: async (id: number, file: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('uploadJobOrderGcodeFile', 'id', id)
+            // verify required parameter 'file' is not null or undefined
+            assertParamExists('uploadJobOrderGcodeFile', 'file', file)
+            const localVarPath = `/job-order/{id}/gcode-file`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+
+            if (file !== undefined) { 
+                localVarFormParams.append('file', file as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = localVarFormParams;
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Upload 3D part file for a job order
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadJobOrderPartFile: async (id: number, file: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('uploadJobOrderPartFile', 'id', id)
+            // verify required parameter 'file' is not null or undefined
+            assertParamExists('uploadJobOrderPartFile', 'file', file)
+            const localVarPath = `/job-order/{id}/part-file`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+
+            if (file !== undefined) { 
+                localVarFormParams.append('file', file as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = localVarFormParams;
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * JobOrderApi - functional programming interface
+ * @export
+ */
+export const JobOrderApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = JobOrderApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Create a new job order
+         * @param {ApiCreateJobOrderRequest} apiCreateJobOrderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createJobOrder(apiCreateJobOrderRequest: ApiCreateJobOrderRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createJobOrder(apiCreateJobOrderRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.createJobOrder']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteJobOrder(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteJobOrder(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.deleteJobOrder']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Download GCode file for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderGcodeFile(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderGcodeFile(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderGcodeFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Download 3D part file for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderPartFile(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderPartFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get a job order by ID
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getJobOrderById(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getJobOrderById(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.getJobOrderById']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get all job orders
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getJobOrders(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiJobOrderResponse>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getJobOrders(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.getJobOrders']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update a job order
+         * @param {number} id 
+         * @param {ApiUpdateJobOrderRequest} apiUpdateJobOrderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateJobOrder(id: number, apiUpdateJobOrderRequest: ApiUpdateJobOrderRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateJobOrder(id, apiUpdateJobOrderRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.updateJobOrder']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Upload GCode file for a job order
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async uploadJobOrderGcodeFile(id: number, file: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderGcodeFile(id, file, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.uploadJobOrderGcodeFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Upload 3D part file for a job order
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async uploadJobOrderPartFile(id: number, file: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderPartFile(id, file, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.uploadJobOrderPartFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * JobOrderApi - factory interface
+ * @export
+ */
+export const JobOrderApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = JobOrderApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Create a new job order
+         * @param {ApiCreateJobOrderRequest} apiCreateJobOrderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createJobOrder(apiCreateJobOrderRequest: ApiCreateJobOrderRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.createJobOrder(apiCreateJobOrderRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteJobOrder(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteJobOrder(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Download GCode file for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderGcodeFile(id: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderGcodeFile(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Download 3D part file for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderPartFile(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get a job order by ID
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrderById(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.getJobOrderById(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get all job orders
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrders(options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiJobOrderResponse>> {
+            return localVarFp.getJobOrders(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update a job order
+         * @param {number} id 
+         * @param {ApiUpdateJobOrderRequest} apiUpdateJobOrderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateJobOrder(id: number, apiUpdateJobOrderRequest: ApiUpdateJobOrderRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.updateJobOrder(id, apiUpdateJobOrderRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Upload GCode file for a job order
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadJobOrderGcodeFile(id: number, file: File, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.uploadJobOrderGcodeFile(id, file, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Upload 3D part file for a job order
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadJobOrderPartFile(id: number, file: File, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.uploadJobOrderPartFile(id, file, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * JobOrderApi - object-oriented interface
+ * @export
+ * @class JobOrderApi
+ * @extends {BaseAPI}
+ */
+export class JobOrderApi extends BaseAPI {
+    /**
+     * 
+     * @summary Create a new job order
+     * @param {ApiCreateJobOrderRequest} apiCreateJobOrderRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public createJobOrder(apiCreateJobOrderRequest: ApiCreateJobOrderRequest, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).createJobOrder(apiCreateJobOrderRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete a job order
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public deleteJobOrder(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).deleteJobOrder(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Download GCode file for a job order
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderGcodeFile(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderGcodeFile(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Download 3D part file for a job order
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderPartFile(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get a job order by ID
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public getJobOrderById(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).getJobOrderById(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get all job orders
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public getJobOrders(options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).getJobOrders(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update a job order
+     * @param {number} id 
+     * @param {ApiUpdateJobOrderRequest} apiUpdateJobOrderRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public updateJobOrder(id: number, apiUpdateJobOrderRequest: ApiUpdateJobOrderRequest, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).updateJobOrder(id, apiUpdateJobOrderRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Upload GCode file for a job order
+     * @param {number} id 
+     * @param {File} file 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public uploadJobOrderGcodeFile(id: number, file: File, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).uploadJobOrderGcodeFile(id, file, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Upload 3D part file for a job order
+     * @param {number} id 
+     * @param {File} file 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public uploadJobOrderPartFile(id: number, file: File, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).uploadJobOrderPartFile(id, file, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * NotificationsApi - axios parameter creator
+ * @export
+ */
+export const NotificationsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Acknowledge all notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        acknowledgeAllNotifications: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/notifications/acknowledge-all`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Acknowledge a single notification
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        acknowledgeNotification: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('acknowledgeNotification', 'id', id)
+            const localVarPath = `/notifications/{id}/acknowledge`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete all acknowledged notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        clearAcknowledgedNotifications: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/notifications/clear-acknowledged`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete a notification
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteNotification: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteNotification', 'id', id)
+            const localVarPath = `/notifications/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get all notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAllNotifications: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/notifications`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get notifications for a specific printer
+         * @param {number} printerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getNotificationsByPrinter: async (printerId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'printerId' is not null or undefined
+            assertParamExists('getNotificationsByPrinter', 'printerId', printerId)
+            const localVarPath = `/notifications/printer/{printerId}`
+                .replace(`{${"printerId"}}`, encodeURIComponent(String(printerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get count of unacknowledged notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUnreadNotificationCount: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/notifications/unread-count`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * NotificationsApi - functional programming interface
+ * @export
+ */
+export const NotificationsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = NotificationsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Acknowledge all notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async acknowledgeAllNotifications(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.acknowledgeAllNotifications(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.acknowledgeAllNotifications']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Acknowledge a single notification
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async acknowledgeNotification(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.acknowledgeNotification(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.acknowledgeNotification']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete all acknowledged notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async clearAcknowledgedNotifications(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.clearAcknowledgedNotifications(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.clearAcknowledgedNotifications']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete a notification
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteNotification(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteNotification(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.deleteNotification']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get all notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAllNotifications(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiNotification>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAllNotifications(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.getAllNotifications']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get notifications for a specific printer
+         * @param {number} printerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getNotificationsByPrinter(printerId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiNotification>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNotificationsByPrinter(printerId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.getNotificationsByPrinter']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get count of unacknowledged notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUnreadNotificationCount(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiUnreadCountResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUnreadNotificationCount(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['NotificationsApi.getUnreadNotificationCount']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * NotificationsApi - factory interface
+ * @export
+ */
+export const NotificationsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = NotificationsApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Acknowledge all notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        acknowledgeAllNotifications(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.acknowledgeAllNotifications(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Acknowledge a single notification
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        acknowledgeNotification(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.acknowledgeNotification(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete all acknowledged notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        clearAcknowledgedNotifications(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.clearAcknowledgedNotifications(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete a notification
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteNotification(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteNotification(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get all notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAllNotifications(options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiNotification>> {
+            return localVarFp.getAllNotifications(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get notifications for a specific printer
+         * @param {number} printerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getNotificationsByPrinter(printerId: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiNotification>> {
+            return localVarFp.getNotificationsByPrinter(printerId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get count of unacknowledged notifications
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUnreadNotificationCount(options?: RawAxiosRequestConfig): AxiosPromise<ApiUnreadCountResponse> {
+            return localVarFp.getUnreadNotificationCount(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * NotificationsApi - object-oriented interface
+ * @export
+ * @class NotificationsApi
+ * @extends {BaseAPI}
+ */
+export class NotificationsApi extends BaseAPI {
+    /**
+     * 
+     * @summary Acknowledge all notifications
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public acknowledgeAllNotifications(options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).acknowledgeAllNotifications(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Acknowledge a single notification
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public acknowledgeNotification(id: number, options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).acknowledgeNotification(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete all acknowledged notifications
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public clearAcknowledgedNotifications(options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).clearAcknowledgedNotifications(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete a notification
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public deleteNotification(id: number, options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).deleteNotification(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get all notifications
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public getAllNotifications(options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).getAllNotifications(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get notifications for a specific printer
+     * @param {number} printerId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public getNotificationsByPrinter(printerId: number, options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).getNotificationsByPrinter(printerId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get count of unacknowledged notifications
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof NotificationsApi
+     */
+    public getUnreadNotificationCount(options?: RawAxiosRequestConfig) {
+        return NotificationsApiFp(this.configuration).getUnreadNotificationCount(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * PrintQueueApi - axios parameter creator
+ * @export
+ */
+export const PrintQueueApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Assign a job order to a printer\'s queue
+         * @param {number} printerId 
+         * @param {ApiQueueJobRequest} apiQueueJobRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        addJobToQueue: async (printerId: number, apiQueueJobRequest: ApiQueueJobRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'printerId' is not null or undefined
+            assertParamExists('addJobToQueue', 'printerId', printerId)
+            // verify required parameter 'apiQueueJobRequest' is not null or undefined
+            assertParamExists('addJobToQueue', 'apiQueueJobRequest', apiQueueJobRequest)
+            const localVarPath = `/printer/{printerId}/queue`
+                .replace(`{${"printerId"}}`, encodeURIComponent(String(printerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiQueueJobRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get the print queue for a printer
+         * @param {number} printerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterQueue: async (printerId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'printerId' is not null or undefined
+            assertParamExists('getPrinterQueue', 'printerId', printerId)
+            const localVarPath = `/printer/{printerId}/queue`
+                .replace(`{${"printerId"}}`, encodeURIComponent(String(printerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Remove a job order from the print queue
+         * @param {number} printerId 
+         * @param {number} jobOrderId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        removeJobFromQueue: async (printerId: number, jobOrderId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'printerId' is not null or undefined
+            assertParamExists('removeJobFromQueue', 'printerId', printerId)
+            // verify required parameter 'jobOrderId' is not null or undefined
+            assertParamExists('removeJobFromQueue', 'jobOrderId', jobOrderId)
+            const localVarPath = `/printer/{printerId}/queue/{jobOrderId}`
+                .replace(`{${"printerId"}}`, encodeURIComponent(String(printerId)))
+                .replace(`{${"jobOrderId"}}`, encodeURIComponent(String(jobOrderId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Reorder jobs in the print queue
+         * @param {number} printerId 
+         * @param {ApiQueueReorderRequest} apiQueueReorderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        reorderQueue: async (printerId: number, apiQueueReorderRequest: ApiQueueReorderRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'printerId' is not null or undefined
+            assertParamExists('reorderQueue', 'printerId', printerId)
+            // verify required parameter 'apiQueueReorderRequest' is not null or undefined
+            assertParamExists('reorderQueue', 'apiQueueReorderRequest', apiQueueReorderRequest)
+            const localVarPath = `/printer/{printerId}/queue`
+                .replace(`{${"printerId"}}`, encodeURIComponent(String(printerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiQueueReorderRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Start printing a queued job
+         * @param {number} printerId 
+         * @param {number} jobOrderId 
+         * @param {ApiQueueStartRequest} apiQueueStartRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startQueuedJob: async (printerId: number, jobOrderId: number, apiQueueStartRequest: ApiQueueStartRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'printerId' is not null or undefined
+            assertParamExists('startQueuedJob', 'printerId', printerId)
+            // verify required parameter 'jobOrderId' is not null or undefined
+            assertParamExists('startQueuedJob', 'jobOrderId', jobOrderId)
+            // verify required parameter 'apiQueueStartRequest' is not null or undefined
+            assertParamExists('startQueuedJob', 'apiQueueStartRequest', apiQueueStartRequest)
+            const localVarPath = `/printer/{printerId}/queue/{jobOrderId}/start`
+                .replace(`{${"printerId"}}`, encodeURIComponent(String(printerId)))
+                .replace(`{${"jobOrderId"}}`, encodeURIComponent(String(jobOrderId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiQueueStartRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * PrintQueueApi - functional programming interface
+ * @export
+ */
+export const PrintQueueApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = PrintQueueApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Assign a job order to a printer\'s queue
+         * @param {number} printerId 
+         * @param {ApiQueueJobRequest} apiQueueJobRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async addJobToQueue(printerId: number, apiQueueJobRequest: ApiQueueJobRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.addJobToQueue(printerId, apiQueueJobRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrintQueueApi.addJobToQueue']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get the print queue for a printer
+         * @param {number} printerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getPrinterQueue(printerId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiJobOrderResponse>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getPrinterQueue(printerId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrintQueueApi.getPrinterQueue']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Remove a job order from the print queue
+         * @param {number} printerId 
+         * @param {number} jobOrderId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async removeJobFromQueue(printerId: number, jobOrderId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.removeJobFromQueue(printerId, jobOrderId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrintQueueApi.removeJobFromQueue']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Reorder jobs in the print queue
+         * @param {number} printerId 
+         * @param {ApiQueueReorderRequest} apiQueueReorderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async reorderQueue(printerId: number, apiQueueReorderRequest: ApiQueueReorderRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.reorderQueue(printerId, apiQueueReorderRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrintQueueApi.reorderQueue']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Start printing a queued job
+         * @param {number} printerId 
+         * @param {number} jobOrderId 
+         * @param {ApiQueueStartRequest} apiQueueStartRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async startQueuedJob(printerId: number, jobOrderId: number, apiQueueStartRequest: ApiQueueStartRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.startQueuedJob(printerId, jobOrderId, apiQueueStartRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrintQueueApi.startQueuedJob']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * PrintQueueApi - factory interface
+ * @export
+ */
+export const PrintQueueApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = PrintQueueApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Assign a job order to a printer\'s queue
+         * @param {number} printerId 
+         * @param {ApiQueueJobRequest} apiQueueJobRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        addJobToQueue(printerId: number, apiQueueJobRequest: ApiQueueJobRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.addJobToQueue(printerId, apiQueueJobRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get the print queue for a printer
+         * @param {number} printerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterQueue(printerId: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiJobOrderResponse>> {
+            return localVarFp.getPrinterQueue(printerId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Remove a job order from the print queue
+         * @param {number} printerId 
+         * @param {number} jobOrderId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        removeJobFromQueue(printerId: number, jobOrderId: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.removeJobFromQueue(printerId, jobOrderId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Reorder jobs in the print queue
+         * @param {number} printerId 
+         * @param {ApiQueueReorderRequest} apiQueueReorderRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        reorderQueue(printerId: number, apiQueueReorderRequest: ApiQueueReorderRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.reorderQueue(printerId, apiQueueReorderRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Start printing a queued job
+         * @param {number} printerId 
+         * @param {number} jobOrderId 
+         * @param {ApiQueueStartRequest} apiQueueStartRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startQueuedJob(printerId: number, jobOrderId: number, apiQueueStartRequest: ApiQueueStartRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.startQueuedJob(printerId, jobOrderId, apiQueueStartRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * PrintQueueApi - object-oriented interface
+ * @export
+ * @class PrintQueueApi
+ * @extends {BaseAPI}
+ */
+export class PrintQueueApi extends BaseAPI {
+    /**
+     * 
+     * @summary Assign a job order to a printer\'s queue
+     * @param {number} printerId 
+     * @param {ApiQueueJobRequest} apiQueueJobRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrintQueueApi
+     */
+    public addJobToQueue(printerId: number, apiQueueJobRequest: ApiQueueJobRequest, options?: RawAxiosRequestConfig) {
+        return PrintQueueApiFp(this.configuration).addJobToQueue(printerId, apiQueueJobRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get the print queue for a printer
+     * @param {number} printerId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrintQueueApi
+     */
+    public getPrinterQueue(printerId: number, options?: RawAxiosRequestConfig) {
+        return PrintQueueApiFp(this.configuration).getPrinterQueue(printerId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Remove a job order from the print queue
+     * @param {number} printerId 
+     * @param {number} jobOrderId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrintQueueApi
+     */
+    public removeJobFromQueue(printerId: number, jobOrderId: number, options?: RawAxiosRequestConfig) {
+        return PrintQueueApiFp(this.configuration).removeJobFromQueue(printerId, jobOrderId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Reorder jobs in the print queue
+     * @param {number} printerId 
+     * @param {ApiQueueReorderRequest} apiQueueReorderRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrintQueueApi
+     */
+    public reorderQueue(printerId: number, apiQueueReorderRequest: ApiQueueReorderRequest, options?: RawAxiosRequestConfig) {
+        return PrintQueueApiFp(this.configuration).reorderQueue(printerId, apiQueueReorderRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Start printing a queued job
+     * @param {number} printerId 
+     * @param {number} jobOrderId 
+     * @param {ApiQueueStartRequest} apiQueueStartRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrintQueueApi
+     */
+    public startQueuedJob(printerId: number, jobOrderId: number, apiQueueStartRequest: ApiQueueStartRequest, options?: RawAxiosRequestConfig) {
+        return PrintQueueApiFp(this.configuration).startQueuedJob(printerId, jobOrderId, apiQueueStartRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1749,6 +3932,1132 @@ export class PrinterApi extends BaseAPI {
      */
     public updatePrinter(id: number, apiUpdatePrinterRequest: ApiUpdatePrinterRequest, options?: RawAxiosRequestConfig) {
         return PrinterApiFp(this.configuration).updatePrinter(id, apiUpdatePrinterRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * PrinterCommandsApi - axios parameter creator
+ * @export
+ */
+export const PrinterCommandsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Home all axes
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        homeAxes: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('homeAxes', 'id', id)
+            const localVarPath = `/printer/{id}/command/home`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Jog an axis
+         * @param {number} id 
+         * @param {ApiJogRequest} apiJogRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        jogAxis: async (id: number, apiJogRequest: ApiJogRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('jogAxis', 'id', id)
+            // verify required parameter 'apiJogRequest' is not null or undefined
+            assertParamExists('jogAxis', 'apiJogRequest', apiJogRequest)
+            const localVarPath = `/printer/{id}/command/jog`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiJogRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Pause the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        pausePrint: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('pausePrint', 'id', id)
+            const localVarPath = `/printer/{id}/command/pause`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Resume the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        resumePrint: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('resumePrint', 'id', id)
+            const localVarPath = `/printer/{id}/command/resume`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Set bed target temperature
+         * @param {number} id 
+         * @param {ApiTempRequest} apiTempRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setBedTemp: async (id: number, apiTempRequest: ApiTempRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('setBedTemp', 'id', id)
+            // verify required parameter 'apiTempRequest' is not null or undefined
+            assertParamExists('setBedTemp', 'apiTempRequest', apiTempRequest)
+            const localVarPath = `/printer/{id}/command/bed-temp`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiTempRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Set light state
+         * @param {number} id 
+         * @param {ApiLightRequest} apiLightRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setLight: async (id: number, apiLightRequest: ApiLightRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('setLight', 'id', id)
+            // verify required parameter 'apiLightRequest' is not null or undefined
+            assertParamExists('setLight', 'apiLightRequest', apiLightRequest)
+            const localVarPath = `/printer/{id}/command/light`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiLightRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Set nozzle target temperature
+         * @param {number} id 
+         * @param {ApiTempRequest} apiTempRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setNozzleTemp: async (id: number, apiTempRequest: ApiTempRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('setNozzleTemp', 'id', id)
+            // verify required parameter 'apiTempRequest' is not null or undefined
+            assertParamExists('setNozzleTemp', 'apiTempRequest', apiTempRequest)
+            const localVarPath = `/printer/{id}/command/nozzle-temp`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiTempRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Set print speed level
+         * @param {number} id 
+         * @param {ApiSpeedRequest} apiSpeedRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setSpeed: async (id: number, apiSpeedRequest: ApiSpeedRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('setSpeed', 'id', id)
+            // verify required parameter 'apiSpeedRequest' is not null or undefined
+            assertParamExists('setSpeed', 'apiSpeedRequest', apiSpeedRequest)
+            const localVarPath = `/printer/{id}/command/speed`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiSpeedRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Start a print job
+         * @param {number} id 
+         * @param {ApiPrintFileRequest} apiPrintFileRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startPrint: async (id: number, apiPrintFileRequest: ApiPrintFileRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('startPrint', 'id', id)
+            // verify required parameter 'apiPrintFileRequest' is not null or undefined
+            assertParamExists('startPrint', 'apiPrintFileRequest', apiPrintFileRequest)
+            const localVarPath = `/printer/{id}/command/print`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiPrintFileRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Stop the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        stopPrint: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('stopPrint', 'id', id)
+            const localVarPath = `/printer/{id}/command/stop`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * PrinterCommandsApi - functional programming interface
+ * @export
+ */
+export const PrinterCommandsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = PrinterCommandsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Home all axes
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async homeAxes(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.homeAxes(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.homeAxes']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Jog an axis
+         * @param {number} id 
+         * @param {ApiJogRequest} apiJogRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async jogAxis(id: number, apiJogRequest: ApiJogRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.jogAxis(id, apiJogRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.jogAxis']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Pause the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async pausePrint(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.pausePrint(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.pausePrint']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Resume the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async resumePrint(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.resumePrint(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.resumePrint']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Set bed target temperature
+         * @param {number} id 
+         * @param {ApiTempRequest} apiTempRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async setBedTemp(id: number, apiTempRequest: ApiTempRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.setBedTemp(id, apiTempRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.setBedTemp']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Set light state
+         * @param {number} id 
+         * @param {ApiLightRequest} apiLightRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async setLight(id: number, apiLightRequest: ApiLightRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.setLight(id, apiLightRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.setLight']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Set nozzle target temperature
+         * @param {number} id 
+         * @param {ApiTempRequest} apiTempRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async setNozzleTemp(id: number, apiTempRequest: ApiTempRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.setNozzleTemp(id, apiTempRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.setNozzleTemp']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Set print speed level
+         * @param {number} id 
+         * @param {ApiSpeedRequest} apiSpeedRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async setSpeed(id: number, apiSpeedRequest: ApiSpeedRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.setSpeed(id, apiSpeedRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.setSpeed']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Start a print job
+         * @param {number} id 
+         * @param {ApiPrintFileRequest} apiPrintFileRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async startPrint(id: number, apiPrintFileRequest: ApiPrintFileRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.startPrint(id, apiPrintFileRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.startPrint']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Stop the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async stopPrint(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.stopPrint(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterCommandsApi.stopPrint']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * PrinterCommandsApi - factory interface
+ * @export
+ */
+export const PrinterCommandsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = PrinterCommandsApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Home all axes
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        homeAxes(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.homeAxes(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Jog an axis
+         * @param {number} id 
+         * @param {ApiJogRequest} apiJogRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        jogAxis(id: number, apiJogRequest: ApiJogRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.jogAxis(id, apiJogRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Pause the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        pausePrint(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.pausePrint(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Resume the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        resumePrint(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.resumePrint(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Set bed target temperature
+         * @param {number} id 
+         * @param {ApiTempRequest} apiTempRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setBedTemp(id: number, apiTempRequest: ApiTempRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.setBedTemp(id, apiTempRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Set light state
+         * @param {number} id 
+         * @param {ApiLightRequest} apiLightRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setLight(id: number, apiLightRequest: ApiLightRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.setLight(id, apiLightRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Set nozzle target temperature
+         * @param {number} id 
+         * @param {ApiTempRequest} apiTempRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setNozzleTemp(id: number, apiTempRequest: ApiTempRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.setNozzleTemp(id, apiTempRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Set print speed level
+         * @param {number} id 
+         * @param {ApiSpeedRequest} apiSpeedRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        setSpeed(id: number, apiSpeedRequest: ApiSpeedRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.setSpeed(id, apiSpeedRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Start a print job
+         * @param {number} id 
+         * @param {ApiPrintFileRequest} apiPrintFileRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        startPrint(id: number, apiPrintFileRequest: ApiPrintFileRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.startPrint(id, apiPrintFileRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Stop the current print
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        stopPrint(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.stopPrint(id, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * PrinterCommandsApi - object-oriented interface
+ * @export
+ * @class PrinterCommandsApi
+ * @extends {BaseAPI}
+ */
+export class PrinterCommandsApi extends BaseAPI {
+    /**
+     * 
+     * @summary Home all axes
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public homeAxes(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).homeAxes(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Jog an axis
+     * @param {number} id 
+     * @param {ApiJogRequest} apiJogRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public jogAxis(id: number, apiJogRequest: ApiJogRequest, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).jogAxis(id, apiJogRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Pause the current print
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public pausePrint(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).pausePrint(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Resume the current print
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public resumePrint(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).resumePrint(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Set bed target temperature
+     * @param {number} id 
+     * @param {ApiTempRequest} apiTempRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public setBedTemp(id: number, apiTempRequest: ApiTempRequest, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).setBedTemp(id, apiTempRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Set light state
+     * @param {number} id 
+     * @param {ApiLightRequest} apiLightRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public setLight(id: number, apiLightRequest: ApiLightRequest, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).setLight(id, apiLightRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Set nozzle target temperature
+     * @param {number} id 
+     * @param {ApiTempRequest} apiTempRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public setNozzleTemp(id: number, apiTempRequest: ApiTempRequest, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).setNozzleTemp(id, apiTempRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Set print speed level
+     * @param {number} id 
+     * @param {ApiSpeedRequest} apiSpeedRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public setSpeed(id: number, apiSpeedRequest: ApiSpeedRequest, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).setSpeed(id, apiSpeedRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Start a print job
+     * @param {number} id 
+     * @param {ApiPrintFileRequest} apiPrintFileRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public startPrint(id: number, apiPrintFileRequest: ApiPrintFileRequest, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).startPrint(id, apiPrintFileRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Stop the current print
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterCommandsApi
+     */
+    public stopPrint(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterCommandsApiFp(this.configuration).stopPrint(id, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * PrinterFilesApi - axios parameter creator
+ * @export
+ */
+export const PrinterFilesApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Delete a file from printer storage
+         * @param {number} id 
+         * @param {string} filename 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deletePrinterFile: async (id: number, filename: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deletePrinterFile', 'id', id)
+            // verify required parameter 'filename' is not null or undefined
+            assertParamExists('deletePrinterFile', 'filename', filename)
+            const localVarPath = `/printer/{id}/files/{filename}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"filename"}}`, encodeURIComponent(String(filename)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Download a file from printer storage
+         * @param {number} id 
+         * @param {string} filename 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadPrinterFile: async (id: number, filename: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadPrinterFile', 'id', id)
+            // verify required parameter 'filename' is not null or undefined
+            assertParamExists('downloadPrinterFile', 'filename', filename)
+            const localVarPath = `/printer/{id}/files/{filename}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"filename"}}`, encodeURIComponent(String(filename)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List files on printer storage
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listPrinterFiles: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('listPrinterFiles', 'id', id)
+            const localVarPath = `/printer/{id}/files`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Upload a file to printer storage
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadPrinterFile: async (id: number, file: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('uploadPrinterFile', 'id', id)
+            // verify required parameter 'file' is not null or undefined
+            assertParamExists('uploadPrinterFile', 'file', file)
+            const localVarPath = `/printer/{id}/files`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+
+            if (file !== undefined) { 
+                localVarFormParams.append('file', file as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = localVarFormParams;
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * PrinterFilesApi - functional programming interface
+ * @export
+ */
+export const PrinterFilesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = PrinterFilesApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Delete a file from printer storage
+         * @param {number} id 
+         * @param {string} filename 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deletePrinterFile(id: number, filename: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deletePrinterFile(id, filename, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterFilesApi.deletePrinterFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Download a file from printer storage
+         * @param {number} id 
+         * @param {string} filename 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadPrinterFile(id: number, filename: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadPrinterFile(id, filename, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterFilesApi.downloadPrinterFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List files on printer storage
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listPrinterFiles(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiPrinterFile>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listPrinterFiles(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterFilesApi.listPrinterFiles']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Upload a file to printer storage
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async uploadPrinterFile(id: number, file: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadPrinterFile(id, file, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterFilesApi.uploadPrinterFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * PrinterFilesApi - factory interface
+ * @export
+ */
+export const PrinterFilesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = PrinterFilesApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Delete a file from printer storage
+         * @param {number} id 
+         * @param {string} filename 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deletePrinterFile(id: number, filename: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deletePrinterFile(id, filename, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Download a file from printer storage
+         * @param {number} id 
+         * @param {string} filename 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadPrinterFile(id: number, filename: string, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadPrinterFile(id, filename, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List files on printer storage
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listPrinterFiles(id: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiPrinterFile>> {
+            return localVarFp.listPrinterFiles(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Upload a file to printer storage
+         * @param {number} id 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadPrinterFile(id: number, file: File, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.uploadPrinterFile(id, file, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * PrinterFilesApi - object-oriented interface
+ * @export
+ * @class PrinterFilesApi
+ * @extends {BaseAPI}
+ */
+export class PrinterFilesApi extends BaseAPI {
+    /**
+     * 
+     * @summary Delete a file from printer storage
+     * @param {number} id 
+     * @param {string} filename 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterFilesApi
+     */
+    public deletePrinterFile(id: number, filename: string, options?: RawAxiosRequestConfig) {
+        return PrinterFilesApiFp(this.configuration).deletePrinterFile(id, filename, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Download a file from printer storage
+     * @param {number} id 
+     * @param {string} filename 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterFilesApi
+     */
+    public downloadPrinterFile(id: number, filename: string, options?: RawAxiosRequestConfig) {
+        return PrinterFilesApiFp(this.configuration).downloadPrinterFile(id, filename, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List files on printer storage
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterFilesApi
+     */
+    public listPrinterFiles(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterFilesApiFp(this.configuration).listPrinterFiles(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Upload a file to printer storage
+     * @param {number} id 
+     * @param {File} file 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterFilesApi
+     */
+    public uploadPrinterFile(id: number, file: File, options?: RawAxiosRequestConfig) {
+        return PrinterFilesApiFp(this.configuration).uploadPrinterFile(id, file, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

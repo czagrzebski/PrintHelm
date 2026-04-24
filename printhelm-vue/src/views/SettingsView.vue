@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import Button from 'primevue/button'
-import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
@@ -417,6 +416,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div class="settings-view">
   <Toast />
   <div class="settings-page">
     <div class="page-header">
@@ -426,135 +426,123 @@ onMounted(async () => {
       </div>
     </div>
 
-    <Tabs value="printers">
-      <TabList>
-        <Tab value="printers">
-          <i class="mdi mdi-printer-3d tab-icon" />
-          Printers
-        </Tab>
-        <Tab v-if="isAdmin" value="users">
-          <i class="mdi mdi-account-group-outline tab-icon" />
-          Users
-        </Tab>
-        <Tab value="profile">
-          <i class="mdi mdi-account-key-outline tab-icon" />
-          Profile
-        </Tab>
-      </TabList>
+    <div class="tabs-card">
+      <Tabs value="printers">
+        <TabList>
+          <Tab value="printers">
+            <i class="mdi mdi-printer-3d tab-icon" />
+            Printers
+          </Tab>
+          <Tab v-if="isAdmin" value="users">
+            <i class="mdi mdi-account-group-outline tab-icon" />
+            Users
+          </Tab>
+          <Tab value="profile">
+            <i class="mdi mdi-account-key-outline tab-icon" />
+            Profile
+          </Tab>
+        </TabList>
 
-      <TabPanels>
+        <TabPanels>
 
-        <!-- ── Printers Tab ── -->
-        <TabPanel value="printers">
-          <Card class="section-card">
-            <template #title>
-              <div class="section-header">
-                <span class="section-title">Printers</span>
-                <Button label="Add Printer" icon="mdi mdi-plus" size="small" @click="openAddPrinter" />
-              </div>
-            </template>
-            <template #content>
-              <DataTable :value="printers" :loading="printersLoading" data-key="printerId"
-                empty-message="No printers configured." size="small">
-                <Column field="printerName" header="Name" style="min-width:140px" />
-                <Column field="printerModel" header="Model" style="min-width:120px" />
-                <Column header="Type" style="min-width:110px">
-                  <template #body="{ data }"><Tag :value="data.printerType" severity="secondary" /></template>
-                </Column>
-                <Column header="Location" style="min-width:110px">
-                  <template #body="{ data }">
-                    <span :class="{ muted: !data.location }">{{ data.location || '—' }}</span>
-                  </template>
-                </Column>
-                <Column header="Connection" style="min-width:200px">
-                  <template #body="{ data }">
-                    <span v-if="data.connectionConfig" class="connection-info">
-                      <i class="mdi mdi-lan-connect" />{{ data.connectionConfig.brokerUrl }}
-                    </span>
-                    <span v-else class="muted">Not configured</span>
-                  </template>
-                </Column>
-                <Column header="Actions" style="min-width:100px">
-                  <template #body="{ data }">
-                    <div class="row-actions">
-                      <Button icon="mdi mdi-pencil-outline" severity="secondary" text size="small"
-                        title="Edit" @click="openEditPrinter(data)" />
-                      <Button icon="mdi mdi-trash-can-outline" severity="danger" text size="small"
-                        title="Delete" @click="printerToDelete = data; showDeletePrinterDialog = true" />
-                    </div>
-                  </template>
-                </Column>
-              </DataTable>
-            </template>
-          </Card>
-        </TabPanel>
+          <!-- ── Printers Tab ── -->
+          <TabPanel value="printers">
+            <div class="panel-header">
+              <span class="section-title">Printers</span>
+              <Button label="Add Printer" icon="mdi mdi-plus" size="small" @click="openAddPrinter" />
+            </div>
+            <DataTable :value="printers" :loading="printersLoading" data-key="printerId"
+              empty-message="No printers configured." size="small">
+              <Column field="printerName" header="Name" style="min-width:140px" />
+              <Column field="printerModel" header="Model" style="min-width:120px" />
+              <Column header="Type" style="min-width:110px">
+                <template #body="{ data }"><Tag :value="data.printerType" severity="secondary" /></template>
+              </Column>
+              <Column header="Location" style="min-width:110px">
+                <template #body="{ data }">
+                  <span :class="{ muted: !data.location }">{{ data.location || '—' }}</span>
+                </template>
+              </Column>
+              <Column header="Connection" style="min-width:200px">
+                <template #body="{ data }">
+                  <span v-if="data.connectionConfig" class="connection-info">
+                    <i class="mdi mdi-lan-connect" />{{ data.connectionConfig.brokerUrl }}
+                  </span>
+                  <span v-else class="muted">Not configured</span>
+                </template>
+              </Column>
+              <Column header="Actions" style="min-width:100px">
+                <template #body="{ data }">
+                  <div class="row-actions">
+                    <Button icon="mdi mdi-pencil-outline" severity="secondary" text size="small"
+                      title="Edit" @click="openEditPrinter(data)" />
+                    <Button icon="mdi mdi-trash-can-outline" severity="danger" text size="small"
+                      title="Delete" @click="printerToDelete = data; showDeletePrinterDialog = true" />
+                  </div>
+                </template>
+              </Column>
+            </DataTable>
+          </TabPanel>
 
-        <!-- ── Users Tab ── -->
-        <TabPanel v-if="isAdmin" value="users">
-          <Card class="section-card">
-            <template #title>
-              <div class="section-header">
-                <span class="section-title">Users</span>
-                <Button label="Add User" icon="mdi mdi-account-plus-outline" size="small" @click="openAddUser" />
-              </div>
-            </template>
-            <template #content>
-              <DataTable :value="users" :loading="usersLoading" data-key="userId"
-                empty-message="No users found." size="small">
-                <Column field="username" header="Username" style="min-width:130px" />
-                <Column header="Name" style="min-width:150px">
-                  <template #body="{ data }">
-                    <span :class="{ muted: !data.firstName && !data.lastName }">
-                      {{ [data.firstName, data.lastName].filter(Boolean).join(' ') || '—' }}
-                    </span>
-                  </template>
-                </Column>
-                <Column header="Roles" style="min-width:160px">
-                  <template #body="{ data }">
-                    <div class="role-tags">
-                      <Tag v-for="role in data.roles" :key="role.roleId"
-                        :value="role.name?.replace('ROLE_', '')"
-                        :severity="role.name === 'ROLE_ADMIN' ? 'warn' : 'secondary'"
-                        style="font-size:0.7rem" />
-                    </div>
-                  </template>
-                </Column>
-                <Column header="Status" style="min-width:90px">
-                  <template #body="{ data }">
-                    <Tag :value="data.isActive ? 'Active' : 'Inactive'"
-                      :severity="data.isActive ? 'success' : 'secondary'" />
-                  </template>
-                </Column>
-                <Column header="Flags" style="min-width:120px">
-                  <template #body="{ data }">
-                    <Tag v-if="data.mustChangePassword" value="Must Reset" severity="warn"
+          <!-- ── Users Tab ── -->
+          <TabPanel v-if="isAdmin" value="users">
+            <div class="panel-header">
+              <span class="section-title">Users</span>
+              <Button label="Add User" icon="mdi mdi-account-plus-outline" size="small" @click="openAddUser" />
+            </div>
+            <DataTable :value="users" :loading="usersLoading" data-key="userId"
+              empty-message="No users found." size="small">
+              <Column field="username" header="Username" style="min-width:130px" />
+              <Column header="Name" style="min-width:150px">
+                <template #body="{ data }">
+                  <span :class="{ muted: !data.firstName && !data.lastName }">
+                    {{ [data.firstName, data.lastName].filter(Boolean).join(' ') || '—' }}
+                  </span>
+                </template>
+              </Column>
+              <Column header="Roles" style="min-width:160px">
+                <template #body="{ data }">
+                  <div class="role-tags">
+                    <Tag v-for="role in data.roles" :key="role.roleId"
+                      :value="role.name?.replace('ROLE_', '')"
+                      :severity="role.name === 'ROLE_ADMIN' ? 'warn' : 'secondary'"
                       style="font-size:0.7rem" />
-                  </template>
-                </Column>
-                <Column header="Actions" style="min-width:130px">
-                  <template #body="{ data }">
-                    <div class="row-actions">
-                      <Button icon="mdi mdi-pencil-outline" severity="secondary" text size="small"
-                        title="Edit" @click="openEditUser(data)" />
-                      <Button icon="mdi mdi-lock-reset" severity="secondary" text size="small"
-                        title="Reset Password" @click="openResetPassword(data)" />
-                      <Button icon="mdi mdi-trash-can-outline" severity="danger" text size="small"
-                        title="Delete" @click="userToDelete = data; showDeleteUserDialog = true" />
-                    </div>
-                  </template>
-                </Column>
-              </DataTable>
-            </template>
-          </Card>
-        </TabPanel>
+                  </div>
+                </template>
+              </Column>
+              <Column header="Status" style="min-width:90px">
+                <template #body="{ data }">
+                  <Tag :value="data.isActive ? 'Active' : 'Inactive'"
+                    :severity="data.isActive ? 'success' : 'secondary'" />
+                </template>
+              </Column>
+              <Column header="Flags" style="min-width:120px">
+                <template #body="{ data }">
+                  <Tag v-if="data.mustChangePassword" value="Must Reset" severity="warn"
+                    style="font-size:0.7rem" />
+                </template>
+              </Column>
+              <Column header="Actions" style="min-width:130px">
+                <template #body="{ data }">
+                  <div class="row-actions">
+                    <Button icon="mdi mdi-pencil-outline" severity="secondary" text size="small"
+                      title="Edit" @click="openEditUser(data)" />
+                    <Button icon="mdi mdi-lock-reset" severity="secondary" text size="small"
+                      title="Reset Password" @click="openResetPassword(data)" />
+                    <Button icon="mdi mdi-trash-can-outline" severity="danger" text size="small"
+                      title="Delete" @click="userToDelete = data; showDeleteUserDialog = true" />
+                  </div>
+                </template>
+              </Column>
+            </DataTable>
+          </TabPanel>
 
-        <!-- ── Profile Tab ── -->
-        <TabPanel value="profile">
-          <Card class="section-card profile-card">
-            <template #title>
-              <span class="section-title">Change Password</span>
-            </template>
-            <template #content>
+          <!-- ── Profile Tab ── -->
+          <TabPanel value="profile">
+            <div class="profile-section">
+              <div class="panel-header">
+                <span class="section-title">Change Password</span>
+              </div>
               <div class="profile-form">
                 <div class="field">
                   <label class="field-label">Current Password <span class="required">*</span></label>
@@ -575,12 +563,12 @@ onMounted(async () => {
                   <Button label="Change Password" :loading="profileSaving" @click="saveProfilePassword" />
                 </div>
               </div>
-            </template>
-          </Card>
-        </TabPanel>
+            </div>
+          </TabPanel>
 
-      </TabPanels>
-    </Tabs>
+        </TabPanels>
+      </Tabs>
+    </div>
 
     <!-- ── Printer Add/Edit Dialog ── -->
     <Dialog v-model:visible="showPrinterDialog"
@@ -733,6 +721,7 @@ onMounted(async () => {
       </template>
     </Dialog>
   </div>
+  </div>
 </template>
 
 <style scoped>
@@ -742,7 +731,17 @@ onMounted(async () => {
   gap: 1.5rem;
 }
 
-.page-header { display: flex; align-items: flex-start; justify-content: space-between; }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  animation: fade-up 0.3s ease-out both;
+}
 
 .page-title {
   font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem; color: var(--ph-text);
@@ -752,16 +751,61 @@ onMounted(async () => {
   font-size: 0.875rem; color: var(--ph-text-muted); margin: 0;
 }
 
+/* ── Unified tab card surface ── */
+.tabs-card {
+  background: #162830;
+  border: 1px solid var(--ph-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.tabs-card :deep(.p-tablist) {
+  border-radius: 0 !important;
+  padding: 0 1.25rem !important;
+}
+
+.tabs-card :deep(.p-tablist-tab-list) {
+  background: transparent !important;
+}
+
+.tabs-card :deep(.p-tab) {
+  padding: 0.75rem 1rem !important;
+}
+
+.tabs-card :deep(.p-tabpanels) {
+  padding: 1.25rem !important;
+}
+
+/* Fade + slide animation on tab switch */
+.tabs-card :deep(.p-tabpanel) {
+  animation: tab-fade-in 0.2s ease-out both;
+}
+
+@keyframes tab-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Panel header (title row + separator) ── */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.875rem;
+  margin-bottom: 0.875rem;
+  border-bottom: 1px solid var(--ph-border);
+}
+
 .tab-icon {
   margin-right: 0.35rem; font-size: 1rem;
-}
-
-.section-card {
-  margin-top: 1rem;
-}
-
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
 }
 
 .section-title {
@@ -780,7 +824,7 @@ onMounted(async () => {
 .role-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 
 /* Profile */
-.profile-card { max-width: 480px; }
+.profile-section { max-width: 480px; }
 
 .profile-form {
   display: flex; flex-direction: column; gap: 1rem;

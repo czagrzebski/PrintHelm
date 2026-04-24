@@ -13,7 +13,7 @@
     "lint:eslint": "eslint . --fix",
     "lint": "run-s lint:*",
     "format": "prettier --write src/",
-    "generateApi": "openapi-generator-cli generate -i ../printhelm-web-contract/src/main/resources/printhelm-web-openapi.yaml -g typescript-axios -o printhelm-web/src/client",
+    "generateApi": "openapi-generator-cli generate -i ../printhelm-web-contract/src/main/resources/printhelm-web-openapi.yaml -g typescript-axios -o src/client/printhelm-web-openapi",
     "generateApiDocker": "openapi-generator-cli generate -i printhelm-web-openapi.yaml -g typescript-axios -o ./src/client"
   },
   "dependencies": {

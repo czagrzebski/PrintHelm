@@ -1,12 +1,9 @@
 import { useAuthStore } from '@/stores/auth'
-import { api } from '@/api/Configuration'
-
-import type { ApiLoginRequest, ApiAuthResponse } from '@/client/printhelm-web-openapi'
+import authApi from '@/api/AuthApi'
 
 class AuthService {
   async login(username: string, password: string) {
-    const data: ApiLoginRequest = { username, password }
-    const response = await api.post<ApiAuthResponse>('/auth/login', data)
+    const response = await authApi.login({ username, password })
     this.authStore.setToken(response.data.accessToken ?? null)
     if (response.data.user) {
       this.authStore.setUserInfo(response.data.user)
@@ -16,10 +13,9 @@ class AuthService {
 
   async logout() {
     try {
-      await api.post('/auth/logout')
+      await authApi.logout()
     } finally {
-      const store = this.authStore
-      store.setToken(null)
+      this.authStore.setToken(null)
     }
   }
 
