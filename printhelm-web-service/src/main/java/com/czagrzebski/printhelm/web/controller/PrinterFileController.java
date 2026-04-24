@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,12 +35,13 @@ public class PrinterFileController {
     }
 
     @GetMapping("/{filename:.+}")
-    public ResponseEntity<byte[]> downloadFile(
+    public ResponseEntity<StreamingResponseBody> downloadFile(
             @PathVariable long id,
             @PathVariable String filename) throws IOException {
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(fileService.downloadFile(id, filename));
+        long size = fileService.getFileSize(id, filename);
+        var builder = ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM);
+        if (size >= 0) builder.contentLength(size);
+        return builder.body(out -> fileService.streamFile(id, filename, out));
     }
 
     @DeleteMapping("/{filename}")

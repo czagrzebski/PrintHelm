@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import JSZip from 'jszip'
 import * as THREE from 'three'
 import { GCodeLoader } from 'three/examples/jsm/loaders/GCodeLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { api } from '@/api/Configuration'
 
-const props = defineProps<{ printerId: number; filename: string }>()
+const props = defineProps<{ printerId: number; filename: string; fileSize?: number }>()
 const emit = defineEmits<{ close: [] }>()
 
 const loading = ref(true)
 const loadingLabel = ref('Downloading…')
+const downloadProgress = ref(0)
+const loadingStage = computed(() => {
+  if (loadingLabel.value === 'Downloading…') return 'download'
+  if (loadingLabel.value === 'Extracting…') return 'extract'
+  return 'parse'
+})
+const loadingStageNum = computed(() =>
+  loadingLabel.value === 'Downloading…' ? 1 : loadingLabel.value === 'Extracting…' ? 2 : 3
+)
 const error = ref('')
 const cfg = ref<Record<string, unknown> | null>(null)
 const plateImageUrl = ref<string | null>(null)
@@ -39,8 +48,8 @@ let resizeObserver: ResizeObserver | null = null
 let pendingGcode: string | null = null
 let vcMat: THREE.LineBasicMaterial | null = null
 let pathMat: THREE.LineBasicMaterial | null = null
-let worldHalfH = 0
 let worldTotalH = 0
+let modelBaseY = 0   // world Y of the first extruded layer after centering
 let extrudeGeos: THREE.BufferGeometry[] = []
 let gcodeZMin = 0
 let gcodeZRange = 1
@@ -61,7 +70,12 @@ onMounted(async () => {
   try {
     const res = await api.get<ArrayBuffer>(
       `/printer/${props.printerId}/files/${encodeURIComponent(props.filename)}`,
-      { responseType: 'arraybuffer' },
+      {
+        responseType: 'arraybuffer',
+        onDownloadProgress: (e) => {
+          if (e.total) downloadProgress.value = Math.round((e.loaded / e.total) * 100)
+        },
+      },
     )
 
     loadingLabel.value = 'Extracting…'
@@ -123,6 +137,8 @@ function teardownViewer() {
   animTotalLayers.value = 0
   animLayer.value = 0
   lastRenderedLayer = -1
+  worldTotalH = 0
+  modelBaseY = 0
   if (animFrameId != null) { cancelAnimationFrame(animFrameId); animFrameId = null }
   resizeObserver?.disconnect(); resizeObserver = null
   controls?.dispose(); controls = null
@@ -156,9 +172,10 @@ function applyVertexColors(hotColor: THREE.Color) {
 
 function applyClipping() {
   if (!vcMat || worldTotalH === 0) return
-  const minY = -worldHalfH + (layerMin.value / 100) * worldTotalH
-  const maxY = -worldHalfH + (layerMax.value / 100) * worldTotalH
-  // Per-material clipping so the nozzle mesh (which has no clippingPlanes set) is never hidden
+  // GCodeLoader rotates group by -PI/2 on X: GCode Z (print height) → Three.js Y.
+  // modelBaseY = world Y of first layer; worldTotalH = gcodeZRange (extruded only).
+  const minY = modelBaseY + (layerMin.value / 100) * worldTotalH
+  const maxY = modelBaseY + (layerMax.value / 100) * worldTotalH
   const planes = [
     new THREE.Plane(new THREE.Vector3(0, 1, 0), -minY),
     new THREE.Plane(new THREE.Vector3(0, -1, 0), maxY),
@@ -264,8 +281,8 @@ function clearLayerTrace() {
   lastLayerStarted = -1
 }
 
-// Build per-layer LineSegments with drawRange=0. segVerts holds GCode-space coords;
-// we convert to world space here: GCode (x, y, z) → world (x−cx, z−cy, −y−cz).
+// Build per-layer LineSegments with drawRange=0. segVerts holds GCode-space coords.
+// GCodeLoader stores GCode (X,Y,Z) directly as Three.js (X,Y,Z) — no axis swap.
 function startLayerAnim(idx: number) {
   if (curLayerLines) {
     scene?.remove(curLayerLines)
@@ -289,13 +306,14 @@ function startLayerAnim(idx: number) {
   const src = layer.segVerts
   if (src.length === 0) return
 
-  // Convert GCode coords to world coords for each vertex
+  // Apply the same -PI/2 X rotation that GCodeLoader uses: GCode(X,Y,Z) → Three.js(X, Z, -Y),
+  // then subtract the world-space bounding-box center used when centering the model.
   const world = new Float32Array(src.length)
   const cx = gcodeCenter.x, cy = gcodeCenter.y, cz = gcodeCenter.z
   for (let i = 0; i < src.length; i += 3) {
-    world[i]     = src[i]     - cx   // world x = GCode X − cx
-    world[i + 1] = src[i + 2] - cy   // world y = GCode Z − cy  (Z is height)
-    world[i + 2] = -src[i + 1] - cz  // world z = −GCode Y − cz
+    world[i]     =  src[i]     - cx   // GCode X → Three.js X
+    world[i + 1] =  src[i + 2] - cy   // GCode Z → Three.js Y (print height)
+    world[i + 2] = -src[i + 1] - cz   // -GCode Y → Three.js Z
   }
 
   curLayerGeo = new THREE.BufferGeometry()
@@ -318,13 +336,13 @@ function tickAnim() {
   animInternalSeg = Math.min(animInternalSeg + segsPerFrame, totalSegs)
   curLayerGeo.setDrawRange(0, animInternalSeg * 2)
 
-  // Move nozzle to end of last drawn segment
+  // Move nozzle to end of last drawn segment — apply same rotation as GCodeLoader
   if (animInternalSeg > 0 && nozzleMesh) {
     const si = (animInternalSeg - 1) * 6
     nozzleMesh.position.set(
-      layer.segVerts[si + 3] - gcodeCenter.x,
-      layer.segVerts[si + 5] - gcodeCenter.y,
-      -layer.segVerts[si + 4] - gcodeCenter.z,
+       layer.segVerts[si + 3] - gcodeCenter.x,   // GCode X → Three.js X
+       layer.segVerts[si + 5] - gcodeCenter.y,   // GCode Z → Three.js Y
+      -layer.segVerts[si + 4] - gcodeCenter.z,   // -GCode Y → Three.js Z
     )
   }
 
@@ -424,15 +442,18 @@ function initViewer(canvas: HTMLCanvasElement, gcodeText: string) {
   obj.position.sub(center)
   scene.add(obj)
 
-  // Bed grid at model base
-  worldTotalH = size.y
-  worldHalfH = size.y / 2
+  // GCodeLoader rotates group by -PI/2 on X: GCode Z (height) → Three.js Y, GCode Y → Three.js -Z.
+  // Use only the extruded range for height so travel-path vertices (incl. initial Z=0) don't
+  // push the grid below the actual first layer.
+  worldTotalH = gcodeZRange
+  modelBaseY = gcodeZMin - gcodeCenter.y   // world Y of the first extruded layer
   const gridSpan = Math.ceil(Math.max(size.x, size.z) * 1.3 / 10) * 10
   const divisions = Math.min(Math.ceil(gridSpan / 10), 30)
   const grid = new THREE.GridHelper(gridSpan, divisions, 0x1e4a5a, 0x1e4a5a)
   ;(grid.material as THREE.LineBasicMaterial).opacity = 0.5
   ;(grid.material as THREE.LineBasicMaterial).transparent = true
-  grid.position.y = -worldHalfH
+  // GridHelper lies in the XZ plane by default — correct for Y-up Three.js after the loader rotation
+  grid.position.y = modelBaseY  // Align grid with bottom of extruded model
   scene.add(grid)
 
   applyClipping()
@@ -558,9 +579,49 @@ function fmtBrimType(raw: string): string {
         </button>
       </div>
 
-      <div v-if="loading" class="pji-state">
-        <span class="pji-spinner" />
-        <span>{{ loadingLabel }}</span>
+      <div v-if="loading" class="pji-state pji-state--loading">
+        <div class="pji-stage-wrapper">
+          <!-- Download graphic -->
+          <div v-if="loadingStage === 'download'" class="pji-stage-graphic pji-stage-graphic--download">
+            <i class="mdi mdi-cloud-outline pji-cloud-icon" />
+            <div class="pji-download-dots">
+              <span class="pji-dot" />
+              <span class="pji-dot" />
+              <span class="pji-dot" />
+            </div>
+          </div>
+
+          <!-- Extract graphic -->
+          <div v-else-if="loadingStage === 'extract'" class="pji-stage-graphic pji-stage-graphic--extract">
+            <div class="pji-extract-rays">
+              <span v-for="n in 8" :key="n" class="pji-ray" :style="`--ri:${n}`" />
+            </div>
+            <i class="mdi mdi-package-variant pji-pkg-icon" />
+          </div>
+
+          <!-- Parse graphic -->
+          <div v-else class="pji-stage-graphic pji-stage-graphic--parse">
+            <i class="mdi mdi-printer-3d-nozzle-outline pji-nozzle-icon" />
+            <div class="pji-parse-layers">
+              <span class="pji-parse-layer" style="--li:1;--lw:52px" />
+              <span class="pji-parse-layer" style="--li:2;--lw:40px" />
+              <span class="pji-parse-layer" style="--li:3;--lw:28px" />
+              <span class="pji-parse-layer" style="--li:4;--lw:16px" />
+            </div>
+          </div>
+
+          <div class="pji-loading-info">
+            <span class="pji-loading-label">{{ loadingLabel }}</span>
+            <span class="pji-loading-step">Step {{ loadingStageNum }} of 3</span>
+          </div>
+
+          <div v-if="loadingStage === 'download'" class="pji-progress-track">
+            <div class="pji-progress-fill" :style="{ width: downloadProgress + '%' }" />
+          </div>
+          <span v-if="loadingStage === 'download' && (props.fileSize ?? 0) > 10 * 1024 * 1024" class="pji-loading-hint">
+            This may take a bit…
+          </span>
+        </div>
       </div>
       <div v-else-if="error" class="pji-state pji-state--error">
         <i class="mdi mdi-alert-circle-outline" /> {{ error }}
@@ -755,8 +816,8 @@ function fmtBrimType(raw: string): string {
 
 .pji-box {
   width: 100%;
-  max-width: 1020px;
-  max-height: 88vh;
+  max-width: 1280px;
+  max-height: 90vh;
   background: #0f2027;
   border: 1px solid var(--ph-border);
   border-radius: 12px;
@@ -817,21 +878,209 @@ function fmtBrimType(raw: string): string {
 }
 .pji-state--error { color: #f87171; }
 
-.pji-spinner {
-  width: 28px;
-  height: 28px;
-  border: 2px solid rgba(255,255,255,0.1);
-  border-top-color: var(--ph-accent, #22d3ee);
-  border-radius: 50%;
-  animation: pji-spin 0.7s linear infinite;
-  flex-shrink: 0;
+.pji-state--loading {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
 }
-@keyframes pji-spin { to { transform: rotate(360deg); } }
+
+/* ── Stage wrapper ───────────────────────────────────────────────────── */
+.pji-stage-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  min-width: 200px;
+}
+
+/* ── Common stage graphic shell ──────────────────────────────────────── */
+.pji-stage-graphic {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+}
+
+/* ── Download stage ──────────────────────────────────────────────────── */
+.pji-stage-graphic--download {
+  gap: 6px;
+}
+
+.pji-cloud-icon {
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--ph-accent, #22d3ee);
+  animation: cloud-pulse 2s ease-in-out infinite;
+}
+
+@keyframes cloud-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.65; transform: scale(0.95); }
+}
+
+.pji-download-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.pji-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ph-accent, #22d3ee);
+  animation: dot-fall 1.3s ease-in-out infinite;
+}
+.pji-dot:nth-child(1) { animation-delay: 0s; }
+.pji-dot:nth-child(2) { animation-delay: 0.2s; }
+.pji-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-fall {
+  0%   { transform: translateY(-6px); opacity: 0; }
+  35%  { transform: translateY(0);    opacity: 1; }
+  65%  { transform: translateY(0);    opacity: 1; }
+  100% { transform: translateY(8px);  opacity: 0; }
+}
+
+/* ── Extract stage ───────────────────────────────────────────────────── */
+.pji-stage-graphic--extract {
+  align-items: center;
+  justify-content: center;
+}
+
+.pji-pkg-icon {
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--ph-accent, #22d3ee);
+  position: relative;
+  z-index: 1;
+  animation: pkg-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pkg-pulse {
+  0%, 100% { transform: scale(1);    filter: brightness(1); }
+  50%       { transform: scale(1.12); filter: brightness(1.3); }
+}
+
+.pji-extract-rays {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pji-ray {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ph-accent, #22d3ee);
+  transform-origin: 50% 0%;
+  transform: translateX(-50%) rotate(calc((var(--ri) - 1) * 45deg)) translateY(-42px);
+  animation: ray-burst 1.4s ease-in-out infinite;
+  animation-delay: calc((var(--ri) - 1) * 0.07s);
+}
+
+@keyframes ray-burst {
+  0%   { opacity: 0; transform: translateX(-50%) rotate(calc((var(--ri) - 1) * 45deg)) translateY(-34px) scaleY(0.3); }
+  40%  { opacity: 1; transform: translateX(-50%) rotate(calc((var(--ri) - 1) * 45deg)) translateY(-44px) scaleY(1); }
+  70%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translateX(-50%) rotate(calc((var(--ri) - 1) * 45deg)) translateY(-52px) scaleY(0.5); }
+}
+
+/* ── Parse stage ─────────────────────────────────────────────────────── */
+.pji-stage-graphic--parse {
+  height: auto;
+  gap: 6px;
+}
+
+.pji-nozzle-icon {
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--ph-accent, #22d3ee);
+  animation: nozzle-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes nozzle-sweep {
+  0%, 100% { transform: translateX(-14px); }
+  50%       { transform: translateX(14px); }
+}
+
+.pji-parse-layers {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  align-items: center;
+}
+
+.pji-parse-layer {
+  display: block;
+  width: var(--lw);
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ph-accent, #22d3ee);
+  animation: layer-appear 1.6s ease-out infinite;
+  animation-delay: calc((var(--li) - 1) * 0.2s);
+  opacity: 0;
+}
+
+@keyframes layer-appear {
+  0%   { opacity: 0; transform: scaleX(0); }
+  25%  { opacity: 1; transform: scaleX(1); }
+  75%  { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0.3; transform: scaleX(1); }
+}
+
+/* ── Loading info (label + step) ─────────────────────────────────────── */
+.pji-loading-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pji-loading-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ph-text);
+}
+
+.pji-loading-step {
+  font-size: 0.72rem;
+  color: var(--ph-text-muted);
+  opacity: 0.6;
+}
+
+/* ── Progress bar (download stage) ──────────────────────────────────── */
+.pji-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.pji-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ph-accent, #22d3ee);
+  transition: width 0.2s ease;
+}
+
+.pji-loading-hint {
+  font-size: 0.72rem;
+  color: var(--ph-text-muted);
+  opacity: 0.6;
+}
 
 /* ── Body layout ─────────────────────────────────────────────────────── */
 .pji-body {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 600px 1fr;
   overflow: hidden;
   flex: 1;
   min-height: 0;
@@ -1168,7 +1417,7 @@ function fmtBrimType(raw: string): string {
 
 .pji-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.375rem;
 }
 
@@ -1183,7 +1432,7 @@ function fmtBrimType(raw: string): string {
   border: 1px solid var(--ph-border);
   min-width: 0;
 }
-.pji-stat--wide { grid-column: span 2; }
+.pji-stat--wide { grid-column: span 3; }
 
 .pji-sk {
   font-size: 0.65rem;
@@ -1209,5 +1458,23 @@ function fmtBrimType(raw: string): string {
   border-radius: 50%;
   flex-shrink: 0;
   border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ── Dialog open/close transition ───────────────────────────────────── */
+.pji-dialog-enter-active { transition: opacity 0.25s ease; }
+.pji-dialog-leave-active { transition: opacity 0.2s ease; }
+.pji-dialog-enter-from,
+.pji-dialog-leave-to { opacity: 0; }
+
+.pji-dialog-enter-active .pji-box {
+  transition: transform 0.28s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.25s ease;
+}
+.pji-dialog-leave-active .pji-box {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.pji-dialog-enter-from .pji-box,
+.pji-dialog-leave-to .pji-box {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
 }
 </style>

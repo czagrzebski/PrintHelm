@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,21 +75,54 @@ public class PrinterFileService {
         }
     }
 
-    public byte[] downloadFile(long printerId, String filename) throws IOException {
+    public long getFileSize(long printerId, String filename) throws IOException {
         var config = resolveConfig(printerId);
-        Path tmp = Files.createTempFile("printhelm-dl-", null);
+        List<String> cmd = List.of(
+                "curl", "-k",
+                "-u", FTPS_USER + ":" + config.password(),
+                "--head", "--silent", "--show-error",
+                ftpsUrl(config.host(), "/" + filename)
+        );
+        String output = runCurl(cmd, "getFileSize:" + filename, printerId);
+        for (String line : output.split("\r?\n")) {
+            if (line.toLowerCase(Locale.ROOT).startsWith("content-length:")) {
+                return Long.parseLong(line.substring(line.indexOf(':') + 1).trim());
+            }
+        }
+        return -1;
+    }
+
+    public void streamFile(long printerId, String filename, OutputStream out) throws IOException {
+        var config = resolveConfig(printerId);
+        List<String> cmd = List.of(
+                "curl", "-k",
+                "-u", FTPS_USER + ":" + config.password(),
+                "--silent", "--show-error",
+                ftpsUrl(config.host(), "/" + filename)
+        );
+        Process process = new ProcessBuilder(cmd).start();
+
+        StringBuilder stderrBuf = new StringBuilder();
+        Thread stderrReader = new Thread(() -> {
+            try {
+                stderrBuf.append(new String(process.getErrorStream().readAllBytes()));
+            } catch (IOException ignored) {}
+        });
+        stderrReader.start();
+
         try {
-            List<String> cmd = List.of(
-                    "curl", "-k",
-                    "-u", FTPS_USER + ":" + config.password(),
-                    "--silent", "--show-error",
-                    "-o", tmp.toString(),
-                    ftpsUrl(config.host(), "/" + filename)
-            );
-            runCurl(cmd, "downloadFile:" + filename, printerId);
-            return Files.readAllBytes(tmp);
-        } finally {
-            Files.deleteIfExists(tmp);
+            process.getInputStream().transferTo(out);
+            stderrReader.join();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String stderr = stderrBuf.toString().trim();
+                logger.error("curl streamFile failed for printer [ID={}]: exit={}, stderr={}", printerId, exitCode, stderr);
+                throw new IOException("FTPS streamFile failed (curl exit " + exitCode + "): " + stderr);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            process.destroyForcibly();
+            throw new IOException("Interrupted during curl streamFile", e);
         }
     }
 

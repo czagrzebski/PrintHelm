@@ -40,7 +40,8 @@ public class BambuLabPrinter extends Printer {
         CALIBRATING_MICRO_LIDAR_2(18, "Calibrating the micro lidar"),
         CALIBRATING_EXTRUSION_FLOW(19, "Calibrating extrusion flow"),
         NOZZLE_TEMP_ERROR(20, "Paused due to nozzle temperature malfunction"),
-        BED_TEMP_ERROR(21, "Paused due to heat bed temperature malfunction");
+        BED_TEMP_ERROR(21, "Paused due to heat bed temperature malfunction"),
+        HEATBED_PREHEATING_2(54, "Heatbed preheating");
 
         private final int code;
         private final String description;

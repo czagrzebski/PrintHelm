@@ -2,6 +2,7 @@
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthService from '@/service/AuthService'
+import NotificationPanel from '@/components/NotificationPanel.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -25,6 +26,10 @@ async function logout() {
           <i class="mdi mdi-view-dashboard-outline" />
           Dashboard
         </RouterLink>
+        <RouterLink to="/job-orders" class="nav-link">
+          <i class="mdi mdi-clipboard-list-outline" />
+          Job Orders
+        </RouterLink>
         <RouterLink to="/settings" class="nav-link">
           <i class="mdi mdi-cog-outline" />
           Settings
@@ -32,19 +37,25 @@ async function logout() {
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user-info">
-          <i class="mdi mdi-account-circle-outline" />
-          <span>{{ authStore.username ?? 'User' }}</span>
+        <div class="footer-user">
+          <i class="mdi mdi-account-circle-outline footer-avatar" />
+          <span class="footer-username">{{ authStore.username ?? 'User' }}</span>
         </div>
-        <button class="logout-link" @click="logout">
-          <i class="mdi mdi-logout" />
-          Logout
-        </button>
+        <div class="footer-actions">
+          <NotificationPanel />
+          <button class="icon-btn" @click="logout" title="Logout">
+            <i class="mdi mdi-logout" />
+          </button>
+        </div>
       </div>
     </aside>
 
     <main class="main-content">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="$route.path" />
+        </Transition>
+      </RouterView>
     </main>
   </div>
 </template>
@@ -79,6 +90,12 @@ async function logout() {
 
 .sidebar-brand i {
   font-size: 1.25rem;
+  animation: brand-glow 3s ease-in-out infinite;
+}
+
+@keyframes brand-glow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.3)); }
+  50%       { filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.7)); }
 }
 
 .sidebar-nav {
@@ -119,44 +136,59 @@ async function logout() {
 }
 
 .sidebar-footer {
-  padding: 1rem 1.25rem 0.5rem;
+  padding: 0.75rem 0.875rem;
   border-top: 1px solid var(--ph-border);
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.user-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--ph-text-muted);
-  padding: 0.25rem 0;
 }
 
-.logout-link {
+.footer-user {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.footer-avatar {
+  font-size: 1.25rem;
+  color: var(--ph-text-muted);
+  flex-shrink: 0;
+}
+
+.footer-username {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ph-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
   border: none;
   border-radius: 8px;
   background: transparent;
   color: var(--ph-text-muted);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
-.logout-link i {
-  font-size: 0.9rem;
-  width: 1rem;
-  text-align: center;
-}
-
-.logout-link:hover {
+.icon-btn:hover {
   background: rgba(255, 255, 255, 0.06);
   color: var(--ph-text);
 }
@@ -166,5 +198,26 @@ async function logout() {
   overflow-y: auto;
   background: var(--ph-bg-mid);
   padding: 2rem;
+}
+</style>
+
+<!-- Non-scoped so transition classes reach child component roots -->
+<style>
+.page-enter-active {
+  animation: page-fade-in 0.55s ease both;
+}
+
+.page-leave-active {
+  animation: page-fade-out 0.55s ease both;
+}
+
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes page-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 </style>

@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
                         .requestMatchers("/api/role/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/job-order/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/notifications/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/printer/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()

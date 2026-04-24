@@ -13,6 +13,8 @@ import { usePrinterFiles } from '@/composables/usePrinterFiles'
 import { useHomingGuard } from '@/composables/useHomingGuard'
 import PrintJobInfoDialog from '@/components/PrintJobInfoDialog.vue'
 import type { ApiPrinterState, ApiFan, ApiLight, ApiMaterial, ApiIpcam, ApiXcam, ApiUpgradeState } from '@/client/printhelm-web-openapi'
+import { useNotificationsStore } from '@/stores/notifications'
+import type { ApiNotification, NotificationSeverity } from '@/service/NotificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -99,6 +101,7 @@ function setSort(key: 'name' | 'size' | 'date') {
 // ── Print job info dialog ─────────────────────────────────────────────────
 const showPrintInfo = ref(false)
 const infoFile = ref<string | null>(null)
+const infoFileSize = ref<number>(0)
 
 // ── Print dialog ──────────────────────────────────────────────────────────
 const showPrintDialog = ref(false)
@@ -214,6 +217,37 @@ function onKeyDown(e: KeyboardEvent) {
   }
 }
 
+// ── Notifications ─────────────────────────────────────────────────────────
+
+const notificationsStore = useNotificationsStore()
+
+const printerNotifications = computed(() =>
+  notificationsStore.sortedNotifications.filter(n => n.printerId === printerId)
+)
+
+function notifSeverityIcon(severity: NotificationSeverity | undefined) {
+  switch (severity) {
+    case 'ERROR':   return 'mdi mdi-alert-circle'
+    case 'WARNING': return 'mdi mdi-alert'
+    default:        return 'mdi mdi-information'
+  }
+}
+
+function notifSeverityClass(severity: NotificationSeverity | undefined) {
+  switch (severity) {
+    case 'ERROR':   return 'notif-error'
+    case 'WARNING': return 'notif-warning'
+    default:        return 'notif-info'
+  }
+}
+
+function notifDate(dateStr: string | undefined) {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+}
+
 // ── Data loading ─────────────────────────────────────────────────────────
 
 onMounted(async () => {
@@ -229,6 +263,7 @@ onMounted(async () => {
     })
 
     fetchFiles()
+    notificationsStore.fetchAll()
   } catch {
     error.value = 'Failed to load printer.'
   } finally {
@@ -393,7 +428,7 @@ onUnmounted(() => {
               <i class="mdi mdi-play" />
               <span>Resume</span>
             </button>
-            <button class="ctrl-btn" :disabled="commands.loading.value" @click="homingGuard.home()">
+            <button class="ctrl-btn" :disabled="commands.loading.value || isGcodeRunning" @click="homingGuard.home()">
               <i class="mdi mdi-home-outline" />
               <span>Home</span>
             </button>
@@ -528,7 +563,7 @@ onUnmounted(() => {
                   v-if="file.name.toLowerCase().endsWith('.3mf')"
                   class="ctrl-icon-btn"
                   title="View job info"
-                  @click="infoFile = file.name; showPrintInfo = true"
+                  @click="infoFile = file.name; infoFileSize = file.sizeBytes; showPrintInfo = true"
                 >
                   <i class="mdi mdi-information-outline" />
                 </button>
@@ -812,6 +847,70 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- Notifications -->
+        <div class="section-card pv-notif-card">
+          <div class="section-label">
+            <i class="mdi mdi-bell-outline" /> Notifications
+            <span v-if="notificationsStore.sortedNotifications.filter(n => n.printerId === printerId && !n.acknowledged).length" class="pv-notif-badge">
+              {{ notificationsStore.sortedNotifications.filter(n => n.printerId === printerId && !n.acknowledged).length }}
+            </span>
+            <div class="pv-notif-actions">
+              <button
+                class="pv-notif-action-btn"
+                title="Acknowledge all"
+                :disabled="printerNotifications.every(n => n.acknowledged)"
+                @click="printerNotifications.filter(n => !n.acknowledged).forEach(n => notificationsStore.acknowledge(n.id!))"
+              >
+                <i class="mdi mdi-check-all" />
+              </button>
+              <button
+                class="pv-notif-action-btn"
+                title="Clear acknowledged"
+                :disabled="printerNotifications.every(n => !n.acknowledged)"
+                @click="notificationsStore.clearAcknowledged()"
+              >
+                <i class="mdi mdi-delete-sweep-outline" />
+              </button>
+            </div>
+          </div>
+
+          <div v-if="printerNotifications.length === 0" class="empty-state">
+            <i class="mdi mdi-bell-off-outline" /> No notifications
+          </div>
+          <ul v-else class="pv-notif-list">
+            <li
+              v-for="n in printerNotifications"
+              :key="n.id"
+              class="pv-notif-item"
+              :class="{ 'pv-notif-item--unread': !n.acknowledged }"
+            >
+              <i :class="[notifSeverityIcon(n.severity), 'pv-notif-icon', notifSeverityClass(n.severity)]" />
+              <div class="pv-notif-body">
+                <div class="pv-notif-title">{{ n.title }}</div>
+                <div class="pv-notif-message">{{ n.message }}</div>
+                <div class="pv-notif-time">{{ notifDate(n.createdAt) }}</div>
+              </div>
+              <div class="pv-notif-row-actions">
+                <button
+                  v-if="!n.acknowledged"
+                  class="pv-notif-btn"
+                  title="Acknowledge"
+                  @click="notificationsStore.acknowledge(n.id!)"
+                >
+                  <i class="mdi mdi-check" />
+                </button>
+                <button
+                  class="pv-notif-btn pv-notif-btn--delete"
+                  title="Delete"
+                  @click="notificationsStore.remove(n.id!)"
+                >
+                  <i class="mdi mdi-close" />
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+
       </div>
     </div>
 
@@ -927,12 +1026,15 @@ onUnmounted(() => {
 
     <!-- Print job info dialog -->
     <Teleport to="body">
-      <PrintJobInfoDialog
-        v-if="showPrintInfo && infoFile"
-        :printer-id="printerId"
-        :filename="infoFile"
-        @close="showPrintInfo = false; infoFile = null"
-      />
+      <Transition name="pji-dialog">
+        <PrintJobInfoDialog
+          v-if="showPrintInfo && infoFile"
+          :printer-id="printerId"
+          :filename="infoFile"
+          :file-size="infoFileSize"
+          @close="showPrintInfo = false; infoFile = null"
+        />
+      </Transition>
     </Teleport>
 
     <!-- Camera fullscreen overlay -->
@@ -1746,6 +1848,144 @@ onUnmounted(() => {
 .light-toggle:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ── Printer notifications ───────────────────────────────────────────── */
+.pv-notif-card .section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pv-notif-badge {
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 4px;
+  background: #f87171;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
+.pv-notif-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pv-notif-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ph-text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s;
+}
+.pv-notif-action-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.08);
+  color: var(--ph-text);
+}
+.pv-notif-action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.pv-notif-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.pv-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--ph-border);
+  transition: background 0.1s;
+}
+
+.pv-notif-item--unread {
+  background: rgba(34,211,238,0.04);
+  border-color: rgba(34,211,238,0.15);
+}
+
+.pv-notif-icon {
+  font-size: 1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+.notif-error   { color: #f87171; }
+.notif-warning { color: #fbbf24; }
+.notif-info    { color: #22d3ee; }
+
+.pv-notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pv-notif-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ph-text);
+  line-height: 1.3;
+}
+
+.pv-notif-message {
+  font-size: 0.75rem;
+  color: var(--ph-text-muted);
+  margin-top: 0.1rem;
+  line-height: 1.4;
+}
+
+.pv-notif-time {
+  font-size: 0.68rem;
+  color: var(--ph-text-muted);
+  opacity: 0.6;
+  margin-top: 0.25rem;
+}
+
+.pv-notif-row-actions {
+  display: flex;
+  gap: 0.125rem;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pv-notif-item:hover .pv-notif-row-actions { opacity: 1; }
+
+.pv-notif-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ph-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+.pv-notif-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--ph-text);
+}
+.pv-notif-btn--delete:hover {
+  background: rgba(248,113,113,0.15);
+  color: #f87171;
 }
 
 /* ── Shared ─────────────────────────────────────────────────────────── */

@@ -171,6 +171,18 @@ async function login() {
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 1px 0 rgba(255, 255, 255, 0.08) inset;
   overflow: hidden;
+  animation: card-enter 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .login-header {
@@ -194,6 +206,12 @@ async function login() {
   justify-content: center;
   margin-bottom: 1.25rem;
   box-shadow: 0 0 24px rgba(34, 211, 238, 0.15);
+  animation: icon-float 3.5s ease-in-out infinite;
+}
+
+@keyframes icon-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
 }
 
 .login-icon-wrap i {
