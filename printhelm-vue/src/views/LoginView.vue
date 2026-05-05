@@ -116,7 +116,7 @@ async function login() {
               placeholder="Enter password"
               :feedback="false"
               toggle-mask
-              autocomplete="current-password"
+              :pt="{ pcInputText: { root: { autocomplete: 'current-password' } } }"
               :disabled="loading"
               fluid
             />

@@ -120,3 +120,51 @@ jobs:
             docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
             docker push ghcr.io/${{ github.repository_owner }}/printhelm-frontend:latest
           fi
+
+  build-playwright:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Clean workspace
+        run: rm -rf $GITHUB_WORKSPACE/*
+
+      - name: Clean Docker
+        run: docker system prune -af --volumes
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set version tags
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF_NAME}" =~ ^release/ ]]; then
+            VERSION="${GITHUB_REF_NAME#release/}"
+            echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+            echo "latest=latest" >> $GITHUB_OUTPUT
+          else
+            BRANCH=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | tr '/' '-')
+            echo "tag=${BRANCH}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Playwright Docker image
+        env:
+          TAG: ${{ steps.vars.outputs.tag }}
+          LATEST: ${{ steps.vars.outputs.latest }}
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/printhelm-playwright:${TAG}
+          docker build -f playwright-tests/Dockerfile -t $IMAGE playwright-tests/
+          docker push $IMAGE
+          if [ -n "${LATEST}" ]; then
+            docker tag $IMAGE ghcr.io/${{ github.repository_owner }}/printhelm-playwright:latest
+            docker push ghcr.io/${{ github.repository_owner }}/printhelm-playwright:latest
+          fi
