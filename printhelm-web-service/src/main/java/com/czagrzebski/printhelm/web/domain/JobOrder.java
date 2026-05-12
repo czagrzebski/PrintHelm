@@ -22,7 +22,7 @@ public class JobOrder {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
     private JobOrderStatus status = JobOrderStatus.SUBMITTED;
 
     @Column(name = "requirements", length = 2000)
@@ -58,6 +58,9 @@ public class JobOrder {
 
     @Column(name = "assigned_filename", length = 200)
     private String assignedFilename;
+
+    @Column(name = "print_started_at")
+    private LocalDateTime printStartedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -111,4 +114,7 @@ public class JobOrder {
 
     public String getMongoGcodeMetadataId() { return mongoGcodeMetadataId; }
     public void setMongoGcodeMetadataId(String mongoGcodeMetadataId) { this.mongoGcodeMetadataId = mongoGcodeMetadataId; }
+
+    public LocalDateTime getPrintStartedAt() { return printStartedAt; }
+    public void setPrintStartedAt(LocalDateTime printStartedAt) { this.printStartedAt = printStartedAt; }
 }

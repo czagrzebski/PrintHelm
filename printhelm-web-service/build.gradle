@@ -47,6 +47,9 @@ dependencies {
 
     // use the contract project as a dependency
     implementation project(':printhelm-web-contract')
+
+    // Spring AI
+    implementation 'org.springframework.ai:spring-ai-starter-model-anthropic:1.0.0'
 }
 
 springBoot {

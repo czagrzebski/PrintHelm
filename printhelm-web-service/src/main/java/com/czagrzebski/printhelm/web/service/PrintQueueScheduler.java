@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -22,6 +23,7 @@ public class PrintQueueScheduler {
     private static final Set<String> IDLE_STATES = Set.of("IDLE", "FINISH", "FAILED");
     private static final Set<String> BUSY_STATES = Set.of("RUNNING", "PAUSE", "PREPARE");
     private static final Set<String> CANCEL_STATES = Set.of("IDLE", "FAILED");
+    private static final long PRINT_START_GRACE_SECONDS = 90;
 
     private final PrinterRepository printerRepository;
     private final JobOrderRepository jobOrderRepository;
@@ -61,6 +63,7 @@ public class PrintQueueScheduler {
         if (!IDLE_STATES.contains(gcodeState)) return;
 
         // Handle any lingering PRINTING jobs based on how the printer stopped
+        LocalDateTime graceCutoff = LocalDateTime.now().minusSeconds(PRINT_START_GRACE_SECONDS);
         List<JobOrder> printingJobs = jobOrderRepository
                 .findByAssignedPrinter_PrinterIdAndStatus(printerId, JobOrderStatus.PRINTING);
         for (JobOrder job : printingJobs) {
@@ -69,10 +72,17 @@ public class PrintQueueScheduler {
                 jobOrderRepository.save(job);
                 logger.info("Marked job [ID={}] as PRINT_FINISHED for printer [ID={}]", job.getOrderId(), printerId);
             } else if (CANCEL_STATES.contains(gcodeState)) {
+                // Guard against reverting a job that was just started — the printer's gcodeState
+                // may still be stale (IDLE) in the cache while the print is actually launching.
+                // Only revert after the grace period has elapsed.
+                if (job.getPrintStartedAt() != null && job.getPrintStartedAt().isAfter(graceCutoff)) {
+                    continue;
+                }
                 job.setStatus(JobOrderStatus.READY_TO_PRINT);
                 job.setAssignedPrinter(null);
                 job.setAssignedFilename(null);
                 job.setQueuePosition(null);
+                job.setPrintStartedAt(null);
                 jobOrderRepository.save(job);
                 logger.info("Reverted job [ID={}] to READY_TO_PRINT after cancelled/failed print on printer [ID={}]", job.getOrderId(), printerId);
             }

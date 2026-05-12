@@ -36,7 +36,7 @@ public class PrintQueueController {
 
     @DeleteMapping("/{jobOrderId}")
     public ResponseEntity<Void> removeFromQueue(@PathVariable long printerId,
-                                                @PathVariable long jobOrderId) {
+                                                @PathVariable long jobOrderId) throws MqttException {
         printQueueService.removeFromQueue(printerId, jobOrderId);
         return ResponseEntity.noContent().build();
     }

@@ -148,6 +148,38 @@ async function login() {
   overflow: hidden;
 }
 
+/* Aurora blobs drifting behind the particles */
+.login-container::before,
+.login-container::after {
+  content: '';
+  position: absolute;
+  width: 55vmax;
+  height: 55vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-container::before {
+  top: -22vmax;
+  left: -14vmax;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.14), transparent 65%);
+  animation: blob-drift 18s ease-in-out infinite alternate;
+}
+
+.login-container::after {
+  bottom: -24vmax;
+  right: -16vmax;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.12), transparent 65%);
+  animation: blob-drift 22s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes blob-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vmax, 4vmax, 0) scale(1.15); }
+}
+
 .particles-canvas {
   position: absolute;
   inset: 0;
@@ -161,17 +193,32 @@ async function login() {
   z-index: 1;
   width: 100%;
   max-width: 420px;
-  background: rgba(15, 32, 39, 0.72);
+  background:
+    linear-gradient(rgba(10, 22, 30, 0.82), rgba(10, 22, 30, 0.82)) padding-box,
+    linear-gradient(130deg,
+      rgba(34, 211, 238, 0.55),
+      rgba(34, 211, 238, 0.08) 30%,
+      rgba(129, 140, 248, 0.1) 65%,
+      rgba(129, 140, 248, 0.5)) border-box;
+  background-size: 100% 100%, 300% 300%;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(34, 211, 238, 0.12);
+  border: 1px solid transparent;
   border-radius: 20px;
   box-shadow:
     0 32px 80px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 48px rgba(34, 211, 238, 0.07),
     0 1px 0 rgba(255, 255, 255, 0.08) inset;
   overflow: hidden;
-  animation: card-enter 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation:
+    card-enter 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
+    border-pan 7s ease infinite;
+}
+
+@keyframes border-pan {
+  0%   { background-position: 0 0, 0% 50%; }
+  50%  { background-position: 0 0, 100% 50%; }
+  100% { background-position: 0 0, 0% 50%; }
 }
 
 @keyframes card-enter {
@@ -253,6 +300,15 @@ async function login() {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  animation: field-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.field:nth-of-type(1) { animation-delay: 0.15s; }
+.field:nth-of-type(2) { animation-delay: 0.25s; }
+
+@keyframes field-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .field label {
@@ -265,5 +321,27 @@ async function login() {
 
 .login-btn {
   margin-top: 0.25rem;
+  position: relative;
+  overflow: hidden;
+  animation: field-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+
+/* shine sweep across the sign-in button */
+.login-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: skewX(-20deg);
+  animation: btn-shine 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes btn-shine {
+  0%, 60% { left: -80%; }
+  100%    { left: 130%; }
 }
 </style>

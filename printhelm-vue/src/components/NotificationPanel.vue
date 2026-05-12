@@ -194,14 +194,18 @@ function formatDate(dateStr: string | undefined) {
   left: 0;
   width: 360px;
   max-height: 480px;
-  background: var(--ph-bg-darkest);
-  border: 1px solid var(--ph-border);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: var(--ph-glass-heavy);
+  backdrop-filter: blur(var(--ph-blur));
+  -webkit-backdrop-filter: blur(var(--ph-blur));
+  border: 1px solid var(--ph-border-strong);
+  border-radius: 14px;
+  box-shadow: var(--ph-shadow-pop);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   z-index: 1000;
+  animation: ph-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: bottom left;
 }
 
 .panel-header {

@@ -829,12 +829,16 @@ function fmtBrimType(raw: string): string {
   width: 100%;
   max-width: 1280px;
   max-height: 90vh;
-  background: #0f2027;
-  border: 1px solid var(--ph-border);
-  border-radius: 12px;
+  background: var(--ph-glass-heavy);
+  backdrop-filter: blur(var(--ph-blur));
+  -webkit-backdrop-filter: blur(var(--ph-blur));
+  border: 1px solid var(--ph-border-strong);
+  border-radius: 16px;
+  box-shadow: var(--ph-shadow-pop);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: ph-scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────── */

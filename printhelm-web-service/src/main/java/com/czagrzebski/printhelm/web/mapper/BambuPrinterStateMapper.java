@@ -18,15 +18,20 @@ import com.czagrzebski.printhelm.web.dto.bambulab.PrintDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.TrayDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.UpgradeStateDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.XcamDTO;
+import com.czagrzebski.printhelm.web.ai.BambuLabErrorRegistry;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public abstract class BambuPrinterStateMapper {
+
+    @Autowired
+    protected BambuLabErrorRegistry bambuLabErrorRegistry;
 
     @Mapping(target = "bedTemp", source = "stateDTO.print.bedTemper")
     @Mapping(target = "file", source = "stateDTO.print.file")
@@ -57,12 +62,24 @@ public abstract class BambuPrinterStateMapper {
     @Mapping(target = "spdLvl", source = "stateDTO.print.spdLvl")
     @Mapping(target = "spdMag", source = "stateDTO.print.spdMag")
     @Mapping(target = "printError", source = "stateDTO.print.printError")
+    @Mapping(target = "printErrorDescription", source = "stateDTO.print", qualifiedByName = "printErrorDescription")
     @Mapping(target = "mcPrintErrorCode", source = "stateDTO.print", qualifiedByName = "mcPrintErrorCode")
     @Mapping(target = "failReason", source = "stateDTO.print", qualifiedByName = "failReason")
+    @Mapping(target = "hmsErrors", source = "stateDTO.print", qualifiedByName = "hmsErrors")
     @Mapping(target = "ipcam", source = "stateDTO.print.ipcam", qualifiedByName = "ipcam")
     @Mapping(target = "xcam", source = "stateDTO.print.xcam", qualifiedByName = "xcam")
     @Mapping(target = "upgradeState", source = "stateDTO.print.upgradeState", qualifiedByName = "upgradeState")
     public abstract ApiPrinterState bambuPrinterStateToPrinterState(BambulabStateDTO stateDTO);
+
+    @Named("printErrorDescription")
+    protected String getPrintErrorDescription(PrintDTO printDTO) {
+        return bambuLabErrorRegistry.decodePrintError(printDTO.getPrintError());
+    }
+
+    @Named("hmsErrors")
+    protected List<String> getHmsErrors(PrintDTO printDTO) {
+        return bambuLabErrorRegistry.decodeHmsList(printDTO.getHms());
+    }
 
     @Named("mcPrintErrorCode")
     protected String getMcPrintErrorCode(PrintDTO printDTO) {
@@ -73,7 +90,13 @@ public abstract class BambuPrinterStateMapper {
     @Named("failReason")
     protected String getFailReason(PrintDTO printDTO) {
         String reason = printDTO.getFailReason();
-        return (reason == null || reason.equals("0") || reason.isBlank()) ? null : reason;
+        if (reason == null || reason.equals("0") || reason.isBlank()) return null;
+        try {
+            String decoded = bambuLabErrorRegistry.decodePrintError(Integer.parseInt(reason));
+            return decoded != null ? decoded : reason;
+        } catch (NumberFormatException e) {
+            return reason;
+        }
     }
 
     @Named("state")

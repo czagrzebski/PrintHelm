@@ -6,6 +6,7 @@ All URIs are relative to *https://printhelm.czagrzebski.dev/api/v1*
 |------------- | ------------- | -------------|
 |[**createPrinter**](#createprinter) | **POST** /printer/createPrinter | Create a new printer|
 |[**deletePrinter**](#deleteprinter) | **DELETE** /printer/{id} | Delete a printer|
+|[**diagnosePrinter**](#diagnoseprinter) | **POST** /printer/{id}/diagnose | Run an AI-powered diagnostic on a printer|
 |[**getPrinterById**](#getprinterbyid) | **GET** /printer/{id} | Get a printer by ID|
 |[**getPrinters**](#getprinters) | **GET** /printer | Get all printers|
 |[**updatePrinter**](#updateprinter) | **PUT** /printer/{id} | Update a printer|
@@ -110,6 +111,57 @@ No authorization required
 |-------------|-------------|------------------|
 |**204** | Printer deleted |  -  |
 |**404** | Not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **diagnosePrinter**
+> ApiDiagnosticReport diagnosePrinter()
+
+
+### Example
+
+```typescript
+import {
+    PrinterApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PrinterApi(configuration);
+
+let id: number; // (default to undefined)
+
+const { status, data } = await apiInstance.diagnosePrinter(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**ApiDiagnosticReport**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Diagnostic report |  -  |
+|**404** | Printer not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

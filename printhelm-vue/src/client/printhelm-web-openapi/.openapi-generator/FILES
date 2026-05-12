@@ -8,10 +8,17 @@ docs/ApiAddPrinterConnectionRequest.md
 docs/ApiAdminResetPasswordRequest.md
 docs/ApiAuthResponse.md
 docs/ApiChangePasswordRequest.md
+docs/ApiChatMessageItem.md
+docs/ApiChatModel.md
+docs/ApiChatRequest.md
+docs/ApiChatResponse.md
+docs/ApiChatSessionDetail.md
+docs/ApiChatSessionSummary.md
 docs/ApiConnectionConfig.md
 docs/ApiCreateJobOrderRequest.md
 docs/ApiCreatePrinterRequest.md
 docs/ApiCreateUserRequest.md
+docs/ApiDiagnosticReport.md
 docs/ApiErrorResponse.md
 docs/ApiFan.md
 docs/ApiGcodeFilamentInfo.md
@@ -31,6 +38,7 @@ docs/ApiPrintFileRequest.md
 docs/ApiPrinterFile.md
 docs/ApiPrinterResponse.md
 docs/ApiPrinterState.md
+docs/ApiProposedAction.md
 docs/ApiQueueJobRequest.md
 docs/ApiQueueReorderEntry.md
 docs/ApiQueueReorderRequest.md
@@ -47,6 +55,7 @@ docs/ApiUpgradeState.md
 docs/ApiUserResponse.md
 docs/ApiXcam.md
 docs/AuthApi.md
+docs/ChatApi.md
 docs/ConnectionType.md
 docs/CreatePrinter201Response.md
 docs/JobOrderApi.md

@@ -753,11 +753,13 @@ onMounted(async () => {
 
 /* ── Unified tab card surface ── */
 .tabs-card {
-  background: #162830;
-  border: 1px solid var(--ph-border);
-  border-radius: 12px;
+  background: var(--ph-glass);
+  backdrop-filter: blur(var(--ph-blur));
+  -webkit-backdrop-filter: blur(var(--ph-blur));
+  border: 1px solid var(--ph-glass-border);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--ph-shadow-card), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
   animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 

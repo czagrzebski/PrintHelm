@@ -36,7 +36,9 @@ Name | Type | Description | Notes
 **spdLvl** | **number** | Speed level preset (1&#x3D;silent, 2&#x3D;standard, 3&#x3D;sport, 4&#x3D;ludicrous) | [optional] [default to undefined]
 **spdMag** | **number** | Speed magnitude as a percentage | [optional] [default to undefined]
 **printError** | **number** | Print error code (0 &#x3D; no error) | [optional] [default to undefined]
+**printErrorDescription** | **string** | Human-readable description of the printError code, decoded from the error registry | [optional] [default to undefined]
 **mcPrintErrorCode** | **string** | Motion controller print error code | [optional] [default to undefined]
+**hmsErrors** | **Array&lt;string&gt;** | Decoded HMS (Health Management System) error descriptions from the printer hardware | [optional] [default to undefined]
 **failReason** | **string** | Human-readable failure reason if print failed | [optional] [default to undefined]
 **materialSystem** | [**ApiMaterialSystem**](ApiMaterialSystem.md) |  | [optional] [default to undefined]
 **fans** | [**Array&lt;ApiFan&gt;**](ApiFan.md) |  | [optional] [default to undefined]
@@ -82,7 +84,9 @@ const instance: ApiPrinterState = {
     spdLvl,
     spdMag,
     printError,
+    printErrorDescription,
     mcPrintErrorCode,
+    hmsErrors,
     failReason,
     materialSystem,
     fans,

@@ -14,20 +14,44 @@ a:hover {
   cursor: pointer;
 }
 
-/* ── PrimeVue dialog global dark theme ───────────────────────────────── */
+/* ── Shared page header (used by every view) ─────────────────────────── */
+.page-title {
+  background: var(--ph-gradient-brand);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent !important;
+  animation: ph-gradient-pan 8s ease infinite;
+  width: fit-content;
+}
+
+/* ── PrimeVue dialog — glass ─────────────────────────────────────────── */
 .p-dialog {
-  background: #162830 !important;
-  border: 1px solid var(--ph-border) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6) !important;
+  background: var(--ph-glass-heavy) !important;
+  backdrop-filter: blur(var(--ph-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--ph-blur)) !important;
+  border: 1px solid var(--ph-border-strong) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    var(--ph-shadow-pop),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
   color: var(--ph-text) !important;
+  animation: ph-scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.p-dialog-mask.p-overlay-mask {
+  background: rgba(4, 10, 14, 0.55) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
 }
 
 .p-dialog-header {
-  background: #162830 !important;
+  background: transparent !important;
   color: var(--ph-text) !important;
   border-bottom: 1px solid var(--ph-border) !important;
-  border-radius: 12px 12px 0 0 !important;
+  border-radius: 16px 16px 0 0 !important;
   padding: 0.875rem 1.25rem !important;
 }
 
@@ -47,25 +71,29 @@ a:hover {
 }
 
 .p-dialog-content {
-  background: #162830 !important;
+  background: transparent !important;
   color: var(--ph-text) !important;
   padding: 1.25rem !important;
 }
 
 .p-dialog-footer {
-  background: #162830 !important;
+  background: transparent !important;
   border-top: 1px solid var(--ph-border) !important;
-  border-radius: 0 0 12px 12px !important;
+  border-radius: 0 0 16px 16px !important;
   padding: 0.75rem 1.25rem !important;
 }
 
-/* ── PrimeVue Card dark theme ────────────────────────────────── */
+/* ── PrimeVue Card — glass ───────────────────────────────────────────── */
 .p-card {
-  background: #162830 !important;
-  border: 1px solid var(--ph-border) !important;
-  border-radius: 12px !important;
+  background: var(--ph-glass) !important;
+  backdrop-filter: blur(var(--ph-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--ph-blur)) !important;
+  border: 1px solid var(--ph-glass-border) !important;
+  border-radius: 16px !important;
   color: var(--ph-text) !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+  box-shadow:
+    var(--ph-shadow-card),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
 }
 
 .p-card-body {
@@ -88,7 +116,20 @@ a:hover {
   padding: 0 !important;
 }
 
-/* ── PrimeVue DataTable dark theme ───────────────────────────── */
+/* ── PrimeVue Button — primary glow ──────────────────────────────────── */
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn):not(.p-button-contrast) {
+  transition: box-shadow 0.25s ease, transform 0.15s ease !important;
+}
+
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn):not(.p-button-contrast):hover {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.35) !important;
+}
+
+.p-button:not(.p-button-text):active {
+  transform: scale(0.98);
+}
+
+/* ── PrimeVue DataTable — dark glass ─────────────────────────────────── */
 .p-datatable {
   background: transparent !important;
   color: var(--ph-text) !important;
@@ -98,10 +139,10 @@ a:hover {
 }
 
 .p-datatable .p-datatable-thead > tr > th {
-  background: rgba(15, 32, 39, 0.6) !important;
+  background: rgba(8, 18, 25, 0.55) !important;
   color: var(--ph-text-muted) !important;
   border-color: var(--ph-border) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(148, 210, 230, 0.12) !important;
   font-size: 0.72rem !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
@@ -114,7 +155,7 @@ a:hover {
   background: transparent !important;
   color: var(--ph-text) !important;
   border-color: transparent !important;
-  transition: background 0.12s !important;
+  transition: background 0.15s, box-shadow 0.15s !important;
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
@@ -130,7 +171,11 @@ a:hover {
 }
 
 .p-datatable .p-datatable-tbody > tr:hover > td {
-  background: rgba(34, 211, 238, 0.04) !important;
+  background: rgba(34, 211, 238, 0.05) !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  box-shadow: inset 2px 0 0 var(--ph-accent) !important;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-highlight > td {
@@ -139,7 +184,8 @@ a:hover {
 }
 
 .p-datatable .p-datatable-loading-overlay {
-  background: rgba(15, 32, 39, 0.7) !important;
+  background: rgba(6, 13, 19, 0.7) !important;
+  backdrop-filter: blur(2px) !important;
 }
 
 .p-datatable .p-datatable-empty-message > td {
@@ -159,7 +205,7 @@ a:hover {
   background: rgba(34, 211, 238, 0.06) !important;
 }
 
-/* ── PrimeVue Tabs dark theme ────────────────────────────────── */
+/* ── PrimeVue Tabs ───────────────────────────────────────────────────── */
 .p-tabs {
   background: transparent !important;
 }
@@ -192,6 +238,7 @@ a:hover {
 .p-tab.p-tab-active {
   color: var(--ph-accent) !important;
   border-color: var(--ph-accent) !important;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.5) !important;
 }
 
 .p-tabpanels {
@@ -204,7 +251,7 @@ a:hover {
   color: var(--ph-text) !important;
 }
 
-/* ── PrimeVue Tag dark refinements ───────────────────────────── */
+/* ── PrimeVue Tag refinements ────────────────────────────────────────── */
 .p-tag {
   font-size: 0.7rem !important;
   font-weight: 600 !important;
@@ -213,7 +260,11 @@ a:hover {
   padding: 0.2rem 0.5rem !important;
 }
 
-/* ── PrimeVue Stepper dark theme ─────────────────────────────── */
+.p-tag.p-tag-success {
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.18) !important;
+}
+
+/* ── PrimeVue Stepper ────────────────────────────────────────────────── */
 .p-stepper,
 .p-steplist,
 .p-steppanels,
@@ -256,6 +307,7 @@ a:hover {
   width: 1.875rem !important;
   height: 1.875rem !important;
   min-width: 1.875rem !important;
+  transition: all 0.3s ease !important;
 }
 
 .p-step[data-p-active='true'] .p-step-number,
@@ -263,7 +315,7 @@ a:hover {
   background: rgba(34, 211, 238, 0.18) !important;
   color: var(--ph-accent) !important;
   border-color: var(--ph-accent) !important;
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.25) !important;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35) !important;
 }
 
 /* completed steps */
@@ -281,13 +333,33 @@ a:hover {
   align-self: center !important;
 }
 
-/* ── PrimeVue ProgressBar dark theme ─────────────────────────── */
+/* ── PrimeVue ProgressBar — animated shimmer fill ────────────────────── */
 .p-progressbar {
   background: rgba(255, 255, 255, 0.08) !important;
   border-radius: 99px !important;
+  overflow: hidden !important;
 }
 
 .p-progressbar-value {
-  background: var(--ph-accent) !important;
+  background:
+    linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 70%
+    ),
+    linear-gradient(90deg, #06b6d4, #22d3ee) !important;
+  background-size: 200% 100%, 100% 100% !important;
   border-radius: 99px !important;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.4) !important;
+  animation: ph-shimmer 2.2s linear infinite !important;
+  transition: width 0.5s ease !important;
+}
+
+/* ── PrimeVue Toast — glass ──────────────────────────────────────────── */
+.p-toast-message {
+  backdrop-filter: blur(var(--ph-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--ph-blur)) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--ph-shadow-pop) !important;
 }

@@ -9,6 +9,7 @@ import ProgressBar from 'primevue/progressbar'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/Configuration'
 import { usePrinterSocket } from '@/composables/usePrinterSocket'
+import { useCountUp } from '@/composables/useCountUp'
 import type { ApiPrinterState } from '@/client/printhelm-web-openapi'
 
 const authStore = useAuthStore()
@@ -45,22 +46,31 @@ const printers = ref<PrinterRow[]>([])
 const loading = ref(true)
 const error = ref('')
 
-const stats = computed(() => {
-  const total = printers.value.length
-  const printing = printers.value.filter(
-    (p) => p.state?.toLowerCase().includes('print'),
-  ).length
-  const idle = printers.value.filter(
-    (p) => p.state && !p.state.toLowerCase().includes('print') && p.state !== 'OFFLINE',
-  ).length
-  const offline = printers.value.filter((p) => !p.state || p.state === 'OFFLINE').length
-  return [
-    { label: 'Total Printers', value: total,    icon: 'mdi mdi-printer-3d',         color: '#22d3ee', bg: 'rgba(34,211,238,0.1)'  },
-    { label: 'Printing',       value: printing,  icon: 'mdi mdi-printer-3d-nozzle-heat', color: '#4ade80', bg: 'rgba(74,222,128,0.1)'  },
-    { label: 'Idle',           value: idle,      icon: 'mdi mdi-printer-3d-nozzle',      color: '#38bdf8', bg: 'rgba(56,189,248,0.1)'  },
-    { label: 'Offline',        value: offline,   icon: 'mdi mdi-printer-3d-off',         color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
-  ]
-})
+const totalCount = computed(() => printers.value.length)
+const printingCount = computed(
+  () => printers.value.filter((p) => p.state?.toLowerCase().includes('print')).length,
+)
+const idleCount = computed(
+  () =>
+    printers.value.filter(
+      (p) => p.state && !p.state.toLowerCase().includes('print') && p.state !== 'OFFLINE',
+    ).length,
+)
+const offlineCount = computed(
+  () => printers.value.filter((p) => !p.state || p.state === 'OFFLINE').length,
+)
+
+const totalDisplay = useCountUp(totalCount)
+const printingDisplay = useCountUp(printingCount)
+const idleDisplay = useCountUp(idleCount)
+const offlineDisplay = useCountUp(offlineCount)
+
+const stats = computed(() => [
+  { label: 'Total Printers', value: totalDisplay.value,    live: false,                     icon: 'mdi mdi-printer-3d',             color: '#22d3ee', bg: 'rgba(34,211,238,0.1)'  },
+  { label: 'Printing',       value: printingDisplay.value, live: printingCount.value > 0,   icon: 'mdi mdi-printer-3d-nozzle-heat', color: '#4ade80', bg: 'rgba(74,222,128,0.1)'  },
+  { label: 'Idle',           value: idleDisplay.value,     live: false,                     icon: 'mdi mdi-printer-3d-nozzle',      color: '#38bdf8', bg: 'rgba(56,189,248,0.1)'  },
+  { label: 'Offline',        value: offlineDisplay.value,  live: false,                     icon: 'mdi mdi-printer-3d-off',         color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+])
 
 function statusSeverity(state?: string) {
   if (!state) return 'secondary'
@@ -134,6 +144,10 @@ onMounted(fetchPrinters)
         <h2 class="page-title">Dashboard</h2>
         <p class="page-subtitle">Welcome back, {{ authStore.username ?? 'User' }}</p>
       </div>
+      <div class="live-badge" :class="{ 'live-badge--active': printingCount > 0 }">
+        <span class="live-dot" />
+        {{ printingCount > 0 ? `${printingCount} printing now` : 'Fleet idle' }}
+      </div>
     </div>
 
     <div class="stats-grid">
@@ -145,11 +159,12 @@ onMounted(fetchPrinters)
       >
         <template #content>
           <div class="stat-content">
-            <div class="stat-icon" :style="{ background: stat.bg, color: stat.color, borderColor: stat.color + '33' }">
+            <div class="stat-icon" :style="{ background: stat.bg, color: stat.color, borderColor: stat.color + '33', boxShadow: `0 0 18px ${stat.color}22` }">
               <i :class="stat.icon" />
+              <span v-if="stat.live" class="stat-live-dot" />
             </div>
             <div class="stat-info">
-              <span class="stat-value">{{ stat.value }}</span>
+              <span class="stat-value" :style="stat.live ? { color: stat.color } : undefined">{{ stat.value }}</span>
               <span class="stat-label">{{ stat.label }}</span>
             </div>
           </div>
@@ -267,6 +282,39 @@ onMounted(fetchPrinters)
   animation: fade-up 0.3s ease-out both;
 }
 
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 99px;
+  border: 1px solid var(--ph-border-strong);
+  background: var(--ph-glass);
+  backdrop-filter: blur(var(--ph-blur));
+  color: var(--ph-text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.live-badge--active {
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.12);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ph-text-muted);
+  flex-shrink: 0;
+}
+
+.live-badge--active .live-dot {
+  background: #4ade80;
+  animation: ph-pulse-dot 1.8s ease-out infinite;
+}
+
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -293,8 +341,11 @@ onMounted(fetchPrinters)
 }
 
 .stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-4px);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(34, 211, 238, 0.08) !important;
+  border-color: rgba(34, 211, 238, 0.25) !important;
 }
 
 .printers-card {
@@ -319,15 +370,33 @@ onMounted(fetchPrinters)
 }
 
 .stat-icon {
+  position: relative;
   width: 3rem;
   height: 3rem;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
   flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+.stat-live-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4ade80;
+  border: 2px solid var(--ph-bg-darkest);
+  animation: ph-pulse-dot 1.8s ease-out infinite;
 }
 
 .stat-info {
@@ -340,6 +409,8 @@ onMounted(fetchPrinters)
   font-weight: 700;
   line-height: 1;
   color: var(--ph-text);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
 }
 
 .stat-label {

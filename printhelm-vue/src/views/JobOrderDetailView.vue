@@ -663,10 +663,19 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
 
 /* ── Section card ────────────────────────────────────────── */
 .section-card {
-  background: rgba(15, 32, 39, 0.6);
-  border: 1px solid var(--ph-border);
-  border-radius: 12px;
+  background: var(--ph-glass);
+  backdrop-filter: blur(var(--ph-blur));
+  -webkit-backdrop-filter: blur(var(--ph-blur));
+  border: 1px solid var(--ph-glass-border);
+  border-radius: 16px;
   padding: 1.25rem;
+  box-shadow: var(--ph-shadow-card), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  animation: ph-fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: border-color 0.25s;
+}
+
+.section-card:hover {
+  border-color: rgba(34, 211, 238, 0.18);
 }
 .section-label {
   font-size: 0.75rem;

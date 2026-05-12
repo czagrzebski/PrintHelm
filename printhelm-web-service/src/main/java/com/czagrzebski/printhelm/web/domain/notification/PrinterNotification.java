@@ -18,11 +18,11 @@ public class PrinterNotification {
     private String printerName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(50)")
     private NotificationType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(50)")
     private NotificationSeverity severity;
 
     @Column(nullable = false)

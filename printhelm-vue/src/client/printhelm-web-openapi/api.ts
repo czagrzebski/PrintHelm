@@ -118,6 +118,167 @@ export interface ApiChangePasswordRequest {
 /**
  * 
  * @export
+ * @interface ApiChatMessageItem
+ */
+export interface ApiChatMessageItem {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatMessageItem
+     */
+    'role': ApiChatMessageItemRoleEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatMessageItem
+     */
+    'content': string;
+}
+
+export const ApiChatMessageItemRoleEnum = {
+    User: 'user',
+    Assistant: 'assistant'
+} as const;
+
+export type ApiChatMessageItemRoleEnum = typeof ApiChatMessageItemRoleEnum[keyof typeof ApiChatMessageItemRoleEnum];
+
+/**
+ * 
+ * @export
+ * @enum {string}
+ */
+
+export const ApiChatModel = {
+    Haiku: 'haiku',
+    Sonnet: 'sonnet'
+} as const;
+
+export type ApiChatModel = typeof ApiChatModel[keyof typeof ApiChatModel];
+
+
+/**
+ * 
+ * @export
+ * @interface ApiChatRequest
+ */
+export interface ApiChatRequest {
+    /**
+     * The user\'s new message text
+     * @type {string}
+     * @memberof ApiChatRequest
+     */
+    'content': string;
+    /**
+     * Existing session ID to continue; omit to start a new session
+     * @type {string}
+     * @memberof ApiChatRequest
+     */
+    'sessionId'?: string;
+    /**
+     * 
+     * @type {ApiChatModel}
+     * @memberof ApiChatRequest
+     */
+    'model'?: ApiChatModel;
+}
+
+
+/**
+ * 
+ * @export
+ * @interface ApiChatResponse
+ */
+export interface ApiChatResponse {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatResponse
+     */
+    'message'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatResponse
+     */
+    'sessionId'?: string;
+    /**
+     * 
+     * @type {Array<ApiProposedAction>}
+     * @memberof ApiChatResponse
+     */
+    'proposedActions'?: Array<ApiProposedAction>;
+}
+/**
+ * 
+ * @export
+ * @interface ApiChatSessionDetail
+ */
+export interface ApiChatSessionDetail {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionDetail
+     */
+    'sessionId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionDetail
+     */
+    'title'?: string;
+    /**
+     * 
+     * @type {Array<ApiChatMessageItem>}
+     * @memberof ApiChatSessionDetail
+     */
+    'messages'?: Array<ApiChatMessageItem>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionDetail
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionDetail
+     */
+    'updatedAt'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiChatSessionSummary
+ */
+export interface ApiChatSessionSummary {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionSummary
+     */
+    'sessionId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionSummary
+     */
+    'title'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionSummary
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiChatSessionSummary
+     */
+    'updatedAt'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiConnectionConfig
  */
 export interface ApiConnectionConfig {
@@ -261,6 +422,60 @@ export interface ApiCreateUserRequest {
      */
     'roles'?: Array<ApiRole>;
 }
+/**
+ * 
+ * @export
+ * @interface ApiDiagnosticReport
+ */
+export interface ApiDiagnosticReport {
+    /**
+     * True if no issues were detected
+     * @type {boolean}
+     * @memberof ApiDiagnosticReport
+     */
+    'healthy'?: boolean;
+    /**
+     * Short summary of the detected issue, or null if healthy
+     * @type {string}
+     * @memberof ApiDiagnosticReport
+     */
+    'issue'?: string;
+    /**
+     * Most probable root cause of the issue
+     * @type {string}
+     * @memberof ApiDiagnosticReport
+     */
+    'likelyCause'?: string;
+    /**
+     * Severity of the issue (NONE, LOW, MEDIUM, HIGH, CRITICAL)
+     * @type {string}
+     * @memberof ApiDiagnosticReport
+     */
+    'severity'?: ApiDiagnosticReportSeverityEnum;
+    /**
+     * Ordered list of steps to resolve the issue
+     * @type {Array<string>}
+     * @memberof ApiDiagnosticReport
+     */
+    'troubleshootingSteps'?: Array<string>;
+    /**
+     * What to monitor after applying the fixes
+     * @type {string}
+     * @memberof ApiDiagnosticReport
+     */
+    'watchFor'?: string;
+}
+
+export const ApiDiagnosticReportSeverityEnum = {
+    None: 'NONE',
+    Low: 'LOW',
+    Medium: 'MEDIUM',
+    High: 'HIGH',
+    Critical: 'CRITICAL'
+} as const;
+
+export type ApiDiagnosticReportSeverityEnum = typeof ApiDiagnosticReportSeverityEnum[keyof typeof ApiDiagnosticReportSeverityEnum];
+
 /**
  * 
  * @export
@@ -1146,11 +1361,23 @@ export interface ApiPrinterState {
      */
     'printError'?: number;
     /**
+     * Human-readable description of the printError code, decoded from the error registry
+     * @type {string}
+     * @memberof ApiPrinterState
+     */
+    'printErrorDescription'?: string;
+    /**
      * Motion controller print error code
      * @type {string}
      * @memberof ApiPrinterState
      */
     'mcPrintErrorCode'?: string;
+    /**
+     * Decoded HMS (Health Management System) error descriptions from the printer hardware
+     * @type {Array<string>}
+     * @memberof ApiPrinterState
+     */
+    'hmsErrors'?: Array<string>;
     /**
      * Human-readable failure reason if print failed
      * @type {string}
@@ -1194,6 +1421,63 @@ export interface ApiPrinterState {
      */
     'upgradeState'?: ApiUpgradeState;
 }
+/**
+ * 
+ * @export
+ * @interface ApiProposedAction
+ */
+export interface ApiProposedAction {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiProposedAction
+     */
+    'actionId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiProposedAction
+     */
+    'actionType'?: ApiProposedActionActionTypeEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiProposedAction
+     */
+    'printerId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiProposedAction
+     */
+    'printerName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiProposedAction
+     */
+    'description'?: string;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof ApiProposedAction
+     */
+    'parameters'?: { [key: string]: any; };
+}
+
+export const ApiProposedActionActionTypeEnum = {
+    Pause: 'PAUSE',
+    Resume: 'RESUME',
+    Stop: 'STOP',
+    SetNozzleTemp: 'SET_NOZZLE_TEMP',
+    SetBedTemp: 'SET_BED_TEMP',
+    SetSpeed: 'SET_SPEED',
+    Home: 'HOME',
+    StartPrint: 'START_PRINT'
+} as const;
+
+export type ApiProposedActionActionTypeEnum = typeof ApiProposedActionActionTypeEnum[keyof typeof ApiProposedActionActionTypeEnum];
+
 /**
  * 
  * @export
@@ -1933,6 +2217,316 @@ export class AuthApi extends BaseAPI {
      */
     public refresh(options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).refresh(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * ChatApi - axios parameter creator
+ * @export
+ */
+export const ChatApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Delete a chat session
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteChatSession: async (sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('deleteChatSession', 'sessionId', sessionId)
+            const localVarPath = `/chat/sessions/{sessionId}`
+                .replace(`{${"sessionId"}}`, encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get full message history for a chat session
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getChatSession: async (sessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'sessionId' is not null or undefined
+            assertParamExists('getChatSession', 'sessionId', sessionId)
+            const localVarPath = `/chat/sessions/{sessionId}`
+                .replace(`{${"sessionId"}}`, encodeURIComponent(String(sessionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List all chat sessions for the current user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getChatSessions: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/chat/sessions`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Send a message to the AI assistant
+         * @param {ApiChatRequest} apiChatRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        sendChatMessage: async (apiChatRequest: ApiChatRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiChatRequest' is not null or undefined
+            assertParamExists('sendChatMessage', 'apiChatRequest', apiChatRequest)
+            const localVarPath = `/chat/message`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiChatRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * ChatApi - functional programming interface
+ * @export
+ */
+export const ChatApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ChatApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Delete a chat session
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteChatSession(sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteChatSession(sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChatApi.deleteChatSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get full message history for a chat session
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getChatSession(sessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiChatSessionDetail>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getChatSession(sessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChatApi.getChatSession']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List all chat sessions for the current user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getChatSessions(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiChatSessionSummary>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getChatSessions(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChatApi.getChatSessions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Send a message to the AI assistant
+         * @param {ApiChatRequest} apiChatRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async sendChatMessage(apiChatRequest: ApiChatRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiChatResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.sendChatMessage(apiChatRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChatApi.sendChatMessage']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * ChatApi - factory interface
+ * @export
+ */
+export const ChatApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = ChatApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Delete a chat session
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteChatSession(sessionId: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteChatSession(sessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get full message history for a chat session
+         * @param {string} sessionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getChatSession(sessionId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiChatSessionDetail> {
+            return localVarFp.getChatSession(sessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List all chat sessions for the current user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getChatSessions(options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiChatSessionSummary>> {
+            return localVarFp.getChatSessions(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Send a message to the AI assistant
+         * @param {ApiChatRequest} apiChatRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        sendChatMessage(apiChatRequest: ApiChatRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiChatResponse> {
+            return localVarFp.sendChatMessage(apiChatRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * ChatApi - object-oriented interface
+ * @export
+ * @class ChatApi
+ * @extends {BaseAPI}
+ */
+export class ChatApi extends BaseAPI {
+    /**
+     * 
+     * @summary Delete a chat session
+     * @param {string} sessionId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChatApi
+     */
+    public deleteChatSession(sessionId: string, options?: RawAxiosRequestConfig) {
+        return ChatApiFp(this.configuration).deleteChatSession(sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get full message history for a chat session
+     * @param {string} sessionId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChatApi
+     */
+    public getChatSession(sessionId: string, options?: RawAxiosRequestConfig) {
+        return ChatApiFp(this.configuration).getChatSession(sessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List all chat sessions for the current user
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChatApi
+     */
+    public getChatSessions(options?: RawAxiosRequestConfig) {
+        return ChatApiFp(this.configuration).getChatSessions(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Send a message to the AI assistant
+     * @param {ApiChatRequest} apiChatRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChatApi
+     */
+    public sendChatMessage(apiChatRequest: ApiChatRequest, options?: RawAxiosRequestConfig) {
+        return ChatApiFp(this.configuration).sendChatMessage(apiChatRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -3627,6 +4221,40 @@ export const PrinterApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Run an AI-powered diagnostic on a printer
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        diagnosePrinter: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('diagnosePrinter', 'id', id)
+            const localVarPath = `/printer/{id}/diagnose`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Get a printer by ID
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3767,6 +4395,19 @@ export const PrinterApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Run an AI-powered diagnostic on a printer
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async diagnosePrinter(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiDiagnosticReport>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.diagnosePrinter(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterApi.diagnosePrinter']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Get a printer by ID
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3836,6 +4477,16 @@ export const PrinterApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary Run an AI-powered diagnostic on a printer
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        diagnosePrinter(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiDiagnosticReport> {
+            return localVarFp.diagnosePrinter(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Get a printer by ID
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3896,6 +4547,18 @@ export class PrinterApi extends BaseAPI {
      */
     public deletePrinter(id: number, options?: RawAxiosRequestConfig) {
         return PrinterApiFp(this.configuration).deletePrinter(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Run an AI-powered diagnostic on a printer
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterApi
+     */
+    public diagnosePrinter(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterApiFp(this.configuration).diagnosePrinter(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -7,6 +7,8 @@ import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import ProgressBar from 'primevue/progressbar'
 import { api, BASE_URL } from '@/api/Configuration'
+import { diagnosticApi } from '@/api/DiagnosticApi'
+import type { ApiDiagnosticReport } from '@/client/printhelm-web-openapi'
 import { usePrinterSocket } from '@/composables/usePrinterSocket'
 import { usePrinterCommands } from '@/composables/usePrinterCommands'
 import { usePrinterFiles } from '@/composables/usePrinterFiles'
@@ -248,6 +250,36 @@ function notifDate(dateStr: string | undefined) {
   })
 }
 
+// ── Diagnostics ───────────────────────────────────────────────────────────
+
+const showDiagnosticDialog = ref(false)
+const diagnosticLoading = ref(false)
+const diagnosticReport = ref<ApiDiagnosticReport | null>(null)
+
+async function runDiagnostics() {
+  diagnosticLoading.value = true
+  diagnosticReport.value = null
+  showDiagnosticDialog.value = true
+  try {
+    const res = await diagnosticApi.diagnosePrinter(printerId)
+    diagnosticReport.value = res.data
+  } catch {
+    diagnosticReport.value = null
+  } finally {
+    diagnosticLoading.value = false
+  }
+}
+
+function diagnosticSeverityClass(severity?: string): string {
+  switch (severity) {
+    case 'CRITICAL': return 'diag-critical'
+    case 'HIGH':     return 'diag-high'
+    case 'MEDIUM':   return 'diag-medium'
+    case 'LOW':      return 'diag-low'
+    default:         return 'diag-none'
+  }
+}
+
 // ── Data loading ─────────────────────────────────────────────────────────
 
 onMounted(async () => {
@@ -390,10 +422,40 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div v-if="(state?.printError != null && state.printError !== 0) || state?.failReason" class="ctrl-error" style="margin-top:0.75rem">
+            <div v-if="state?.hmsErrors?.length" class="hms-errors" style="margin-top:0.75rem">
+              <div v-for="(msg, i) in state.hmsErrors" :key="i" class="ctrl-error" style="margin-bottom:0.4rem;display:flex;align-items:center;gap:0.5rem">
+                <i class="mdi mdi-alert-circle-outline" />
+                <span style="flex:1">{{ msg }}</span>
+                <Button
+                  v-if="i === 0"
+                  icon="pi pi-microchip-ai"
+                  label="Diagnose"
+                  severity="secondary"
+                  size="small"
+                  style="margin-left:auto"
+                  @click="runDiagnostics"
+                />
+              </div>
+            </div>
+            <div
+              v-else-if="state?.failReason || state?.printErrorDescription || (state?.printError != null && state.printError !== 0)"
+              class="ctrl-error"
+              style="margin-top:0.75rem;display:flex;align-items:center;gap:0.5rem"
+            >
               <i class="mdi mdi-alert-circle-outline" />
-              <span v-if="state.failReason">{{ state.failReason }}</span>
-              <span v-else>Error 0x{{ state.printError!.toString(16).toUpperCase() }}<span v-if="state.mcPrintErrorCode"> · {{ state.mcPrintErrorCode }}</span></span>
+              <span style="flex:1">
+                <span v-if="state.failReason">{{ state.failReason }}</span>
+                <span v-else-if="state.printErrorDescription">{{ state.printErrorDescription }}</span>
+                <span v-else>Error 0x{{ state.printError!.toString(16).toUpperCase() }}<span v-if="state.mcPrintErrorCode"> · {{ state.mcPrintErrorCode }}</span></span>
+              </span>
+              <Button
+                icon="pi pi-microchip-ai"
+                label="Diagnose"
+                severity="secondary"
+                size="small"
+                style="margin-left:auto"
+                @click="runDiagnostics"
+              />
             </div>
 
             <div class="conn-pills" style="margin-top:0.75rem;margin-bottom:0">
@@ -1072,6 +1134,72 @@ onUnmounted(() => {
         </div>
       </div>
     </Teleport>
+
+    <!-- Diagnostic Dialog -->
+    <Dialog
+      v-model:visible="showDiagnosticDialog"
+      header="AI Diagnostic Report"
+      :modal="true"
+      :dismissable-mask="true"
+      :style="{ width: '560px' }"
+      class="diagnostic-dialog"
+    >
+      <div v-if="diagnosticLoading" class="diag-loading">
+        <span class="page-spinner" />
+        <span>Analyzing printer state…</span>
+      </div>
+
+      <div v-else-if="diagnosticReport" class="diag-report">
+        <!-- Healthy banner -->
+        <div v-if="diagnosticReport.healthy" class="diag-healthy">
+          <i class="mdi mdi-check-circle" />
+          <span>No issues detected — printer looks healthy.</span>
+        </div>
+
+        <!-- Issue summary -->
+        <div v-else>
+          <div :class="['diag-severity-badge', diagnosticSeverityClass(diagnosticReport.severity)]">
+            <i class="mdi mdi-alert-circle-outline" />
+            {{ diagnosticReport.severity }}
+          </div>
+
+          <div v-if="diagnosticReport.issue" class="diag-section">
+            <div class="diag-label">Issue</div>
+            <div class="diag-value">{{ diagnosticReport.issue }}</div>
+          </div>
+
+          <div v-if="diagnosticReport.likelyCause" class="diag-section">
+            <div class="diag-label">Likely Cause</div>
+            <div class="diag-value">{{ diagnosticReport.likelyCause }}</div>
+          </div>
+
+          <div v-if="diagnosticReport.troubleshootingSteps?.length" class="diag-section">
+            <div class="diag-label">Troubleshooting Steps</div>
+            <ol class="diag-steps">
+              <li v-for="(step, i) in diagnosticReport.troubleshootingSteps" :key="i">
+                {{ step }}
+              </li>
+            </ol>
+          </div>
+
+          <div v-if="diagnosticReport.watchFor" class="diag-section">
+            <div class="diag-label">Watch For</div>
+            <div class="diag-value diag-watch">
+              <i class="mdi mdi-eye-outline" /> {{ diagnosticReport.watchFor }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="diag-error">
+        Failed to run diagnostic. Please try again.
+      </div>
+
+      <template #footer>
+        <Button label="Close" severity="secondary" @click="showDiagnosticDialog = false" />
+        <Button label="Re-run" icon="pi pi-refresh" @click="runDiagnostics" :loading="diagnosticLoading" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -1180,11 +1308,32 @@ onUnmounted(() => {
 
 /* ── Section card ───────────────────────────────────────────────────── */
 .section-card {
-  background: rgba(15, 32, 39, 0.6);
-  border: 1px solid var(--ph-border);
-  border-radius: 12px;
+  background: var(--ph-glass);
+  backdrop-filter: blur(var(--ph-blur));
+  -webkit-backdrop-filter: blur(var(--ph-blur));
+  border: 1px solid var(--ph-glass-border);
+  border-radius: 16px;
   padding: 1.25rem;
+  box-shadow: var(--ph-shadow-card), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  animation: ph-fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: border-color 0.25s;
 }
+
+.section-card:hover {
+  border-color: rgba(34, 211, 238, 0.18);
+}
+
+/* staggered entrance per column */
+.col-left .section-card:nth-child(2),
+.col-right .section-card:nth-child(2) { animation-delay: 0.06s; }
+.col-left .section-card:nth-child(3),
+.col-right .section-card:nth-child(3) { animation-delay: 0.12s; }
+.col-left .section-card:nth-child(4),
+.col-right .section-card:nth-child(4) { animation-delay: 0.18s; }
+.col-left .section-card:nth-child(5),
+.col-right .section-card:nth-child(5) { animation-delay: 0.24s; }
+.col-left .section-card:nth-child(6),
+.col-right .section-card:nth-child(6) { animation-delay: 0.3s; }
 
 .section-label {
   font-size: 0.75rem;
@@ -2663,5 +2812,97 @@ onUnmounted(() => {
   border-radius: 50%;
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── Diagnostic dialog ───────────────────────────────────────────────── */
+.diag-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+  color: var(--ph-text-muted, #aaa);
+}
+
+.diag-report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.diag-healthy {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  color: #4ade80;
+  font-weight: 500;
+}
+
+.diag-severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.diag-critical { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.diag-high     { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+.diag-medium   { background: rgba(234,179,8,0.15);  color: #facc15; border: 1px solid rgba(234,179,8,0.3); }
+.diag-low      { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.diag-none     { background: rgba(107,114,128,0.15); color: #9ca3af; border: 1px solid rgba(107,114,128,0.3); }
+
+.diag-section {
+  margin-bottom: 1rem;
+}
+
+.diag-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ph-text-muted, #888);
+  margin-bottom: 0.3rem;
+}
+
+.diag-value {
+  font-size: 0.9rem;
+  color: var(--ph-text, #e2e8f0);
+  line-height: 1.5;
+}
+
+.diag-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.diag-steps li {
+  font-size: 0.88rem;
+  color: var(--ph-text, #e2e8f0);
+  line-height: 1.5;
+}
+
+.diag-watch {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  color: var(--ph-text-muted, #aaa);
+  font-style: italic;
+}
+
+.diag-error {
+  color: #f87171;
+  padding: 1rem 0;
 }
 </style>

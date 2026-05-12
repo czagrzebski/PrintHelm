@@ -11,16 +11,21 @@ import com.czagrzebski.printhelm.web.mapper.JobOrderMapper;
 import com.czagrzebski.printhelm.web.repository.JobOrderRepository;
 import com.czagrzebski.printhelm.web.repository.PrinterRepository;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @Transactional
 public class PrintQueueService {
+
+    private static final Logger logger = LogManager.getLogger(PrintQueueService.class);
 
     private final JobOrderRepository jobOrderRepository;
     private final PrinterRepository printerRepository;
@@ -104,7 +109,7 @@ public class PrintQueueService {
         }
     }
 
-    public void removeFromQueue(long printerId, long jobOrderId) {
+    public void removeFromQueue(long printerId, long jobOrderId) throws MqttException {
         findPrinterOrThrow(printerId);
         JobOrder job = findJobOrThrow(jobOrderId);
 
@@ -112,6 +117,16 @@ public class PrintQueueService {
             throw new IllegalArgumentException("Job is not assigned to printer " + printerId);
         }
 
+        if (job.getStatus() == JobOrderStatus.PRINTING) {
+            try {
+                printerCommandService.stopPrint(printerId);
+            } catch (Exception e) {
+                logger.warn("Could not send stop command to printer [ID={}] while removing job [ID={}]: {}", printerId, jobOrderId, e.getMessage());
+            }
+            job.setPrintStartedAt(null);
+        }
+
+        job.setStatus(JobOrderStatus.READY_TO_PRINT);
         job.setAssignedPrinter(null);
         job.setAssignedFilename(null);
         job.setQueuePosition(null);
@@ -135,6 +150,7 @@ public class PrintQueueService {
 
         printerCommandService.printFile(printerId, job.getAssignedFilename(), amsMapping, flowCali, vibrationCali, layerInspect);
         job.setStatus(JobOrderStatus.PRINTING);
+        job.setPrintStartedAt(LocalDateTime.now());
         jobOrderRepository.save(job);
     }
 

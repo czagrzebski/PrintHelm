@@ -531,11 +531,22 @@ onUnmounted(() => {
 }
 
 .printer-card {
-  background: #162830;
-  border: 1px solid var(--ph-border);
-  border-radius: 12px;
+  background: var(--ph-glass);
+  backdrop-filter: blur(var(--ph-blur));
+  -webkit-backdrop-filter: blur(var(--ph-blur));
+  border: 1px solid var(--ph-glass-border);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--ph-shadow-card), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.printer-card:hover {
+  border-color: rgba(34, 211, 238, 0.22);
+  box-shadow:
+    var(--ph-shadow-card),
+    0 0 28px rgba(34, 211, 238, 0.07),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
 }
 
 /* ── Card header ────────────────────────────────────────────────── */
