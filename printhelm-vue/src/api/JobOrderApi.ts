@@ -27,6 +27,16 @@ export async function fetchGcodeFileBuffer(orderId: number): Promise<ArrayBuffer
   return res.data as unknown as ArrayBuffer
 }
 
+export async function downloadInvoice(orderId: number) {
+  const res = await jobOrderApi.downloadJobOrderInvoice(orderId, { responseType: 'blob' })
+  triggerDownload(res.data as unknown as Blob, `invoice-${orderId}.pdf`)
+}
+
+export async function downloadQuote(orderId: number) {
+  const res = await jobOrderApi.downloadJobOrderQuote(orderId, { responseType: 'blob' })
+  triggerDownload(res.data as unknown as Blob, `quote-${orderId}.pdf`)
+}
+
 
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)

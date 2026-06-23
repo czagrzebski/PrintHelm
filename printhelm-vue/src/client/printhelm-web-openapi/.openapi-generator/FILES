@@ -7,6 +7,7 @@ configuration.ts
 docs/ApiAddPrinterConnectionRequest.md
 docs/ApiAdminResetPasswordRequest.md
 docs/ApiAuthResponse.md
+docs/ApiBusinessSettings.md
 docs/ApiChangePasswordRequest.md
 docs/ApiChatMessageItem.md
 docs/ApiChatModel.md
@@ -43,6 +44,7 @@ docs/ApiQueueJobRequest.md
 docs/ApiQueueReorderEntry.md
 docs/ApiQueueReorderRequest.md
 docs/ApiQueueStartRequest.md
+docs/ApiQuoteLineItem.md
 docs/ApiRefreshRequest.md
 docs/ApiRole.md
 docs/ApiSpeedRequest.md
@@ -68,6 +70,7 @@ docs/PrinterCommandsApi.md
 docs/PrinterFilesApi.md
 docs/PrinterType.md
 docs/RoleApi.md
+docs/SettingsApi.md
 docs/UserApi.md
 git_push.sh
 index.ts

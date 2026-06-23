@@ -127,7 +127,7 @@ async function fetchPrinters() {
         },
       )
     }
-  } catch (e) {
+  } catch {
     error.value = 'Failed to load printers.'
   } finally {
     loading.value = false

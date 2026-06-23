@@ -25,6 +25,8 @@ public abstract class JobOrderMapper {
     protected GcodeMetadataRepository gcodeMetadataRepository;
 
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "localToOffset")
+    @Mapping(target = "quotedAt", source = "quotedAt", qualifiedByName = "localToOffset")
+    @Mapping(target = "invoicedAt", source = "invoicedAt", qualifiedByName = "localToOffset")
     @Mapping(target = "assignedPrinterId", source = "assignedPrinter.printerId")
     @Mapping(target = "gcodeMetadata", source = "mongoGcodeMetadataId", qualifiedByName = "loadGcodeMetadata")
     public abstract ApiJobOrderResponse jobOrderToApiJobOrderResponse(JobOrder order);

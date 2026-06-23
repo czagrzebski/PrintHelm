@@ -78,7 +78,8 @@ function run(item: PaletteItem) {
 function onGlobalKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault()
-    visible.value ? close() : open()
+    if (visible.value) close()
+    else open()
   } else if (e.key === 'Escape' && visible.value) {
     close()
   }

@@ -1018,6 +1018,86 @@ paths:
         '404':
           description: Job order or file not found
 
+  /job-order/{id}/quote:
+    get:
+      tags:
+        - JobOrder
+      summary: Download quote PDF for a job order
+      operationId: downloadJobOrderQuote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Quote PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order not found
+
+  /job-order/{id}/invoice:
+    get:
+      tags:
+        - JobOrder
+      summary: Download invoice PDF for a job order
+      operationId: downloadJobOrderInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Invoice PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order not found
+
+  /settings/business:
+    get:
+      tags:
+        - Settings
+      summary: Get business settings
+      operationId: getBusinessSettings
+      responses:
+        '200':
+          description: Business settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiBusinessSettings'
+    put:
+      tags:
+        - Settings
+      summary: Update business settings
+      operationId: updateBusinessSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiBusinessSettings'
+      responses:
+        '200':
+          description: Updated business settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiBusinessSettings'
+
   /printer/{id}/diagnose:
     post:
       tags:
@@ -1259,6 +1339,18 @@ paths:
 
 components:
   schemas:
+    ApiBusinessSettings:
+      type: object
+      properties:
+        businessName:
+          type: string
+        businessAddress:
+          type: string
+        businessEmail:
+          type: string
+        businessPhone:
+          type: string
+
     NotificationType:
       type: string
       enum: [PRINT_JOB_STARTED, PRINT_STARTED, PRINT_PAUSED, PRINT_RESUMED, PRINT_COMPLETED, PRINT_STOPPED, PRINT_FAILED, PRINT_ERROR, JOB_QUEUED]
@@ -1846,7 +1938,7 @@ components:
           format: date-time
     ApiJobOrderStatus:
       type: string
-      enum: [SUBMITTED, REVIEW, DESIGN, SETUP, READY_TO_PRINT, PRINTING, PRINT_FINISHED]
+      enum: [SUBMITTED, REVIEW, QUOTED, DESIGN, SETUP, READY_TO_PRINT, PRINTING, PRINT_FINISHED, INVOICED]
     ApiCreateJobOrderRequest:
       type: object
       required:
@@ -1873,6 +1965,66 @@ components:
           type: string
         requiresCustomDesign:
           type: boolean
+        quotedMaterialCost:
+          type: number
+          format: double
+          description: Estimated material cost for the quote
+        quotedCostPerUnit:
+          type: number
+          format: double
+          description: Cost per unit of material
+        quotedQuantity:
+          type: integer
+          format: int32
+          description: Number of units of material
+        quotedLaborCost:
+          type: number
+          format: double
+          description: Estimated labor or design fee for the quote
+        quotedSetupFee:
+          type: number
+          format: double
+          description: Estimated setup fee for the quote
+        quotedDiscount:
+          type: number
+          format: double
+          description: Estimated discount for the quote
+        quoteNotes:
+          type: string
+          description: Additional notes to include on the quote
+        quoteExpiresAt:
+          type: string
+          format: date
+          description: Date until which the quote is valid
+        quoteLineItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiQuoteLineItem'
+          description: Optional custom line items for the quote
+        quoteMaterials:
+          type: array
+          items:
+            type: string
+          description: Material types selected for this quote
+        materialCost:
+          type: number
+          format: double
+          description: Cost of materials/filament used
+        laborCost:
+          type: number
+          format: double
+          description: Labor or design fee
+        setupFee:
+          type: number
+          format: double
+          description: One-time setup fee
+        discount:
+          type: number
+          format: double
+          description: Discount amount applied to the total
+        invoiceNotes:
+          type: string
+          description: Additional notes to include on the invoice
     ApiJobOrderResponse:
       type: object
       properties:
@@ -1922,6 +2074,84 @@ components:
         gcodeMetadata:
           $ref: '#/components/schemas/ApiGcodeMetadata'
           description: Parsed metadata from .3mf upload (null if not a .3mf or not yet uploaded)
+        materialCost:
+          type: number
+          format: double
+          description: Cost of materials/filament used
+        laborCost:
+          type: number
+          format: double
+          description: Labor or design fee
+        setupFee:
+          type: number
+          format: double
+          description: One-time setup fee
+        discount:
+          type: number
+          format: double
+          description: Discount amount applied to the total
+        invoiceNotes:
+          type: string
+          description: Additional notes included on the invoice
+        invoicedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the invoice was generated
+        quotedMaterialCost:
+          type: number
+          format: double
+          description: Estimated material cost from the quote
+        quotedCostPerUnit:
+          type: number
+          format: double
+          description: Cost per unit of material
+        quotedQuantity:
+          type: integer
+          format: int32
+          description: Number of units of material
+        quotedLaborCost:
+          type: number
+          format: double
+          description: Estimated labor or design fee from the quote
+        quotedSetupFee:
+          type: number
+          format: double
+          description: Estimated setup fee from the quote
+        quotedDiscount:
+          type: number
+          format: double
+          description: Estimated discount from the quote
+        quoteNotes:
+          type: string
+          description: Notes from the quote
+        quotedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the quote was generated
+        quoteExpiresAt:
+          type: string
+          format: date
+          description: Date until which the quote is valid
+        quoteLineItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiQuoteLineItem'
+          description: Custom line items on the quote
+        quoteMaterials:
+          type: array
+          items:
+            type: string
+          description: Material types selected for this quote
+    ApiQuoteLineItem:
+      type: object
+      properties:
+        label:
+          type: string
+          description: Description of the line item
+        amount:
+          type: number
+          format: double
+          description: Cost of the line item
     ApiGcodeFilamentInfo:
       type: object
       properties:

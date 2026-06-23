@@ -166,7 +166,7 @@ function applyVertexColors(hotColor: THREE.Color) {
   for (const geo of extrudeGeos) {
     const pos = geo.attributes.position as THREE.BufferAttribute
     const n = pos.count
-    let attr = geo.attributes.color as THREE.BufferAttribute | undefined
+    const attr = geo.attributes.color as THREE.BufferAttribute | undefined
     const buf = attr ? (attr.array as Float32Array) : new Float32Array(n * 3)
     for (let i = 0; i < n; i++) {
       const t = Math.sqrt(Math.max(0, (pos.getZ(i) - gcodeZMin) / gcodeZRange))

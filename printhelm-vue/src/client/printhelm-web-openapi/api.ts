@@ -99,6 +99,37 @@ export interface ApiAuthResponse {
 /**
  * 
  * @export
+ * @interface ApiBusinessSettings
+ */
+export interface ApiBusinessSettings {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiBusinessSettings
+     */
+    'businessName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiBusinessSettings
+     */
+    'businessAddress'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiBusinessSettings
+     */
+    'businessEmail'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiBusinessSettings
+     */
+    'businessPhone'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiChangePasswordRequest
  */
 export interface ApiChangePasswordRequest {
@@ -721,6 +752,108 @@ export interface ApiJobOrderResponse {
      * @memberof ApiJobOrderResponse
      */
     'gcodeMetadata'?: ApiGcodeMetadata;
+    /**
+     * Cost of materials/filament used
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'materialCost'?: number;
+    /**
+     * Labor or design fee
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'laborCost'?: number;
+    /**
+     * One-time setup fee
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'setupFee'?: number;
+    /**
+     * Discount amount applied to the total
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'discount'?: number;
+    /**
+     * Additional notes included on the invoice
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'invoiceNotes'?: string;
+    /**
+     * Timestamp when the invoice was generated
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'invoicedAt'?: string;
+    /**
+     * Estimated material cost from the quote
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedMaterialCost'?: number;
+    /**
+     * Cost per unit of material
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedCostPerUnit'?: number;
+    /**
+     * Number of units of material
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedQuantity'?: number;
+    /**
+     * Estimated labor or design fee from the quote
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedLaborCost'?: number;
+    /**
+     * Estimated setup fee from the quote
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedSetupFee'?: number;
+    /**
+     * Estimated discount from the quote
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedDiscount'?: number;
+    /**
+     * Notes from the quote
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'quoteNotes'?: string;
+    /**
+     * Timestamp when the quote was generated
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedAt'?: string;
+    /**
+     * Date until which the quote is valid
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'quoteExpiresAt'?: string;
+    /**
+     * Custom line items on the quote
+     * @type {Array<ApiQuoteLineItem>}
+     * @memberof ApiJobOrderResponse
+     */
+    'quoteLineItems'?: Array<ApiQuoteLineItem>;
+    /**
+     * Material types selected for this quote
+     * @type {Array<string>}
+     * @memberof ApiJobOrderResponse
+     */
+    'quoteMaterials'?: Array<string>;
 }
 
 
@@ -733,11 +866,13 @@ export interface ApiJobOrderResponse {
 export const ApiJobOrderStatus = {
     Submitted: 'SUBMITTED',
     Review: 'REVIEW',
+    Quoted: 'QUOTED',
     Design: 'DESIGN',
     Setup: 'SETUP',
     ReadyToPrint: 'READY_TO_PRINT',
     Printing: 'PRINTING',
-    PrintFinished: 'PRINT_FINISHED'
+    PrintFinished: 'PRINT_FINISHED',
+    Invoiced: 'INVOICED'
 } as const;
 
 export type ApiJobOrderStatus = typeof ApiJobOrderStatus[keyof typeof ApiJobOrderStatus];
@@ -1557,6 +1692,25 @@ export interface ApiQueueStartRequest {
 /**
  * 
  * @export
+ * @interface ApiQuoteLineItem
+ */
+export interface ApiQuoteLineItem {
+    /**
+     * Description of the line item
+     * @type {string}
+     * @memberof ApiQuoteLineItem
+     */
+    'label'?: string;
+    /**
+     * Cost of the line item
+     * @type {number}
+     * @memberof ApiQuoteLineItem
+     */
+    'amount'?: number;
+}
+/**
+ * 
+ * @export
  * @interface ApiRefreshRequest
  */
 export interface ApiRefreshRequest {
@@ -1673,6 +1827,96 @@ export interface ApiUpdateJobOrderRequest {
      * @memberof ApiUpdateJobOrderRequest
      */
     'requiresCustomDesign'?: boolean;
+    /**
+     * Estimated material cost for the quote
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedMaterialCost'?: number;
+    /**
+     * Cost per unit of material
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedCostPerUnit'?: number;
+    /**
+     * Number of units of material
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedQuantity'?: number;
+    /**
+     * Estimated labor or design fee for the quote
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedLaborCost'?: number;
+    /**
+     * Estimated setup fee for the quote
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedSetupFee'?: number;
+    /**
+     * Estimated discount for the quote
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedDiscount'?: number;
+    /**
+     * Additional notes to include on the quote
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quoteNotes'?: string;
+    /**
+     * Date until which the quote is valid
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quoteExpiresAt'?: string;
+    /**
+     * Optional custom line items for the quote
+     * @type {Array<ApiQuoteLineItem>}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quoteLineItems'?: Array<ApiQuoteLineItem>;
+    /**
+     * Material types selected for this quote
+     * @type {Array<string>}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quoteMaterials'?: Array<string>;
+    /**
+     * Cost of materials/filament used
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'materialCost'?: number;
+    /**
+     * Labor or design fee
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'laborCost'?: number;
+    /**
+     * One-time setup fee
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'setupFee'?: number;
+    /**
+     * Discount amount applied to the total
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'discount'?: number;
+    /**
+     * Additional notes to include on the invoice
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'invoiceNotes'?: string;
 }
 
 
@@ -2644,6 +2888,40 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary Download invoice PDF for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderInvoice: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderInvoice', 'id', id)
+            const localVarPath = `/job-order/{id}/invoice`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Download 3D part file for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -2653,6 +2931,40 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             // verify required parameter 'id' is not null or undefined
             assertParamExists('downloadJobOrderPartFile', 'id', id)
             const localVarPath = `/job-order/{id}/part-file`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Download quote PDF for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderQuote: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderQuote', 'id', id)
+            const localVarPath = `/job-order/{id}/quote`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2921,6 +3233,19 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Download invoice PDF for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderInvoice(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderInvoice(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderInvoice']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Download 3D part file for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -2930,6 +3255,19 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderPartFile(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderPartFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Download quote PDF for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderQuote(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderQuote(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderQuote']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3041,6 +3379,16 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary Download invoice PDF for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderInvoice(id: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderInvoice(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Download 3D part file for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3048,6 +3396,16 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
          */
         downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
             return localVarFp.downloadJobOrderPartFile(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Download quote PDF for a job order
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderQuote(id: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderQuote(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3149,6 +3507,18 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
+     * @summary Download invoice PDF for a job order
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderInvoice(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderInvoice(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Download 3D part file for a job order
      * @param {number} id 
      * @param {*} [options] Override http request option.
@@ -3157,6 +3527,18 @@ export class JobOrderApi extends BaseAPI {
      */
     public downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig) {
         return JobOrderApiFp(this.configuration).downloadJobOrderPartFile(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Download quote PDF for a job order
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderQuote(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderQuote(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -5822,6 +6204,178 @@ export class RoleApi extends BaseAPI {
      */
     public getRoles(options?: RawAxiosRequestConfig) {
         return RoleApiFp(this.configuration).getRoles(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * SettingsApi - axios parameter creator
+ * @export
+ */
+export const SettingsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Get business settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getBusinessSettings: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/settings/business`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update business settings
+         * @param {ApiBusinessSettings} apiBusinessSettings 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateBusinessSettings: async (apiBusinessSettings: ApiBusinessSettings, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiBusinessSettings' is not null or undefined
+            assertParamExists('updateBusinessSettings', 'apiBusinessSettings', apiBusinessSettings)
+            const localVarPath = `/settings/business`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiBusinessSettings, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * SettingsApi - functional programming interface
+ * @export
+ */
+export const SettingsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = SettingsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Get business settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getBusinessSettings(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiBusinessSettings>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getBusinessSettings(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SettingsApi.getBusinessSettings']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update business settings
+         * @param {ApiBusinessSettings} apiBusinessSettings 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateBusinessSettings(apiBusinessSettings: ApiBusinessSettings, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiBusinessSettings>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateBusinessSettings(apiBusinessSettings, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SettingsApi.updateBusinessSettings']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * SettingsApi - factory interface
+ * @export
+ */
+export const SettingsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = SettingsApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Get business settings
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getBusinessSettings(options?: RawAxiosRequestConfig): AxiosPromise<ApiBusinessSettings> {
+            return localVarFp.getBusinessSettings(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update business settings
+         * @param {ApiBusinessSettings} apiBusinessSettings 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateBusinessSettings(apiBusinessSettings: ApiBusinessSettings, options?: RawAxiosRequestConfig): AxiosPromise<ApiBusinessSettings> {
+            return localVarFp.updateBusinessSettings(apiBusinessSettings, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * SettingsApi - object-oriented interface
+ * @export
+ * @class SettingsApi
+ * @extends {BaseAPI}
+ */
+export class SettingsApi extends BaseAPI {
+    /**
+     * 
+     * @summary Get business settings
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SettingsApi
+     */
+    public getBusinessSettings(options?: RawAxiosRequestConfig) {
+        return SettingsApiFp(this.configuration).getBusinessSettings(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update business settings
+     * @param {ApiBusinessSettings} apiBusinessSettings 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SettingsApi
+     */
+    public updateBusinessSettings(apiBusinessSettings: ApiBusinessSettings, options?: RawAxiosRequestConfig) {
+        return SettingsApiFp(this.configuration).updateBusinessSettings(apiBusinessSettings, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

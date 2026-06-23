@@ -3,8 +3,6 @@ package com.czagrzebski.printhelm.web.ai;
 import com.czagrzebski.printhelm.model.ApiDiagnosticReport;
 import com.czagrzebski.printhelm.model.ApiPrinterState;
 import com.czagrzebski.printhelm.web.domain.Printer;
-import com.czagrzebski.printhelm.web.domain.notification.PrinterNotification;
-import com.czagrzebski.printhelm.web.repository.PrinterNotificationRepository;
 import com.czagrzebski.printhelm.web.repository.PrinterRepository;
 import com.czagrzebski.printhelm.web.service.PrinterStateCache;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class PrinterDiagnosticService {
@@ -29,7 +26,7 @@ public class PrinterDiagnosticService {
             root causes and practical troubleshooting steps based on the decoded information provided.
 
             Consider temperature deviations, HMS error descriptions, fan speeds, print progress,
-            recent notification history, and the current printer stage when forming your analysis.
+            and the current printer stage when forming your analysis.
 
             Mark the printer as healthy (healthy=true, severity=NONE) only when no errors or
             anomalies are present. If there are active HMS errors or a non-zero printError, always
@@ -46,15 +43,12 @@ public class PrinterDiagnosticService {
 
     private final ChatClient chatClient;
     private final PrinterStateCache printerStateCache;
-    private final PrinterNotificationRepository notificationRepository;
     private final PrinterRepository printerRepository;
 
     public PrinterDiagnosticService(ChatClient.Builder builder,
                                     PrinterStateCache printerStateCache,
-                                    PrinterNotificationRepository notificationRepository,
                                     PrinterRepository printerRepository) {
         this.printerStateCache = printerStateCache;
-        this.notificationRepository = notificationRepository;
         this.printerRepository = printerRepository;
         this.chatClient = builder.build();
     }
@@ -64,13 +58,8 @@ public class PrinterDiagnosticService {
                 .orElseThrow(() -> new IllegalArgumentException("Printer not found: " + printerId));
 
         Optional<ApiPrinterState> stateOpt = printerStateCache.getState(printerId);
-        List<PrinterNotification> recentNotifications = notificationRepository
-                .findByPrinterIdOrderByCreatedAtDesc(printerId)
-                .stream()
-                .limit(20)
-                .collect(Collectors.toList());
 
-        String userPrompt = buildDiagnosticPrompt(printer, stateOpt.orElse(null), recentNotifications);
+        String userPrompt = buildDiagnosticPrompt(printer, stateOpt.orElse(null));
 
         ApiDiagnosticReport result = chatClient.prompt()
                 .messages(
@@ -86,7 +75,7 @@ public class PrinterDiagnosticService {
         return result != null ? result : healthyReport();
     }
 
-    private String buildDiagnosticPrompt(Printer printer, ApiPrinterState state, List<PrinterNotification> notifications) {
+    private String buildDiagnosticPrompt(Printer printer, ApiPrinterState state) {
         StringBuilder sb = new StringBuilder();
         sb.append("Diagnose the following Bambu Lab printer:\n\n");
         sb.append("Printer: ").append(printer.getPrinterName())
@@ -142,15 +131,6 @@ public class PrinterDiagnosticService {
                     sb.append("    - ").append(m.getType())
                       .append(m.getLoaded() != null && m.getLoaded() ? " [loaded]" : "").append("\n"));
             }
-        }
-
-        if (!notifications.isEmpty()) {
-            sb.append("\nRECENT NOTIFICATIONS (newest first):\n");
-            notifications.forEach(n ->
-                sb.append("  [").append(n.getSeverity()).append("] ")
-                  .append(n.getType()).append(": ").append(n.getTitle())
-                  .append(n.getMessage() != null ? " — " + n.getMessage() : "")
-                  .append(" (").append(n.getCreatedAt()).append(")\n"));
         }
 
         return sb.toString();

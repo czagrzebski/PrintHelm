@@ -50,6 +50,9 @@ dependencies {
 
     // Spring AI
     implementation 'org.springframework.ai:spring-ai-starter-model-anthropic:1.0.0'
+
+    // PDF generation
+    implementation 'com.github.librepdf:openpdf:2.0.3'
 }
 
 springBoot {

@@ -19,6 +19,7 @@ import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/Configuration'
+import { getBusinessSettings, updateBusinessSettings } from '@/api/BusinessSettingsApi'
 
 const toast = useToast()
 const authStore = useAuthStore()
@@ -407,11 +408,59 @@ async function saveProfilePassword() {
   }
 }
 
+// ─── Business Settings ────────────────────────────────────────
+
+const businessName = ref('')
+const businessAddress = ref('')
+const businessEmail = ref('')
+const businessPhone = ref('')
+const businessSaving = ref(false)
+const businessLoading = ref(false)
+
+async function fetchBusinessSettings() {
+  businessLoading.value = true
+  try {
+    const data = await getBusinessSettings()
+    businessName.value = data.businessName ?? ''
+    businessAddress.value = data.businessAddress ?? ''
+    businessEmail.value = data.businessEmail ?? ''
+    businessPhone.value = data.businessPhone ?? ''
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to load business settings.', life: 4000 })
+  } finally {
+    businessLoading.value = false
+  }
+}
+
+async function saveBusinessSettings() {
+  businessSaving.value = true
+  try {
+    const data = await updateBusinessSettings({
+      businessName: businessName.value.trim() || undefined,
+      businessAddress: businessAddress.value.trim() || undefined,
+      businessEmail: businessEmail.value.trim() || undefined,
+      businessPhone: businessPhone.value.trim() || undefined,
+    })
+    businessName.value = data.businessName ?? ''
+    businessAddress.value = data.businessAddress ?? ''
+    businessEmail.value = data.businessEmail ?? ''
+    businessPhone.value = data.businessPhone ?? ''
+    toast.add({ severity: 'success', summary: 'Saved', detail: 'Business settings updated.', life: 3000 })
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to save business settings.', life: 4000 })
+  } finally {
+    businessSaving.value = false
+  }
+}
+
 // ─── Init ─────────────────────────────────────────────────────
 
 onMounted(async () => {
   await fetchPrinters()
-  if (isAdmin.value) await fetchUsers()
+  if (isAdmin.value) {
+    await fetchUsers()
+    await fetchBusinessSettings()
+  }
 })
 </script>
 
@@ -440,6 +489,10 @@ onMounted(async () => {
           <Tab value="profile">
             <i class="mdi mdi-account-key-outline tab-icon" />
             Profile
+          </Tab>
+          <Tab v-if="isAdmin" value="business">
+            <i class="mdi mdi-domain tab-icon" />
+            Business
           </Tab>
         </TabList>
 
@@ -561,6 +614,39 @@ onMounted(async () => {
                 </div>
                 <div class="profile-actions">
                   <Button label="Change Password" :loading="profileSaving" @click="saveProfilePassword" />
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+
+          <!-- ── Business Tab ── -->
+          <TabPanel v-if="isAdmin" value="business">
+            <div class="business-section">
+              <div class="panel-header">
+                <span class="section-title">Business Information</span>
+              </div>
+              <p class="business-hint">This information appears on quotes and invoices sent to customers.</p>
+              <div class="business-form" v-if="!businessLoading">
+                <div class="field">
+                  <label class="field-label">Business Name</label>
+                  <InputText v-model="businessName" placeholder="e.g. Acme 3D Printing" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Address</label>
+                  <InputText v-model="businessAddress" placeholder="e.g. 123 Main St, Springfield, IL 62701" class="field-input" />
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">Email</label>
+                    <InputText v-model="businessEmail" placeholder="e.g. contact@acme3d.com" class="field-input" />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Phone</label>
+                    <InputText v-model="businessPhone" placeholder="e.g. (555) 123-4567" class="field-input" />
+                  </div>
+                </div>
+                <div class="business-actions">
+                  <Button label="Save Settings" icon="mdi mdi-content-save-outline" :loading="businessSaving" @click="saveBusinessSettings" />
                 </div>
               </div>
             </div>
@@ -868,4 +954,17 @@ onMounted(async () => {
 }
 
 .reset-info { margin-bottom: 0.5rem; }
+
+/* Business */
+.business-section { max-width: 560px; }
+
+.business-hint {
+  font-size: 0.85rem; color: var(--ph-text-muted); margin: 0 0 1.25rem;
+}
+
+.business-form {
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+.business-actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 </style>

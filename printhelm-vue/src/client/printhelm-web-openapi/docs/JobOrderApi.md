@@ -7,7 +7,9 @@ All URIs are relative to *https://printhelm.czagrzebski.dev/api/v1*
 |[**createJobOrder**](#createjoborder) | **POST** /job-order | Create a new job order|
 |[**deleteJobOrder**](#deletejoborder) | **DELETE** /job-order/{id} | Delete a job order|
 |[**downloadJobOrderGcodeFile**](#downloadjobordergcodefile) | **GET** /job-order/{id}/gcode-file | Download GCode file for a job order|
+|[**downloadJobOrderInvoice**](#downloadjoborderinvoice) | **GET** /job-order/{id}/invoice | Download invoice PDF for a job order|
 |[**downloadJobOrderPartFile**](#downloadjoborderpartfile) | **GET** /job-order/{id}/part-file | Download 3D part file for a job order|
+|[**downloadJobOrderQuote**](#downloadjoborderquote) | **GET** /job-order/{id}/quote | Download quote PDF for a job order|
 |[**getJobOrderById**](#getjoborderbyid) | **GET** /job-order/{id} | Get a job order by ID|
 |[**getJobOrders**](#getjoborders) | **GET** /job-order | Get all job orders|
 |[**updateJobOrder**](#updatejoborder) | **PUT** /job-order/{id} | Update a job order|
@@ -168,6 +170,57 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **downloadJobOrderInvoice**
+> File downloadJobOrderInvoice()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+
+const { status, data } = await apiInstance.downloadJobOrderInvoice(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/pdf
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Invoice PDF |  -  |
+|**404** | Job order not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **downloadJobOrderPartFile**
 > File downloadJobOrderPartFile()
 
@@ -216,6 +269,57 @@ No authorization required
 |-------------|-------------|------------------|
 |**200** | File content |  -  |
 |**404** | Job order or file not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **downloadJobOrderQuote**
+> File downloadJobOrderQuote()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+
+const { status, data } = await apiInstance.downloadJobOrderQuote(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/pdf
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Quote PDF |  -  |
+|**404** | Job order not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

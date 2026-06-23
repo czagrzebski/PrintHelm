@@ -1,7 +1,10 @@
 package com.czagrzebski.printhelm.web.domain;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "JobOrder")
@@ -62,6 +65,59 @@ public class JobOrder {
     @Column(name = "print_started_at")
     private LocalDateTime printStartedAt;
 
+    @Column(name = "quoted_material_cost", precision = 10, scale = 2)
+    private BigDecimal quotedMaterialCost;
+
+    @Column(name = "quoted_cost_per_unit", precision = 10, scale = 4)
+    private BigDecimal quotedCostPerUnit;
+
+    @Column(name = "quoted_quantity")
+    private Integer quotedQuantity;
+
+    @Column(name = "quoted_labor_cost", precision = 10, scale = 2)
+    private BigDecimal quotedLaborCost;
+
+    @Column(name = "quoted_setup_fee", precision = 10, scale = 2)
+    private BigDecimal quotedSetupFee;
+
+    @Column(name = "quoted_discount", precision = 10, scale = 2)
+    private BigDecimal quotedDiscount;
+
+    @Column(name = "quote_notes", length = 2000)
+    private String quoteNotes;
+
+    @Column(name = "quoted_at")
+    private LocalDateTime quotedAt;
+
+    @Column(name = "quote_expires_at")
+    private LocalDate quoteExpiresAt;
+
+    @Convert(converter = QuoteLineItemsConverter.class)
+    @Column(name = "quote_line_items", columnDefinition = "TEXT")
+    private List<QuoteLineItem> quoteLineItems;
+
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "quote_materials", columnDefinition = "TEXT")
+    private List<String> quoteMaterials;
+
+    @Column(name = "material_cost", precision = 10, scale = 2)
+    private BigDecimal materialCost;
+
+    @Column(name = "labor_cost", precision = 10, scale = 2)
+    private BigDecimal laborCost;
+
+    @Column(name = "setup_fee", precision = 10, scale = 2)
+    private BigDecimal setupFee;
+
+    @Column(name = "discount", precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    @Column(name = "invoice_notes", length = 2000)
+    private String invoiceNotes;
+
+    @Column(name = "invoiced_at")
+    private LocalDateTime invoicedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -117,4 +173,55 @@ public class JobOrder {
 
     public LocalDateTime getPrintStartedAt() { return printStartedAt; }
     public void setPrintStartedAt(LocalDateTime printStartedAt) { this.printStartedAt = printStartedAt; }
+
+    public BigDecimal getQuotedMaterialCost() { return quotedMaterialCost; }
+    public void setQuotedMaterialCost(BigDecimal quotedMaterialCost) { this.quotedMaterialCost = quotedMaterialCost; }
+
+    public BigDecimal getQuotedCostPerUnit() { return quotedCostPerUnit; }
+    public void setQuotedCostPerUnit(BigDecimal quotedCostPerUnit) { this.quotedCostPerUnit = quotedCostPerUnit; }
+
+    public Integer getQuotedQuantity() { return quotedQuantity; }
+    public void setQuotedQuantity(Integer quotedQuantity) { this.quotedQuantity = quotedQuantity; }
+
+    public BigDecimal getQuotedLaborCost() { return quotedLaborCost; }
+    public void setQuotedLaborCost(BigDecimal quotedLaborCost) { this.quotedLaborCost = quotedLaborCost; }
+
+    public BigDecimal getQuotedSetupFee() { return quotedSetupFee; }
+    public void setQuotedSetupFee(BigDecimal quotedSetupFee) { this.quotedSetupFee = quotedSetupFee; }
+
+    public BigDecimal getQuotedDiscount() { return quotedDiscount; }
+    public void setQuotedDiscount(BigDecimal quotedDiscount) { this.quotedDiscount = quotedDiscount; }
+
+    public String getQuoteNotes() { return quoteNotes; }
+    public void setQuoteNotes(String quoteNotes) { this.quoteNotes = quoteNotes; }
+
+    public LocalDateTime getQuotedAt() { return quotedAt; }
+    public void setQuotedAt(LocalDateTime quotedAt) { this.quotedAt = quotedAt; }
+
+    public LocalDate getQuoteExpiresAt() { return quoteExpiresAt; }
+    public void setQuoteExpiresAt(LocalDate quoteExpiresAt) { this.quoteExpiresAt = quoteExpiresAt; }
+
+    public List<QuoteLineItem> getQuoteLineItems() { return quoteLineItems; }
+    public void setQuoteLineItems(List<QuoteLineItem> quoteLineItems) { this.quoteLineItems = quoteLineItems; }
+
+    public List<String> getQuoteMaterials() { return quoteMaterials; }
+    public void setQuoteMaterials(List<String> quoteMaterials) { this.quoteMaterials = quoteMaterials; }
+
+    public BigDecimal getMaterialCost() { return materialCost; }
+    public void setMaterialCost(BigDecimal materialCost) { this.materialCost = materialCost; }
+
+    public BigDecimal getLaborCost() { return laborCost; }
+    public void setLaborCost(BigDecimal laborCost) { this.laborCost = laborCost; }
+
+    public BigDecimal getSetupFee() { return setupFee; }
+    public void setSetupFee(BigDecimal setupFee) { this.setupFee = setupFee; }
+
+    public BigDecimal getDiscount() { return discount; }
+    public void setDiscount(BigDecimal discount) { this.discount = discount; }
+
+    public String getInvoiceNotes() { return invoiceNotes; }
+    public void setInvoiceNotes(String invoiceNotes) { this.invoiceNotes = invoiceNotes; }
+
+    public LocalDateTime getInvoicedAt() { return invoicedAt; }
+    public void setInvoicedAt(LocalDateTime invoicedAt) { this.invoicedAt = invoicedAt; }
 }

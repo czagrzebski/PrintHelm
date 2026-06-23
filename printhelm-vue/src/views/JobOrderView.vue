@@ -29,6 +29,8 @@ const STATUS_META: Record<string, { label: string; severity: string }> = {
   [ApiJobOrderStatus.ReadyToPrint]: { label: 'Ready to Print',  severity: 'contrast' },
   [ApiJobOrderStatus.Printing]:     { label: 'Printing',        severity: 'success' },
   [ApiJobOrderStatus.PrintFinished]:{ label: 'Print Finished',  severity: 'success' },
+  [ApiJobOrderStatus.Invoiced]:     { label: 'Invoiced',         severity: 'success' },
+  [ApiJobOrderStatus.Quoted]:       { label: 'Quoted',           severity: 'warn' },
 }
 
 function statusLabel(status?: ApiJobOrderStatus) {

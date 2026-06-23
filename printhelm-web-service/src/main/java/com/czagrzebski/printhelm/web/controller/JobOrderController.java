@@ -81,6 +81,24 @@ public class JobOrderController {
         return buildFileResponse(order.getMongoGcodeFileId());
     }
 
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable long id) {
+        byte[] pdf = jobOrderService.generateInvoice(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"invoice-" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/{id}/quote")
+    public ResponseEntity<byte[]> downloadQuote(@PathVariable long id) {
+        byte[] pdf = jobOrderService.generateQuote(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"quote-" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     private ResponseEntity<Resource> buildFileResponse(String fileId) throws IOException {
         GridFsResource resource = jobOrderFileService.getFileResource(fileId);
         String filename = resource.getFilename() != null ? resource.getFilename() : fileId;

@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Textarea from 'primevue/textarea'
 import Checkbox from 'primevue/checkbox'
+import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
+import MultiSelect from 'primevue/multiselect'
 import { useToast } from 'primevue/usetoast'
 import {
   type ApiJobOrderResponse,
   type ApiUpdateJobOrderRequest,
   ApiJobOrderStatus,
 } from '@/client/printhelm-web-openapi'
-import jobOrderApi, { uploadPartFile, uploadGcodeFile, downloadPartFile, downloadGcodeFile, fetchGcodeFileBuffer } from '@/api/JobOrderApi'
+import jobOrderApi, { uploadPartFile, uploadGcodeFile, downloadPartFile, downloadGcodeFile, fetchGcodeFileBuffer, downloadInvoice, downloadQuote } from '@/api/JobOrderApi'
 import { printerApi } from '@/api/PrinterApi'
 import PrintJobInfoDialog from '@/components/PrintJobInfoDialog.vue'
 
@@ -25,31 +28,37 @@ const orderId = Number(route.params.id)
 const STEPS = [
   { value: 1, label: 'Submitted',      icon: 'mdi mdi-inbox-arrow-down' },
   { value: 2, label: 'Review',         icon: 'mdi mdi-clipboard-text-outline' },
-  { value: 3, label: 'Design',         icon: 'mdi mdi-cube-outline' },
-  { value: 4, label: 'Setup',          icon: 'mdi mdi-file-cog-outline' },
-  { value: 5, label: 'Ready to Print', icon: 'mdi mdi-printer-check' },
-  { value: 6, label: 'Printing',       icon: 'mdi mdi-printer-3d-nozzle' },
-  { value: 7, label: 'Finished',       icon: 'mdi mdi-check-decagram' },
+  { value: 3, label: 'Quote',          icon: 'mdi mdi-file-document-outline' },
+  { value: 4, label: 'Design',         icon: 'mdi mdi-cube-outline' },
+  { value: 5, label: 'Setup',          icon: 'mdi mdi-file-cog-outline' },
+  { value: 6, label: 'Ready to Print', icon: 'mdi mdi-printer-check' },
+  { value: 7, label: 'Printing',       icon: 'mdi mdi-printer-3d-nozzle' },
+  { value: 8, label: 'Finished',       icon: 'mdi mdi-check-decagram' },
+  { value: 9, label: 'Invoice',        icon: 'mdi mdi-receipt-text-outline' },
 ]
 
 const STATUS_STEP: Record<string, number> = {
   [ApiJobOrderStatus.Submitted]:    1,
   [ApiJobOrderStatus.Review]:       2,
-  [ApiJobOrderStatus.Design]:       3,
-  [ApiJobOrderStatus.Setup]:        4,
-  [ApiJobOrderStatus.ReadyToPrint]: 5,
-  [ApiJobOrderStatus.Printing]:     6,
-  [ApiJobOrderStatus.PrintFinished]:7,
+  [ApiJobOrderStatus.Quoted]:       3,
+  [ApiJobOrderStatus.Design]:       4,
+  [ApiJobOrderStatus.Setup]:        5,
+  [ApiJobOrderStatus.ReadyToPrint]: 6,
+  [ApiJobOrderStatus.Printing]:     7,
+  [ApiJobOrderStatus.PrintFinished]:8,
+  [ApiJobOrderStatus.Invoiced]:     9,
 }
 
 const STATUS_META: Record<string, { label: string; severity: string }> = {
   [ApiJobOrderStatus.Submitted]:    { label: 'Submitted',      severity: 'secondary' },
   [ApiJobOrderStatus.Review]:       { label: 'Review',         severity: 'warn' },
+  [ApiJobOrderStatus.Quoted]:       { label: 'Quoted',         severity: 'warn' },
   [ApiJobOrderStatus.Design]:       { label: 'Design',         severity: 'info' },
   [ApiJobOrderStatus.Setup]:        { label: 'Setup',          severity: 'info' },
   [ApiJobOrderStatus.ReadyToPrint]: { label: 'Ready to Print', severity: 'contrast' },
   [ApiJobOrderStatus.Printing]:     { label: 'Printing',       severity: 'success' },
   [ApiJobOrderStatus.PrintFinished]:{ label: 'Print Finished', severity: 'success' },
+  [ApiJobOrderStatus.Invoiced]:     { label: 'Invoiced',       severity: 'success' },
 }
 
 function statusLabel(s?: ApiJobOrderStatus) {
@@ -88,6 +97,85 @@ const isOnCurrentStep = computed(() => viewingStep.value === statusStep.value)
 const reviewRequirements = ref('')
 const reviewRequiresCustomDesign = ref(false)
 
+const MATERIAL_OPTIONS = [
+  'PLA', 'PLA+', 'PLA-HF', 'PLA-CF',
+  'PETG', 'PETG-HF', 'PETG-CF',
+  'ABS', 'ASA',
+  'TPU', 'TPE',
+  'Nylon (PA)', 'PA-CF', 'PA-GF', 'PA12-CF', 'PAHT-CF',
+  'PC', 'PEI (ULTEM)',
+  'HIPS', 'PVA',
+  'PPS', 'PPS-CF',
+]
+
+const quoteMaterials     = ref<string[]>([])
+const quotedMaterialCost = ref<number | null>(null)
+const quotedCostPerUnit  = ref<number | null>(null)
+const quotedQuantity     = ref<number | null>(null)
+const quotedLaborCost    = ref<number | null>(null)
+const quotedSetupFee     = ref<number | null>(null)
+const quotedDiscount     = ref<number | null>(null)
+const quoteNotes         = ref('')
+const quoteExpiresAt     = ref('')
+const savingQuote        = ref(false)
+const downloadingQuote   = ref(false)
+
+watch([quotedCostPerUnit, quotedQuantity], ([perUnit, qty]) => {
+  if (perUnit != null && qty != null && qty > 0) {
+    quotedMaterialCost.value = Math.round(perUnit * qty * 100) / 100
+  }
+})
+
+interface LineItem { label: string; amount: number | null }
+const quoteLineItems = ref<LineItem[]>([])
+
+const quoteTotal = computed(() => {
+  const fixed = (quotedMaterialCost.value ?? 0) + (quotedLaborCost.value ?? 0) + (quotedSetupFee.value ?? 0)
+  const extra = quoteLineItems.value.reduce((sum, item) => sum + (item.amount ?? 0), 0)
+  return Math.max(0, fixed + extra - (quotedDiscount.value ?? 0))
+})
+
+function syncQuoteFields(data: ApiJobOrderResponse) {
+  quoteMaterials.value     = data.quoteMaterials     ?? []
+  quotedMaterialCost.value = data.quotedMaterialCost ?? null
+  quotedCostPerUnit.value  = data.quotedCostPerUnit  ?? null
+  quotedQuantity.value     = data.quotedQuantity     ?? null
+  quotedLaborCost.value    = data.quotedLaborCost    ?? null
+  quotedSetupFee.value     = data.quotedSetupFee     ?? null
+  quotedDiscount.value     = data.quotedDiscount     ?? null
+  quoteNotes.value         = data.quoteNotes         ?? ''
+  quoteExpiresAt.value     = data.quoteExpiresAt     ?? ''
+  quoteLineItems.value     = (data.quoteLineItems ?? []).map(i => ({ label: i.label ?? '', amount: i.amount ?? null }))
+}
+
+function addLineItem() {
+  quoteLineItems.value.push({ label: '', amount: null })
+}
+
+function removeLineItem(index: number) {
+  quoteLineItems.value.splice(index, 1)
+}
+
+const invoiceMaterialCost = ref<number | null>(null)
+const invoiceLaborCost    = ref<number | null>(null)
+const invoiceSetupFee     = ref<number | null>(null)
+const invoiceDiscount     = ref<number | null>(null)
+const invoiceNotes        = ref('')
+const downloadingInvoice  = ref(false)
+
+const invoiceTotal = computed(() => {
+  const sub = (invoiceMaterialCost.value ?? 0) + (invoiceLaborCost.value ?? 0) + (invoiceSetupFee.value ?? 0)
+  return Math.max(0, sub - (invoiceDiscount.value ?? 0))
+})
+
+function syncInvoiceFields(data: ApiJobOrderResponse) {
+  invoiceMaterialCost.value = data.materialCost ?? null
+  invoiceLaborCost.value    = data.laborCost    ?? null
+  invoiceSetupFee.value     = data.setupFee     ?? null
+  invoiceDiscount.value     = data.discount     ?? null
+  invoiceNotes.value        = data.invoiceNotes ?? ''
+}
+
 async function fetchOrder() {
   loading.value = true
   try {
@@ -96,6 +184,8 @@ async function fetchOrder() {
     viewingStep.value = STATUS_STEP[res.data.status ?? ApiJobOrderStatus.Submitted] ?? 1
     reviewRequirements.value = res.data.requirements ?? ''
     reviewRequiresCustomDesign.value = res.data.requiresCustomDesign ?? false
+    syncQuoteFields(res.data)
+    syncInvoiceFields(res.data)
   } catch {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to load order.', life: 4000 })
   } finally {
@@ -112,6 +202,8 @@ async function advanceStatus(nextStatus: ApiJobOrderStatus, extra?: Partial<ApiU
     viewingStep.value = STATUS_STEP[nextStatus] ?? viewingStep.value
     reviewRequirements.value = res.data.requirements ?? ''
     reviewRequiresCustomDesign.value = res.data.requiresCustomDesign ?? false
+    syncQuoteFields(res.data)
+    syncInvoiceFields(res.data)
   } catch {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update order.', life: 4000 })
   } finally {
@@ -122,9 +214,10 @@ async function advanceStatus(nextStatus: ApiJobOrderStatus, extra?: Partial<ApiU
 function prevStatusFor(current?: ApiJobOrderStatus): ApiJobOrderStatus | null {
   switch (current) {
     case ApiJobOrderStatus.Review:       return ApiJobOrderStatus.Submitted
-    case ApiJobOrderStatus.Design:       return ApiJobOrderStatus.Review
+    case ApiJobOrderStatus.Quoted:       return ApiJobOrderStatus.Review
+    case ApiJobOrderStatus.Design:       return ApiJobOrderStatus.Quoted
     case ApiJobOrderStatus.Setup:        return order.value?.requiresCustomDesign
-                                           ? ApiJobOrderStatus.Design : ApiJobOrderStatus.Review
+                                           ? ApiJobOrderStatus.Design : ApiJobOrderStatus.Quoted
     case ApiJobOrderStatus.ReadyToPrint: return ApiJobOrderStatus.Setup
     default: return null
   }
@@ -136,9 +229,7 @@ async function regressStatus() {
 }
 
 function completeReview() {
-  const next = reviewRequiresCustomDesign.value
-    ? ApiJobOrderStatus.Design : ApiJobOrderStatus.Setup
-  advanceStatus(next, {
+  advanceStatus(ApiJobOrderStatus.Quoted, {
     requirements: reviewRequirements.value.trim() || undefined,
     requiresCustomDesign: reviewRequiresCustomDesign.value,
   })
@@ -211,6 +302,75 @@ async function handleDownloadGcodeFile() {
   }
 }
 
+
+async function handleSaveAndDownloadQuote() {
+  if (!order.value?.orderId) return
+  savingQuote.value = true
+  try {
+    const validLineItems = quoteLineItems.value
+      .filter(i => i.label.trim() && i.amount != null && i.amount > 0)
+      .map(i => ({ label: i.label.trim(), amount: i.amount! }))
+    const res = await jobOrderApi.updateJobOrder(order.value.orderId, {
+      quoteMaterials:     quoteMaterials.value.length > 0 ? quoteMaterials.value : undefined,
+      quotedMaterialCost: quotedMaterialCost.value ?? undefined,
+      quotedCostPerUnit:  quotedCostPerUnit.value  ?? undefined,
+      quotedQuantity:     quotedQuantity.value     ?? undefined,
+      quotedLaborCost:    quotedLaborCost.value    ?? undefined,
+      quotedSetupFee:     quotedSetupFee.value     ?? undefined,
+      quotedDiscount:     quotedDiscount.value     ?? undefined,
+      quoteNotes:         quoteNotes.value.trim()  || undefined,
+      quoteExpiresAt:     quoteExpiresAt.value     || undefined,
+      quoteLineItems:     validLineItems.length > 0 ? validLineItems : undefined,
+    })
+    order.value = res.data
+    syncQuoteFields(res.data)
+    await downloadQuote(order.value.orderId!)
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to save or download quote.', life: 4000 })
+  } finally {
+    savingQuote.value = false
+  }
+}
+
+async function handleAcceptQuote() {
+  const next = order.value?.requiresCustomDesign ? ApiJobOrderStatus.Design : ApiJobOrderStatus.Setup
+  await advanceStatus(next)
+}
+
+async function handleDownloadQuote() {
+  if (!order.value?.orderId) return
+  downloadingQuote.value = true
+  try {
+    await downloadQuote(order.value.orderId)
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to download quote.', life: 4000 })
+  } finally {
+    downloadingQuote.value = false
+  }
+}
+
+async function handleGenerateInvoice() {
+  await advanceStatus(ApiJobOrderStatus.Invoiced, {
+    materialCost: invoiceMaterialCost.value ?? undefined,
+    laborCost:    invoiceLaborCost.value    ?? undefined,
+    setupFee:     invoiceSetupFee.value     ?? undefined,
+    discount:     invoiceDiscount.value     ?? undefined,
+    invoiceNotes: invoiceNotes.value.trim() || undefined,
+  })
+  toast.add({ severity: 'success', summary: 'Invoiced', detail: 'Invoice generated. You can now download the PDF.', life: 4000 })
+}
+
+async function handleDownloadInvoice() {
+  if (!order.value?.orderId) return
+  downloadingInvoice.value = true
+  try {
+    await downloadInvoice(order.value.orderId)
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to download invoice.', life: 4000 })
+  } finally {
+    downloadingInvoice.value = false
+  }
+}
 
 onMounted(() => { fetchOrder(); fetchPrinterNames() })
 </script>
@@ -347,8 +507,131 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
           </template>
         </template>
 
-        <!-- Step 3: Design -->
+        <!-- Step 3: Quote -->
         <template v-else-if="viewingStep === 3">
+          <template v-if="order.status !== ApiJobOrderStatus.Quoted && statusStep > 3">
+            <!-- Read-only quote summary when browsing past this step -->
+            <div class="invoice-summary-card">
+              <div v-if="order.quoteMaterials && order.quoteMaterials.length > 0" class="invoice-summary-row">
+                <span class="invoice-summary-label">Materials</span>
+                <span class="invoice-summary-value">{{ order.quoteMaterials.join(', ') }}</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.quotedMaterialCost">
+                <span class="invoice-summary-label">Est. Material Cost</span>
+                <span class="invoice-summary-value">${{ order.quotedMaterialCost.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.quotedLaborCost">
+                <span class="invoice-summary-label">Est. Labor / Design Fee</span>
+                <span class="invoice-summary-value">${{ order.quotedLaborCost.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.quotedSetupFee">
+                <span class="invoice-summary-label">Est. Setup Fee</span>
+                <span class="invoice-summary-value">${{ order.quotedSetupFee.toFixed(2) }}</span>
+              </div>
+              <template v-if="order.quoteLineItems && order.quoteLineItems.length > 0">
+                <div class="invoice-summary-row" v-for="(item, i) in order.quoteLineItems" :key="i">
+                  <span class="invoice-summary-label">{{ item.label }}</span>
+                  <span class="invoice-summary-value">${{ (item.amount ?? 0).toFixed(2) }}</span>
+                </div>
+              </template>
+              <div class="invoice-summary-divider" />
+              <div class="invoice-summary-row" v-if="order.quotedDiscount && order.quotedDiscount > 0">
+                <span class="invoice-summary-label">Discount</span>
+                <span class="invoice-summary-value invoice-summary-value--discount">-${{ order.quotedDiscount.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-row invoice-summary-row--total">
+                <span class="invoice-summary-label">Est. Total</span>
+                <span class="invoice-summary-value invoice-summary-value--total">
+                  ${{ Math.max(0, ((order.quotedMaterialCost ?? 0) + (order.quotedLaborCost ?? 0) + (order.quotedSetupFee ?? 0) + (order.quoteLineItems ?? []).reduce((s, i) => s + (i.amount ?? 0), 0)) - (order.quotedDiscount ?? 0)).toFixed(2) }}
+                </span>
+              </div>
+              <div v-if="order.quoteNotes" class="invoice-notes-section">
+                <span class="invoice-summary-label">Notes</span>
+                <p class="invoice-notes-text">{{ order.quoteNotes }}</p>
+              </div>
+            </div>
+            <div class="invoice-download-row">
+              <Button label="Download Quote PDF" icon="pi pi-download" severity="secondary" :loading="downloadingQuote" @click="handleDownloadQuote" />
+              <span v-if="order.quotedAt" class="invoice-date-hint">Quoted {{ formatDate(order.quotedAt) }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <!-- Active quote step: cost entry form -->
+            <p class="step-description">Enter the estimated costs for this job to generate a quote for the customer.</p>
+            <div class="form-body">
+              <div class="field">
+                <label class="field-label">Materials</label>
+                <MultiSelect
+                  v-model="quoteMaterials"
+                  :options="MATERIAL_OPTIONS"
+                  placeholder="Select material types…"
+                  display="chip"
+                  class="field-input"
+                />
+              </div>
+              <div class="unit-cost-row">
+                <div class="field">
+                  <label class="field-label">Cost Per Unit</label>
+                  <InputNumber v-model="quotedCostPerUnit" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+                <div class="field unit-cost-qty">
+                  <label class="field-label">Quantity</label>
+                  <InputNumber v-model="quotedQuantity" :min="1" :max="99999" placeholder="1" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Est. Material Cost</label>
+                  <InputNumber v-model="quotedMaterialCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+              </div>
+              <div class="invoice-cost-grid">
+                <div class="field">
+                  <label class="field-label">Est. Labor / Design Fee</label>
+                  <InputNumber v-model="quotedLaborCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Est. Setup Fee</label>
+                  <InputNumber v-model="quotedSetupFee" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Discount</label>
+                  <InputNumber v-model="quotedDiscount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+              </div>
+              <!-- Line items -->
+              <div class="line-items-section">
+                <div class="line-items-header">
+                  <span class="field-label">Additional Line Items</span>
+                  <Button label="Add Item" icon="mdi mdi-plus" size="small" severity="secondary" text @click="addLineItem" />
+                </div>
+                <div v-for="(item, index) in quoteLineItems" :key="index" class="line-item-row">
+                  <InputText v-model="item.label" placeholder="Description" class="line-item-label" />
+                  <InputNumber v-model="item.amount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="line-item-amount" />
+                  <Button icon="mdi mdi-close" severity="danger" text size="small" @click="removeLineItem(index)" />
+                </div>
+              </div>
+              <div class="invoice-total-preview">
+                <span class="invoice-total-label">Estimated Total</span>
+                <span class="invoice-total-value">${{ quoteTotal.toFixed(2) }}</span>
+              </div>
+              <div class="field">
+                <label class="field-label">Valid Until (optional)</label>
+                <input
+                  v-model="quoteExpiresAt"
+                  type="date"
+                  class="field-input date-input"
+                  :min="new Date().toISOString().split('T')[0]"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Notes (optional)</label>
+                <Textarea v-model="quoteNotes" placeholder="Additional notes for the quote…" class="field-input" rows="3" auto-resize />
+              </div>
+            </div>
+          </template>
+        </template>
+
+        <!-- Step 4: Design -->
+        <template v-else-if="viewingStep === 4">
           <p class="step-description">Create or finalise the 3D design file based on the documented requirements.</p>
           <div class="upload-area" :class="{ 'upload-area--active': isOnCurrentStep }">
             <i class="mdi mdi-cube-scan upload-icon" />
@@ -386,8 +669,8 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
           </div>
         </template>
 
-        <!-- Step 4: Setup -->
-        <template v-else-if="viewingStep === 4">
+        <!-- Step 5: Setup -->
+        <template v-else-if="viewingStep === 5">
           <p class="step-description">Upload the sliced GCode file to prepare the order for printing.</p>
           <div class="upload-area" :class="{ 'upload-area--active': isOnCurrentStep }">
             <i class="mdi mdi-code-braces upload-icon" />
@@ -465,8 +748,8 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
           </div>
         </template>
 
-        <!-- Step 5: Ready to Print -->
-        <template v-else-if="viewingStep === 5">
+        <!-- Step 6: Ready to Print -->
+        <template v-else-if="viewingStep === 6">
           <p class="step-description">The order is fully prepared and awaiting a printer.</p>
           <div class="info-grid">
             <div class="info-card">
@@ -513,8 +796,8 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
           </div>
         </template>
 
-        <!-- Step 6: Printing -->
-        <template v-else-if="viewingStep === 6">
+        <!-- Step 7: Printing -->
+        <template v-else-if="viewingStep === 7">
           <div class="focal-display">
             <div class="focal-ring">
               <i class="mdi mdi-printer-3d-nozzle focal-icon" />
@@ -523,8 +806,8 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
           </div>
         </template>
 
-        <!-- Step 7: Finished -->
-        <template v-else-if="viewingStep === 7">
+        <!-- Step 8: Finished -->
+        <template v-else-if="viewingStep === 8">
           <div class="focal-display">
             <div class="focal-ring focal-ring--done">
               <i class="mdi mdi-check focal-icon focal-icon--done" />
@@ -541,6 +824,91 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
               <span class="info-value">{{ order.customerEmail || '—' }}</span>
             </div>
           </div>
+        </template>
+
+        <!-- Step 9: Invoice -->
+        <template v-else-if="viewingStep === 9">
+          <template v-if="order.status === ApiJobOrderStatus.Invoiced">
+            <!-- Read-only cost summary once invoiced -->
+            <div class="focal-display" style="margin-bottom:1.25rem">
+              <div class="focal-ring focal-ring--done">
+                <i class="mdi mdi-receipt-check focal-icon focal-icon--done" />
+              </div>
+              <p class="focal-label">Invoice has been generated.</p>
+            </div>
+            <div class="invoice-summary-card">
+              <div class="invoice-summary-row" v-if="order.materialCost">
+                <span class="invoice-summary-label">Material Cost</span>
+                <span class="invoice-summary-value">${{ order.materialCost.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.laborCost">
+                <span class="invoice-summary-label">Labor / Design Fee</span>
+                <span class="invoice-summary-value">${{ order.laborCost.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.setupFee">
+                <span class="invoice-summary-label">Setup Fee</span>
+                <span class="invoice-summary-value">${{ order.setupFee.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-divider" />
+              <div class="invoice-summary-row" v-if="order.discount && order.discount > 0">
+                <span class="invoice-summary-label">Discount</span>
+                <span class="invoice-summary-value invoice-summary-value--discount">-${{ order.discount.toFixed(2) }}</span>
+              </div>
+              <div class="invoice-summary-row invoice-summary-row--total">
+                <span class="invoice-summary-label">Total</span>
+                <span class="invoice-summary-value invoice-summary-value--total">
+                  ${{ Math.max(0, ((order.materialCost ?? 0) + (order.laborCost ?? 0) + (order.setupFee ?? 0)) - (order.discount ?? 0)).toFixed(2) }}
+                </span>
+              </div>
+              <div v-if="order.invoiceNotes" class="invoice-notes-section">
+                <span class="invoice-summary-label">Notes</span>
+                <p class="invoice-notes-text">{{ order.invoiceNotes }}</p>
+              </div>
+            </div>
+            <div class="invoice-download-row">
+              <Button
+                label="Download PDF"
+                icon="pi pi-download"
+                :loading="downloadingInvoice"
+                @click="handleDownloadInvoice"
+              />
+              <span v-if="order.invoicedAt" class="invoice-date-hint">
+                Invoiced {{ formatDate(order.invoicedAt) }}
+              </span>
+            </div>
+          </template>
+          <template v-else>
+            <!-- Cost entry form — shown when at PRINT_FINISHED viewing step 8 -->
+            <p class="step-description">Enter the cost breakdown to generate the customer invoice.</p>
+            <div class="form-body">
+              <div class="invoice-cost-grid">
+                <div class="field">
+                  <label class="field-label">Material Cost</label>
+                  <InputNumber v-model="invoiceMaterialCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Labor / Design Fee</label>
+                  <InputNumber v-model="invoiceLaborCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Setup Fee</label>
+                  <InputNumber v-model="invoiceSetupFee" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Discount</label>
+                  <InputNumber v-model="invoiceDiscount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                </div>
+              </div>
+              <div class="invoice-total-preview">
+                <span class="invoice-total-label">Estimated Total</span>
+                <span class="invoice-total-value">${{ invoiceTotal.toFixed(2) }}</span>
+              </div>
+              <div class="field">
+                <label class="field-label">Notes (optional)</label>
+                <Textarea v-model="invoiceNotes" placeholder="Additional notes for the invoice…" class="field-input" rows="3" auto-resize />
+              </div>
+            </div>
+          </template>
         </template>
 
         <!-- Workflow Transition — only visible when viewing the current step -->
@@ -564,6 +932,16 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
               <template v-else-if="order.status === ApiJobOrderStatus.Review">
                 <Button label="Complete Review →" :loading="advancing" @click="completeReview" />
               </template>
+              <template v-else-if="order.status === ApiJobOrderStatus.Quoted">
+                <Button
+                  label="Save & Download Quote PDF"
+                  icon="mdi mdi-file-download-outline"
+                  severity="secondary"
+                  :loading="savingQuote"
+                  @click="handleSaveAndDownloadQuote"
+                />
+                <Button label="Accept Quote →" :loading="advancing" @click="handleAcceptQuote" />
+              </template>
               <template v-else-if="order.status === ApiJobOrderStatus.Design">
                 <Button label="Complete Design →" :loading="advancing" @click="advanceStatus(ApiJobOrderStatus.Setup)" />
               </template>
@@ -576,6 +954,39 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
               <template v-else-if="order.status === ApiJobOrderStatus.Printing">
                 <span class="transition-info">Print in progress — managed by printer</span>
               </template>
+              <template v-else-if="order.status === ApiJobOrderStatus.PrintFinished">
+                <Button
+                  label="Create Invoice →"
+                  icon="mdi mdi-receipt-text-outline"
+                  :loading="advancing"
+                  @click="viewingStep = 9"
+                />
+              </template>
+              <template v-else-if="order.status === ApiJobOrderStatus.Invoiced">
+                <Button
+                  label="Download PDF"
+                  icon="pi pi-download"
+                  severity="secondary"
+                  :loading="downloadingInvoice"
+                  @click="handleDownloadInvoice"
+                />
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <!-- Invoice Generate button — shown in step 9 only when not yet invoiced -->
+        <template v-if="viewingStep === 9 && order.status !== ApiJobOrderStatus.Invoiced && isOnCurrentStep">
+          <div class="transition-divider" />
+          <div class="transition-section">
+            <span class="transition-label"><i class="mdi mdi-receipt-text-outline" /> Generate Invoice</span>
+            <div class="transition-btns">
+              <Button
+                label="Generate Invoice & Mark as Invoiced"
+                icon="mdi mdi-receipt-send-outline"
+                :loading="advancing"
+                @click="handleGenerateInvoice"
+              />
             </div>
           </div>
         </template>
@@ -1031,4 +1442,140 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
 }
 .transition-btns { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
 .transition-info { font-size: 0.8125rem; color: var(--ph-text-muted); font-style: italic; }
+
+/* ── Date input ──────────────────────────────────────────── */
+.date-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--ph-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: var(--ph-text);
+  font-size: 0.875rem;
+  color-scheme: dark;
+}
+.date-input:focus {
+  outline: none;
+  border-color: var(--ph-accent);
+}
+
+/* ── Invoice cost grid ───────────────────────────────────── */
+.invoice-cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 600px) {
+  .invoice-cost-grid { grid-template-columns: 1fr; }
+}
+.invoice-total-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 10px;
+}
+.invoice-total-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ph-text-muted);
+}
+.invoice-total-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ph-accent);
+}
+
+/* ── Invoice summary (read-only) ─────────────────────────── */
+.invoice-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--ph-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  max-width: 480px;
+  margin-top: 0.75rem;
+}
+.invoice-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+.invoice-summary-row--total {
+  margin-top: 0.25rem;
+}
+.invoice-summary-label {
+  color: var(--ph-text-muted);
+  font-size: 0.825rem;
+}
+.invoice-summary-value { color: var(--ph-text); font-weight: 500; }
+.invoice-summary-value--discount { color: #f87171; }
+.invoice-summary-value--total {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ph-accent);
+}
+.invoice-summary-divider {
+  height: 1px;
+  background: var(--ph-border);
+  margin: 0.25rem 0;
+}
+.invoice-notes-section {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.invoice-notes-text {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ph-text);
+  white-space: pre-wrap;
+}
+.invoice-download-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.invoice-date-hint {
+  font-size: 0.775rem;
+  color: var(--ph-text-muted);
+  font-style: italic;
+}
+
+.line-items-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.line-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.line-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.line-item-label { flex: 1; min-width: 0; }
+.line-item-amount { width: 160px; flex-shrink: 0; }
+
+.unit-cost-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 1fr;
+  gap: 0.75rem;
+}
+
+.unit-cost-qty :deep(.p-inputnumber-input) { text-align: center; }
 </style>
