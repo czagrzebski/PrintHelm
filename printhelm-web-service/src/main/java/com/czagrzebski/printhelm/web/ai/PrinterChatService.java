@@ -5,13 +5,16 @@ import com.czagrzebski.printhelm.model.ApiChatResponse;
 import com.czagrzebski.printhelm.model.ApiProposedAction;
 import com.czagrzebski.printhelm.web.domain.chat.ChatSession;
 import com.czagrzebski.printhelm.web.service.ChatSessionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,57 +24,65 @@ public class PrinterChatService {
     private static final String MODEL_HAIKU = "claude-haiku-4-5-20251001";
     private static final String MODEL_SONNET = "claude-sonnet-4-6";
 
+    private static final String SYSTEM_PROMPT = """
+            You are PrintHelm AI, an intelligent assistant for managing 3D printers.
+            You have two categories of tools:
+
+            READ tools (execute immediately): listPrinters, getPrinterState, getPrinterQueue
+            - Use these freely to answer questions about printer status, temperatures, errors, progress, and queued jobs.
+
+            CONTROL tools (propose only — never execute): proposePause, proposeResume, proposeStop, proposeSetNozzleTemp, proposeSetBedTemp, proposeSetSpeed, proposeHome, proposeStartPrint
+            - These queue an action for the user to explicitly approve. They will NEVER execute automatically.
+            - Always call a control tool when the user asks you to perform a printer action.
+            - After proposing, tell the user to review and confirm the action shown below your message.
+            - Do NOT say the action has been completed or succeeded — it is only queued for approval.
+            - For proposeStartPrint: \
+              1. Call getPrinterQueue to find a job with status READY_TO_PRINT and get its jobOrderId. \
+              2. Call getPrinterState to check for AMS trays (materialSystem.materials). \
+              3. If AMS trays are present, build amsMapping by matching each filament slot to a tray by type. \
+                 If getPrinterState returned null, no materials, or the job has no filament metadata, pass amsMapping=[]. \
+              4. Always call proposeStartPrint — never skip it just because AMS info is unavailable.
+
+            When a [System] notice tells you a command was dispatched, you MUST call getPrinterState(printerId) \
+            before responding. Report what you actually observe in the state — never assume the action succeeded.
+
+            Be concise and practical. If the user does not specify a printer by name, call listPrinters first.
+            """;
+
     private final ChatClient chatClient;
     private final PrinterStateTool printerStateTool;
     private final PrinterControlTool printerControlTool;
     private final PrintQueueTool printQueueTool;
     private final ChatSessionService chatSessionService;
+    private final ObjectMapper objectMapper;
 
     public PrinterChatService(ChatClient.Builder builder,
                               PrinterStateTool printerStateTool,
                               PrinterControlTool printerControlTool,
                               PrintQueueTool printQueueTool,
-                              ChatSessionService chatSessionService) {
+                              ChatSessionService chatSessionService,
+                              ObjectMapper objectMapper) {
         this.printerStateTool = printerStateTool;
         this.printerControlTool = printerControlTool;
         this.printQueueTool = printQueueTool;
         this.chatSessionService = chatSessionService;
-        this.chatClient = builder
-                .defaultSystem("""
-                        You are PrintHelm AI, an intelligent assistant for managing 3D printers.
-                        You have two categories of tools:
+        this.objectMapper = objectMapper;
+        this.chatClient = builder.defaultSystem(SYSTEM_PROMPT).build();
+    }
 
-                        READ tools (execute immediately): listPrinters, getPrinterState, getPrinterQueue
-                        - Use these freely to answer questions about printer status, temperatures, errors, progress, and queued jobs.
-
-                        CONTROL tools (propose only — never execute): proposePause, proposeResume, proposeStop, proposeSetNozzleTemp, proposeSetBedTemp, proposeSetSpeed, proposeHome, proposeStartPrint
-                        - These queue an action for the user to explicitly approve. They will NEVER execute automatically.
-                        - Always call a control tool when the user asks you to perform a printer action.
-                        - After proposing, tell the user to review and confirm the action shown below your message.
-                        - For proposeStartPrint: \
-                          1. Call getPrinterQueue to find a job with status READY_TO_PRINT and get its jobOrderId. \
-                          2. Call getPrinterState to check for AMS trays (materialSystem.materials). \
-                          3. If AMS trays are present, build amsMapping by matching each filament slot to a tray by type. \
-                             If getPrinterState returned null, no materials, or the job has no filament metadata, pass amsMapping=[]. \
-                          4. Always call proposeStartPrint — never skip it just because AMS info is unavailable.
-
-                        Be concise and practical. If the user does not specify a printer by name, call listPrinters first.
-                        """)
-                .build();
+    private List<Message> buildMessageList(ChatSession session, String userContent) {
+        List<Message> messages = new ArrayList<>(session.getMessages().stream()
+                .map(m -> "user".equals(m.getRole())
+                        ? (Message) new UserMessage(m.getContent())
+                        : new AssistantMessage(m.getContent()))
+                .toList());
+        messages.add(new UserMessage(userContent));
+        return messages;
     }
 
     public ApiChatResponse chat(String userContent, String sessionId, String username, ApiChatModel model) {
         ChatSession session = chatSessionService.loadOrCreate(sessionId, username);
-
-        List<Message> messages = session.getMessages().stream()
-                .map(m -> "user".equals(m.getRole())
-                        ? (Message) new UserMessage(m.getContent())
-                        : new AssistantMessage(m.getContent()))
-                .toList();
-
-        messages = new ArrayList<>(messages);
-        messages.add(new UserMessage(userContent));
-
+        List<Message> messages = buildMessageList(session, userContent);
         String modelId = (model == ApiChatModel.SONNET) ? MODEL_SONNET : MODEL_HAIKU;
 
         printerControlTool.initRequest();
@@ -99,5 +110,53 @@ public class PrinterChatService {
         response.setSessionId(saved.getId());
         response.setProposedActions(allActions);
         return response;
+    }
+
+    public void chatStream(String userContent, String sessionId, String username, ApiChatModel model, SseEmitter emitter) {
+        ChatSession session = chatSessionService.loadOrCreate(sessionId, username);
+        List<Message> messages = buildMessageList(session, userContent);
+        String modelId = (model == ApiChatModel.SONNET) ? MODEL_SONNET : MODEL_HAIKU;
+
+        printerControlTool.initRequest();
+        printQueueTool.initRequest();
+
+        StringBuilder accumulated = new StringBuilder();
+
+        try {
+            chatClient.prompt()
+                    .messages(messages)
+                    .tools(printerStateTool, printerControlTool, printQueueTool)
+                    .options(AnthropicChatOptions.builder().model(modelId).build())
+                    .stream()
+                    .content()
+                    .doOnNext(accumulated::append)
+                    .doOnNext(token -> {
+                        try {
+                            emitter.send(SseEmitter.event().name("token").data(token));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .blockLast();
+
+            String full = accumulated.toString();
+            ChatSession saved = chatSessionService.save(session, userContent, full);
+
+            List<ApiProposedAction> actions = new ArrayList<>();
+            actions.addAll(printerControlTool.getAndClearActions());
+            actions.addAll(printQueueTool.getAndClearActions());
+
+            ApiChatResponse meta = new ApiChatResponse();
+            meta.setSessionId(saved.getId());
+            meta.setProposedActions(actions);
+
+            emitter.send(SseEmitter.event().name("done").data(objectMapper.writeValueAsString(meta)));
+            emitter.complete();
+        } catch (Exception e) {
+            try {
+                emitter.completeWithError(e);
+            } catch (Exception ignored) {
+            }
+        }
     }
 }

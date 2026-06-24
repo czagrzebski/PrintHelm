@@ -7,7 +7,9 @@ import { chatApi } from '@/api/ChatApi'
 import { printerCommandApi } from '@/api/PrinterCommandApi'
 import printQueueApi from '@/api/PrintQueueApi'
 import { ApiChatModel, ApiProposedActionActionTypeEnum } from '@/client/printhelm-web-openapi'
-import type { ApiChatSessionSummary, ApiProposedAction } from '@/client/printhelm-web-openapi'
+import type { ApiChatResponse, ApiChatSessionSummary, ApiProposedAction } from '@/client/printhelm-web-openapi'
+import { useAuthStore } from '@/stores/auth'
+import { BASE_URL } from '@/api/Configuration'
 
 type ActionStatus = 'pending' | 'executing' | 'approved' | 'declined' | 'error'
 
@@ -23,6 +25,7 @@ interface Message {
   actions?: ActionCard[]
 }
 
+const authStore = useAuthStore()
 const isOpen = ref(false)
 const showSessions = ref(false)
 const loading = ref(false)
@@ -93,6 +96,61 @@ async function deleteSession(e: Event, session: ApiChatSessionSummary) {
   }
 }
 
+async function streamChat(content: string, assistantMsg: Message): Promise<void> {
+  const res = await fetch(`${BASE_URL}/chat/message/stream`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authStore.accessToken}`,
+    },
+    body: JSON.stringify({
+      content,
+      sessionId: currentSessionId.value ?? undefined,
+      model: selectedModel.value,
+    }),
+  })
+
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+
+    const eventBlocks = buf.split('\n\n')
+    buf = eventBlocks.pop() ?? ''
+
+    for (const block of eventBlocks) {
+      let eventType = ''
+      const dataLines: string[] = []
+
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) eventType = line.slice(6).trim()
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).replace(/^ /, ''))
+      }
+
+      if (!eventType || dataLines.length === 0) continue
+      const data = dataLines.join('\n')
+
+      if (eventType === 'token') {
+        assistantMsg.content += data
+        await scrollToBottom()
+      } else if (eventType === 'done') {
+        const meta = JSON.parse(data) as ApiChatResponse
+        if (meta.sessionId) currentSessionId.value = meta.sessionId
+        const actions: ActionCard[] = (meta.proposedActions ?? []).map((a) => ({
+          ...a,
+          status: 'pending' as ActionStatus,
+        }))
+        if (actions.length > 0) assistantMsg.actions = actions
+      }
+    }
+  }
+}
+
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
@@ -101,29 +159,15 @@ async function sendMessage() {
   inputText.value = ''
   loading.value = true
   showSessions.value = false
+
+  const assistantMsg: Message = { role: 'assistant', content: '' }
+  messages.value.push(assistantMsg)
   await scrollToBottom()
 
   try {
-    const res = await chatApi.sendChatMessage({
-      content: text,
-      sessionId: currentSessionId.value ?? undefined,
-      model: selectedModel.value,
-    })
-
-    currentSessionId.value = res.data.sessionId ?? currentSessionId.value
-
-    const actions: ActionCard[] = (res.data.proposedActions ?? []).map((a) => ({
-      ...a,
-      status: 'pending' as ActionStatus,
-    }))
-
-    messages.value.push({
-      role: 'assistant',
-      content: res.data.message ?? '',
-      actions: actions.length > 0 ? actions : undefined,
-    })
+    await streamChat(text, assistantMsg)
   } catch {
-    messages.value.push({ role: 'assistant', content: 'Something went wrong. Please try again.' })
+    assistantMsg.content = 'Something went wrong. Please try again.'
   } finally {
     loading.value = false
     await scrollToBottom()
@@ -182,23 +226,36 @@ async function approveAction(action: ActionCard) {
   }
 }
 
+function verificationDelay(actionType: string | undefined): number {
+  const T = ApiProposedActionActionTypeEnum
+  switch (actionType) {
+    case T.Home:
+    case T.StartPrint:
+      return 4000
+    case T.Stop:
+    case T.Pause:
+    case T.Resume:
+      return 2000
+    default:
+      return 1000
+  }
+}
+
 async function fetchActionSummary(action: ActionCard) {
   if (!currentSessionId.value) return
+
+  await new Promise<void>((resolve) => setTimeout(resolve, verificationDelay(action.actionType)))
+
   loading.value = true
+  const assistantMsg: Message = { role: 'assistant', content: '' }
+  messages.value.push(assistantMsg)
   await scrollToBottom()
+
   try {
-    const notice = `[System notice — do not repeat this text] The user approved and the following action was executed successfully: "${action.description}" on printer "${action.printerName}". Provide a short, friendly confirmation summary to the user.`
-    const res = await chatApi.sendChatMessage({
-      content: notice,
-      sessionId: currentSessionId.value,
-      model: selectedModel.value,
-    })
-    messages.value.push({
-      role: 'assistant',
-      content: res.data.message ?? '',
-    })
+    const notice = `[System] Command dispatched: "${action.description}" on printer "${action.printerName}" (ID: ${action.printerId}). Call getPrinterState(${action.printerId}) now, then report the current state to the user. Be concise.`
+    await streamChat(notice, assistantMsg)
   } catch {
-    // summary is best-effort; silently ignore failures
+    messages.value.pop()
   } finally {
     loading.value = false
     await scrollToBottom()

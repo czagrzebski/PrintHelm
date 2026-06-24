@@ -2,6 +2,7 @@ package com.czagrzebski.printhelm.web.config;
 
 import com.czagrzebski.printhelm.web.service.JWTService;
 import com.czagrzebski.printhelm.web.service.UserDetailsServiceImpl;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -44,7 +45,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((requests) ->
-                requests.requestMatchers("/api/auth/login").permitAll()
+                // ASYNC/ERROR dispatches re-enter the filter chain without the JWT context
+                // (OncePerRequestFilter skips them); authorization already ran on the
+                // original REQUEST dispatch, e.g. for SseEmitter streaming responses
+                requests.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").permitAll()
                         .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/createUser").permitAll()

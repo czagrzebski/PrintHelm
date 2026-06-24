@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthService from '@/service/AuthService'
@@ -10,22 +10,6 @@ import CommandPalette from '@/components/CommandPalette.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
-
-const clock = ref('')
-let clockTimer: ReturnType<typeof setInterval> | null = null
-
-function tick() {
-  clock.value = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-}
-
-onMounted(() => {
-  tick()
-  clockTimer = setInterval(tick, 10_000)
-})
-
-onUnmounted(() => {
-  if (clockTimer !== null) clearInterval(clockTimer)
-})
 
 async function logout() {
   await AuthService.logout()
@@ -65,11 +49,6 @@ async function logout() {
           Settings
         </RouterLink>
       </nav>
-
-      <div class="sidebar-clock">
-        <i class="mdi mdi-clock-outline" />
-        <span>{{ clock }}</span>
-      </div>
 
       <div class="sidebar-footer">
         <div class="footer-user">
@@ -261,17 +240,6 @@ async function logout() {
 
 .nav-link.router-link-active i {
   text-shadow: 0 0 14px rgba(34, 211, 238, 0.7);
-}
-
-/* ── Clock ───────────────────────────────────────────────────────── */
-.sidebar-clock {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  color: var(--ph-text-muted);
-  font-size: 0.78rem;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────── */

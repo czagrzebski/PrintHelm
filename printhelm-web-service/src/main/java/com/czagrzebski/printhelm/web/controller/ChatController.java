@@ -8,7 +8,10 @@ import com.czagrzebski.printhelm.web.ai.PrinterChatService;
 import com.czagrzebski.printhelm.web.service.ChatSessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.security.Principal;
 import java.util.List;
@@ -30,6 +33,20 @@ public class ChatController {
                 request.getSessionId(),
                 principal.getName(),
                 request.getModel()));
+    }
+
+    @PostMapping("/message/stream")
+    public SseEmitter chatStream(@RequestBody ApiChatRequest request, Principal principal) {
+        SseEmitter emitter = new SseEmitter(120_000L);
+        var ctx = SecurityContextHolder.getContext();
+        Thread.ofVirtual().start(new DelegatingSecurityContextRunnable(() ->
+                printerChatService.chatStream(
+                        request.getContent(),
+                        request.getSessionId(),
+                        principal.getName(),
+                        request.getModel(),
+                        emitter), ctx));
+        return emitter;
     }
 
     @GetMapping("/sessions")
