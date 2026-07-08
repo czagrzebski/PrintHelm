@@ -7,34 +7,27 @@ import com.czagrzebski.printhelm.web.repository.PrinterRepository;
 import com.czagrzebski.printhelm.web.service.PrintQueueService;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Component
+/**
+ * Per-request tool instance; created by {@link ChatToolFactory} for each chat request.
+ */
 public class PrintQueueTool {
 
-    @Autowired
-    private PrintQueueService printQueueService;
+    private final PrintQueueService printQueueService;
+    private final PrinterRepository printerRepository;
+    private final ChatRequestContext ctx;
 
-    @Autowired
-    private PrinterRepository printerRepository;
-
-    private final ThreadLocal<List<ApiProposedAction>> pending = new ThreadLocal<>();
-
-    public void initRequest() {
-        pending.set(new ArrayList<>());
-    }
-
-    public List<ApiProposedAction> getAndClearActions() {
-        List<ApiProposedAction> actions = pending.get();
-        pending.remove();
-        return actions != null ? actions : List.of();
+    public PrintQueueTool(PrintQueueService printQueueService,
+                          PrinterRepository printerRepository,
+                          ChatRequestContext ctx) {
+        this.printQueueService = printQueueService;
+        this.printerRepository = printerRepository;
+        this.ctx = ctx;
     }
 
     @Tool(description = """
@@ -43,6 +36,7 @@ public class PrintQueueTool {
             """)
     public List<ApiJobOrderResponse> getPrinterQueue(
             @ToolParam(description = "Numeric printer ID obtained from listPrinters") long printerId) {
+        ctx.status("Reading the print queue");
         return printQueueService.getQueue(printerId);
     }
 
@@ -80,8 +74,8 @@ public class PrintQueueTool {
         params.put("layerInspect", true);
         action.setParameters(params);
 
-        List<ApiProposedAction> list = pending.get();
-        if (list != null) list.add(action);
+        ctx.status("Preparing action: " + action.getDescription());
+        ctx.addAction(action);
 
         return "Action proposed: \"" + action.getDescription() + "\". Awaiting explicit user confirmation — this will NOT execute automatically.";
     }

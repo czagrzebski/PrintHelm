@@ -2,7 +2,6 @@ package com.czagrzebski.printhelm.web.ai;
 
 import com.czagrzebski.printhelm.model.ApiChatModel;
 import com.czagrzebski.printhelm.model.ApiChatResponse;
-import com.czagrzebski.printhelm.model.ApiProposedAction;
 import com.czagrzebski.printhelm.web.domain.chat.ChatSession;
 import com.czagrzebski.printhelm.web.service.ChatSessionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,21 +49,15 @@ public class PrinterChatService {
             """;
 
     private final ChatClient chatClient;
-    private final PrinterStateTool printerStateTool;
-    private final PrinterControlTool printerControlTool;
-    private final PrintQueueTool printQueueTool;
+    private final ChatToolFactory chatToolFactory;
     private final ChatSessionService chatSessionService;
     private final ObjectMapper objectMapper;
 
     public PrinterChatService(ChatClient.Builder builder,
-                              PrinterStateTool printerStateTool,
-                              PrinterControlTool printerControlTool,
-                              PrintQueueTool printQueueTool,
+                              ChatToolFactory chatToolFactory,
                               ChatSessionService chatSessionService,
                               ObjectMapper objectMapper) {
-        this.printerStateTool = printerStateTool;
-        this.printerControlTool = printerControlTool;
-        this.printQueueTool = printQueueTool;
+        this.chatToolFactory = chatToolFactory;
         this.chatSessionService = chatSessionService;
         this.objectMapper = objectMapper;
         this.chatClient = builder.defaultSystem(SYSTEM_PROMPT).build();
@@ -85,12 +78,11 @@ public class PrinterChatService {
         List<Message> messages = buildMessageList(session, userContent);
         String modelId = (model == ApiChatModel.SONNET) ? MODEL_SONNET : MODEL_HAIKU;
 
-        printerControlTool.initRequest();
-        printQueueTool.initRequest();
+        ChatRequestContext ctx = new ChatRequestContext();
 
         String assistantContent = chatClient.prompt()
                 .messages(messages)
-                .tools(printerStateTool, printerControlTool, printQueueTool)
+                .tools(chatToolFactory.createTools(ctx))
                 .options(AnthropicChatOptions.builder().model(modelId).build())
                 .call()
                 .content();
@@ -101,14 +93,10 @@ public class PrinterChatService {
 
         ChatSession saved = chatSessionService.save(session, userContent, assistantContent);
 
-        List<ApiProposedAction> allActions = new ArrayList<>();
-        allActions.addAll(printerControlTool.getAndClearActions());
-        allActions.addAll(printQueueTool.getAndClearActions());
-
         ApiChatResponse response = new ApiChatResponse();
         response.setMessage(assistantContent);
         response.setSessionId(saved.getId());
-        response.setProposedActions(allActions);
+        response.setProposedActions(ctx.getActions());
         return response;
     }
 
@@ -117,38 +105,50 @@ public class PrinterChatService {
         List<Message> messages = buildMessageList(session, userContent);
         String modelId = (model == ApiChatModel.SONNET) ? MODEL_SONNET : MODEL_HAIKU;
 
-        printerControlTool.initRequest();
-        printQueueTool.initRequest();
+        // Status updates fire from the tool-execution thread while the stream is live.
+        ChatRequestContext ctx = new ChatRequestContext(label -> sendEvent(emitter, "status", label));
 
         StringBuilder accumulated = new StringBuilder();
 
         try {
             chatClient.prompt()
                     .messages(messages)
-                    .tools(printerStateTool, printerControlTool, printQueueTool)
+                    .tools(chatToolFactory.createTools(ctx))
                     .options(AnthropicChatOptions.builder().model(modelId).build())
                     .stream()
-                    .content()
-                    .doOnNext(accumulated::append)
-                    .doOnNext(token -> {
-                        try {
-                            emitter.send(SseEmitter.event().name("token").data(token));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                    .chatResponse()
+                    .doOnNext(response -> {
+                        if (response.getResults() == null || response.getResults().isEmpty()) {
+                            return;
+                        }
+                        var result = response.getResult();
+
+                        String token = result.getOutput() != null ? result.getOutput().getText() : null;
+                        if (token != null && !token.isEmpty()) {
+                            accumulated.append(token);
+                            sendEvent(emitter, "token", token);
+                        }
+
+                        // The assistant writes text in segments across tool-call rounds
+                        // ("let me look that up" → tool call → "here's what I found").
+                        // Each round ends with a finish reason; without a separator the
+                        // segments concatenate into "...printer ID.Now I'll propose...".
+                        String finish = result.getMetadata() != null ? result.getMetadata().getFinishReason() : null;
+                        if (finish != null && !finish.isBlank()
+                                && !accumulated.isEmpty()
+                                && accumulated.charAt(accumulated.length() - 1) != '\n') {
+                            accumulated.append("\n\n");
+                            sendEvent(emitter, "token", "\n\n");
                         }
                     })
                     .blockLast();
 
-            String full = accumulated.toString();
+            String full = accumulated.toString().strip();
             ChatSession saved = chatSessionService.save(session, userContent, full);
-
-            List<ApiProposedAction> actions = new ArrayList<>();
-            actions.addAll(printerControlTool.getAndClearActions());
-            actions.addAll(printQueueTool.getAndClearActions());
 
             ApiChatResponse meta = new ApiChatResponse();
             meta.setSessionId(saved.getId());
-            meta.setProposedActions(actions);
+            meta.setProposedActions(ctx.getActions());
 
             emitter.send(SseEmitter.event().name("done").data(objectMapper.writeValueAsString(meta)));
             emitter.complete();
@@ -157,6 +157,20 @@ public class PrinterChatService {
                 emitter.completeWithError(e);
             } catch (Exception ignored) {
             }
+        }
+    }
+
+    /**
+     * Sends an SSE event with the payload JSON-encoded. Raw SSE data cannot
+     * represent leading spaces or newlines faithfully (the frontend parser and
+     * the SSE spec both strip a leading space after "data:"), which was mangling
+     * streamed tokens like " get" into "get". JSON encoding round-trips exactly.
+     */
+    private void sendEvent(SseEmitter emitter, String name, String payload) {
+        try {
+            emitter.send(SseEmitter.event().name(name).data(objectMapper.writeValueAsString(payload)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

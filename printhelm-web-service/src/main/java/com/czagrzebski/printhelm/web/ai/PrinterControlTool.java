@@ -5,30 +5,22 @@ import com.czagrzebski.printhelm.model.ApiProposedAction.ActionTypeEnum;
 import com.czagrzebski.printhelm.web.repository.PrinterRepository;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Component
+/**
+ * Per-request tool instance; created by {@link ChatToolFactory} for each chat request.
+ * Proposed actions accumulate on the {@link ChatRequestContext}.
+ */
 public class PrinterControlTool {
 
-    @Autowired
-    private PrinterRepository printerRepository;
+    private final PrinterRepository printerRepository;
+    private final ChatRequestContext ctx;
 
-    private final ThreadLocal<List<ApiProposedAction>> pending = new ThreadLocal<>();
-
-    public void initRequest() {
-        pending.set(new ArrayList<>());
-    }
-
-    public List<ApiProposedAction> getAndClearActions() {
-        List<ApiProposedAction> actions = pending.get();
-        pending.remove();
-        return actions != null ? actions : List.of();
+    public PrinterControlTool(PrinterRepository printerRepository, ChatRequestContext ctx) {
+        this.printerRepository = printerRepository;
+        this.ctx = ctx;
     }
 
     @Tool(description = "Propose pausing the current print job on a specific printer. The action is queued for user approval and will NOT execute until the user confirms.")
@@ -89,8 +81,8 @@ public class PrinterControlTool {
         action.setDescription(descriptionPrefix + " " + printerName);
         action.setParameters(parameters);
 
-        List<ApiProposedAction> list = pending.get();
-        if (list != null) list.add(action);
+        ctx.status("Preparing action: " + action.getDescription());
+        ctx.addAction(action);
 
         return "Action proposed: \"" + action.getDescription() + "\". Awaiting explicit user confirmation — this will NOT execute automatically.";
     }

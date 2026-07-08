@@ -37,7 +37,7 @@ public class ChatController {
 
     @PostMapping("/message/stream")
     public SseEmitter chatStream(@RequestBody ApiChatRequest request, Principal principal) {
-        SseEmitter emitter = new SseEmitter(120_000L);
+        SseEmitter emitter = new SseEmitter(300_000L);
         var ctx = SecurityContextHolder.getContext();
         Thread.ofVirtual().start(new DelegatingSecurityContextRunnable(() ->
                 printerChatService.chatStream(

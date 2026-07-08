@@ -23,6 +23,8 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   actions?: ActionCard[]
+  /** What the assistant is currently doing ("Thinking", "Looking up your printers", …). */
+  status?: string | null
 }
 
 const authStore = useAuthStore()
@@ -136,7 +138,12 @@ async function streamChat(content: string, assistantMsg: Message): Promise<void>
       const data = dataLines.join('\n')
 
       if (eventType === 'token') {
-        assistantMsg.content += data
+        // Tokens are JSON-encoded strings so leading spaces and newlines survive SSE framing.
+        assistantMsg.content += JSON.parse(data) as string
+        assistantMsg.status = null
+        await scrollToBottom()
+      } else if (eventType === 'status') {
+        assistantMsg.status = JSON.parse(data) as string
         await scrollToBottom()
       } else if (eventType === 'done') {
         const meta = JSON.parse(data) as ApiChatResponse
@@ -160,7 +167,7 @@ async function sendMessage() {
   loading.value = true
   showSessions.value = false
 
-  const assistantMsg: Message = { role: 'assistant', content: '' }
+  const assistantMsg: Message = { role: 'assistant', content: '', status: 'Thinking' }
   messages.value.push(assistantMsg)
   await scrollToBottom()
 
@@ -169,6 +176,7 @@ async function sendMessage() {
   } catch {
     assistantMsg.content = 'Something went wrong. Please try again.'
   } finally {
+    assistantMsg.status = null
     loading.value = false
     await scrollToBottom()
   }
@@ -247,7 +255,7 @@ async function fetchActionSummary(action: ActionCard) {
   await new Promise<void>((resolve) => setTimeout(resolve, verificationDelay(action.actionType)))
 
   loading.value = true
-  const assistantMsg: Message = { role: 'assistant', content: '' }
+  const assistantMsg: Message = { role: 'assistant', content: '', status: 'Verifying with the printer' }
   messages.value.push(assistantMsg)
   await scrollToBottom()
 
@@ -257,6 +265,7 @@ async function fetchActionSummary(action: ActionCard) {
   } catch {
     messages.value.pop()
   } finally {
+    assistantMsg.status = null
     loading.value = false
     await scrollToBottom()
   }
@@ -389,7 +398,13 @@ function formatSessionDate(dateStr: string | undefined): string {
           :class="msg.role === 'user' ? 'msg-user' : 'msg-ai'"
         >
           <div v-if="msg.role === 'user'" class="msg-bubble">{{ msg.content }}</div>
-          <div v-else class="msg-bubble markdown" v-html="renderMarkdown(msg.content)" />
+          <div v-else-if="msg.content" class="msg-bubble markdown" v-html="renderMarkdown(msg.content)" />
+
+          <!-- Thinking / working indicator while the assistant streams -->
+          <div v-if="msg.role === 'assistant' && msg.status" class="msg-status">
+            <span class="msg-status-text">{{ msg.status }}</span>
+            <span class="status-dots"><span class="dot" /><span class="dot" /><span class="dot" /></span>
+          </div>
 
           <div v-if="msg.actions && msg.actions.length > 0" class="action-cards">
             <div
@@ -472,11 +487,6 @@ function formatSessionDate(dateStr: string | undefined): string {
           </div>
         </div>
 
-        <div v-if="loading" class="chat-msg msg-ai">
-          <div class="msg-bubble msg-loading">
-            <span class="dot" /><span class="dot" /><span class="dot" />
-          </div>
-        </div>
       </div>
 
       <!-- Input -->
@@ -734,8 +744,30 @@ function formatSessionDate(dateStr: string | undefined): string {
 .msg-user .msg-bubble { background: var(--ph-accent); color: #0f2027; border-bottom-right-radius: 4px; }
 .msg-ai .msg-bubble { background: rgba(255, 255, 255, 0.07); color: var(--ph-text); border-bottom-left-radius: 4px; }
 
-/* Typing dots */
-.msg-loading { display: flex; align-items: center; gap: 5px; padding: 0.7rem 1rem; }
+/* Thinking / working status indicator */
+.msg-status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ph-text-muted);
+}
+.msg-status-text {
+  background: linear-gradient(90deg, var(--ph-text-muted) 25%, var(--ph-text) 50%, var(--ph-text-muted) 75%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 1.8s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.status-dots { display: inline-flex; align-items: center; gap: 4px; }
+.status-dots .dot { width: 4px; height: 4px; }
 .dot { width: 6px; height: 6px; background: var(--ph-text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
