@@ -1,8 +1,10 @@
 package com.czagrzebski.printhelm.web.controller;
 
 import com.czagrzebski.printhelm.model.ApiCreateJobOrderRequest;
+import com.czagrzebski.printhelm.model.ApiJobOrderFileVersion;
 import com.czagrzebski.printhelm.model.ApiJobOrderResponse;
 import com.czagrzebski.printhelm.model.ApiUpdateJobOrderRequest;
+import com.czagrzebski.printhelm.web.domain.JobOrderFileType;
 import com.czagrzebski.printhelm.web.service.JobOrderFileService;
 import com.czagrzebski.printhelm.web.service.JobOrderService;
 import org.springframework.core.io.Resource;
@@ -57,14 +59,44 @@ public class JobOrderController {
 
     @PostMapping("/{id}/part-file")
     public ResponseEntity<ApiJobOrderResponse> uploadPartFile(@PathVariable long id,
-                                                              @RequestParam("file") MultipartFile file) throws IOException {
-        return ResponseEntity.ok(jobOrderService.uploadPartFile(id, file));
+                                                              @RequestParam("file") MultipartFile file,
+                                                              @RequestParam(value = "description", required = false) String description) throws IOException {
+        return ResponseEntity.ok(jobOrderService.uploadPartFile(id, file, description));
     }
 
     @PostMapping("/{id}/gcode-file")
     public ResponseEntity<ApiJobOrderResponse> uploadGcodeFile(@PathVariable long id,
-                                                               @RequestParam("file") MultipartFile file) throws IOException {
-        return ResponseEntity.ok(jobOrderService.uploadGcodeFile(id, file));
+                                                               @RequestParam("file") MultipartFile file,
+                                                               @RequestParam(value = "description", required = false) String description) throws IOException {
+        return ResponseEntity.ok(jobOrderService.uploadGcodeFile(id, file, description));
+    }
+
+    @GetMapping("/{id}/part-file/versions")
+    public ResponseEntity<List<ApiJobOrderFileVersion>> getPartFileVersions(@PathVariable long id) {
+        return ResponseEntity.ok(jobOrderService.getFileVersions(id, JobOrderFileType.PART));
+    }
+
+    @GetMapping("/{id}/part-file/versions/{versionId}")
+    public ResponseEntity<Resource> downloadPartFileVersion(@PathVariable long id,
+                                                            @PathVariable long versionId) throws IOException {
+        return buildFileResponse(jobOrderService.getFileVersion(id, versionId, JobOrderFileType.PART).getMongoFileId());
+    }
+
+    @GetMapping("/{id}/gcode-file/versions")
+    public ResponseEntity<List<ApiJobOrderFileVersion>> getGcodeFileVersions(@PathVariable long id) {
+        return ResponseEntity.ok(jobOrderService.getFileVersions(id, JobOrderFileType.GCODE));
+    }
+
+    @GetMapping("/{id}/gcode-file/versions/{versionId}")
+    public ResponseEntity<Resource> downloadGcodeFileVersion(@PathVariable long id,
+                                                             @PathVariable long versionId) throws IOException {
+        return buildFileResponse(jobOrderService.getFileVersion(id, versionId, JobOrderFileType.GCODE).getMongoFileId());
+    }
+
+    @PostMapping("/{id}/gcode-file/versions/{versionId}/select")
+    public ResponseEntity<ApiJobOrderResponse> selectGcodeFileVersion(@PathVariable long id,
+                                                                      @PathVariable long versionId) {
+        return ResponseEntity.ok(jobOrderService.selectGcodeVersion(id, versionId));
     }
 
     @GetMapping("/{id}/part-file")

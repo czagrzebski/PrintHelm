@@ -25,6 +25,8 @@ docs/ApiFan.md
 docs/ApiGcodeFilamentInfo.md
 docs/ApiGcodeMetadata.md
 docs/ApiIpcam.md
+docs/ApiJobOrderFileType.md
+docs/ApiJobOrderFileVersion.md
 docs/ApiJobOrderResponse.md
 docs/ApiJobOrderStatus.md
 docs/ApiJogRequest.md

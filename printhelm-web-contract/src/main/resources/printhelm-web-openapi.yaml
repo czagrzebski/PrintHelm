@@ -908,7 +908,7 @@ paths:
     post:
       tags:
         - JobOrder
-      summary: Upload 3D part file for a job order
+      summary: Upload a new version of the 3D part file for a job order
       operationId: uploadJobOrderPartFile
       parameters:
         - name: id
@@ -929,6 +929,9 @@ paths:
                 file:
                   type: string
                   format: binary
+                description:
+                  type: string
+                  description: Description of the changes in this version
       responses:
         '200':
           description: File uploaded; returns updated job order
@@ -965,7 +968,7 @@ paths:
     post:
       tags:
         - JobOrder
-      summary: Upload GCode file for a job order
+      summary: Upload a new version of the GCode file for a job order
       operationId: uploadJobOrderGcodeFile
       parameters:
         - name: id
@@ -986,6 +989,9 @@ paths:
                 file:
                   type: string
                   format: binary
+                description:
+                  type: string
+                  description: Description of the changes in this version
       responses:
         '200':
           description: File uploaded; returns updated job order
@@ -1017,6 +1023,145 @@ paths:
                 format: binary
         '404':
           description: Job order or file not found
+
+  /job-order/{id}/part-file/versions:
+    get:
+      tags:
+        - JobOrder
+      summary: List all uploaded versions of the 3D part file
+      operationId: getJobOrderPartFileVersions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Part file versions, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiJobOrderFileVersion'
+        '404':
+          description: Job order not found
+
+  /job-order/{id}/part-file/versions/{versionId}:
+    get:
+      tags:
+        - JobOrder
+      summary: Download a specific version of the 3D part file
+      operationId: downloadJobOrderPartFileVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order or version not found
+
+  /job-order/{id}/gcode-file/versions:
+    get:
+      tags:
+        - JobOrder
+      summary: List all uploaded versions of the GCode file
+      operationId: getJobOrderGcodeFileVersions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: GCode file versions, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiJobOrderFileVersion'
+        '404':
+          description: Job order not found
+
+  /job-order/{id}/gcode-file/versions/{versionId}:
+    get:
+      tags:
+        - JobOrder
+      summary: Download a specific version of the GCode file
+      operationId: downloadJobOrderGcodeFileVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order or version not found
+
+  /job-order/{id}/gcode-file/versions/{versionId}/select:
+    post:
+      tags:
+        - JobOrder
+      summary: Select a GCode file version as the active version used for printing
+      operationId: selectJobOrderGcodeFileVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Version selected; returns updated job order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderResponse'
+        '404':
+          description: Job order or version not found
 
   /job-order/{id}/quote:
     get:
@@ -2152,6 +2297,35 @@ components:
           type: number
           format: double
           description: Cost of the line item
+    ApiJobOrderFileType:
+      type: string
+      enum: [PART, GCODE]
+    ApiJobOrderFileVersion:
+      type: object
+      properties:
+        versionId:
+          type: integer
+          format: int64
+          description: Unique identifier of this file version
+        versionNumber:
+          type: integer
+          format: int32
+          description: Sequential version number (1-based)
+        fileType:
+          $ref: '#/components/schemas/ApiJobOrderFileType'
+        filename:
+          type: string
+          description: Original filename of the uploaded file
+        description:
+          type: string
+          description: Description of the changes in this version
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when this version was uploaded
+        active:
+          type: boolean
+          description: Whether this version is the currently active one on the job order
     ApiGcodeFilamentInfo:
       type: object
       properties:

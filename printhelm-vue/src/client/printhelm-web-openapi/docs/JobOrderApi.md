@@ -7,14 +7,19 @@ All URIs are relative to *https://printhelm.czagrzebski.dev/api/v1*
 |[**createJobOrder**](#createjoborder) | **POST** /job-order | Create a new job order|
 |[**deleteJobOrder**](#deletejoborder) | **DELETE** /job-order/{id} | Delete a job order|
 |[**downloadJobOrderGcodeFile**](#downloadjobordergcodefile) | **GET** /job-order/{id}/gcode-file | Download GCode file for a job order|
+|[**downloadJobOrderGcodeFileVersion**](#downloadjobordergcodefileversion) | **GET** /job-order/{id}/gcode-file/versions/{versionId} | Download a specific version of the GCode file|
 |[**downloadJobOrderInvoice**](#downloadjoborderinvoice) | **GET** /job-order/{id}/invoice | Download invoice PDF for a job order|
 |[**downloadJobOrderPartFile**](#downloadjoborderpartfile) | **GET** /job-order/{id}/part-file | Download 3D part file for a job order|
+|[**downloadJobOrderPartFileVersion**](#downloadjoborderpartfileversion) | **GET** /job-order/{id}/part-file/versions/{versionId} | Download a specific version of the 3D part file|
 |[**downloadJobOrderQuote**](#downloadjoborderquote) | **GET** /job-order/{id}/quote | Download quote PDF for a job order|
 |[**getJobOrderById**](#getjoborderbyid) | **GET** /job-order/{id} | Get a job order by ID|
+|[**getJobOrderGcodeFileVersions**](#getjobordergcodefileversions) | **GET** /job-order/{id}/gcode-file/versions | List all uploaded versions of the GCode file|
+|[**getJobOrderPartFileVersions**](#getjoborderpartfileversions) | **GET** /job-order/{id}/part-file/versions | List all uploaded versions of the 3D part file|
 |[**getJobOrders**](#getjoborders) | **GET** /job-order | Get all job orders|
+|[**selectJobOrderGcodeFileVersion**](#selectjobordergcodefileversion) | **POST** /job-order/{id}/gcode-file/versions/{versionId}/select | Select a GCode file version as the active version used for printing|
 |[**updateJobOrder**](#updatejoborder) | **PUT** /job-order/{id} | Update a job order|
-|[**uploadJobOrderGcodeFile**](#uploadjobordergcodefile) | **POST** /job-order/{id}/gcode-file | Upload GCode file for a job order|
-|[**uploadJobOrderPartFile**](#uploadjoborderpartfile) | **POST** /job-order/{id}/part-file | Upload 3D part file for a job order|
+|[**uploadJobOrderGcodeFile**](#uploadjobordergcodefile) | **POST** /job-order/{id}/gcode-file | Upload a new version of the GCode file for a job order|
+|[**uploadJobOrderPartFile**](#uploadjoborderpartfile) | **POST** /job-order/{id}/part-file | Upload a new version of the 3D part file for a job order|
 
 # **createJobOrder**
 > ApiJobOrderResponse createJobOrder(apiCreateJobOrderRequest)
@@ -170,6 +175,60 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **downloadJobOrderGcodeFileVersion**
+> File downloadJobOrderGcodeFileVersion()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+let versionId: number; // (default to undefined)
+
+const { status, data } = await apiInstance.downloadJobOrderGcodeFileVersion(
+    id,
+    versionId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+| **versionId** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/octet-stream
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | File content |  -  |
+|**404** | Job order or version not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **downloadJobOrderInvoice**
 > File downloadJobOrderInvoice()
 
@@ -269,6 +328,60 @@ No authorization required
 |-------------|-------------|------------------|
 |**200** | File content |  -  |
 |**404** | Job order or file not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **downloadJobOrderPartFileVersion**
+> File downloadJobOrderPartFileVersion()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+let versionId: number; // (default to undefined)
+
+const { status, data } = await apiInstance.downloadJobOrderPartFileVersion(
+    id,
+    versionId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+| **versionId** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/octet-stream
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | File content |  -  |
+|**404** | Job order or version not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -374,6 +487,108 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **getJobOrderGcodeFileVersions**
+> Array<ApiJobOrderFileVersion> getJobOrderGcodeFileVersions()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+
+const { status, data } = await apiInstance.getJobOrderGcodeFileVersions(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**Array<ApiJobOrderFileVersion>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | GCode file versions, newest first |  -  |
+|**404** | Job order not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getJobOrderPartFileVersions**
+> Array<ApiJobOrderFileVersion> getJobOrderPartFileVersions()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+
+const { status, data } = await apiInstance.getJobOrderPartFileVersions(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**Array<ApiJobOrderFileVersion>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Part file versions, newest first |  -  |
+|**404** | Job order not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **getJobOrders**
 > Array<ApiJobOrderResponse> getJobOrders()
 
@@ -414,6 +629,60 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | List of job orders |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **selectJobOrderGcodeFileVersion**
+> ApiJobOrderResponse selectJobOrderGcodeFileVersion()
+
+
+### Example
+
+```typescript
+import {
+    JobOrderApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JobOrderApi(configuration);
+
+let id: number; // (default to undefined)
+let versionId: number; // (default to undefined)
+
+const { status, data } = await apiInstance.selectJobOrderGcodeFileVersion(
+    id,
+    versionId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+| **versionId** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**ApiJobOrderResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Version selected; returns updated job order |  -  |
+|**404** | Job order or version not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -489,10 +758,12 @@ const apiInstance = new JobOrderApi(configuration);
 
 let id: number; // (default to undefined)
 let file: File; // (default to undefined)
+let description: string; //Description of the changes in this version (optional) (default to undefined)
 
 const { status, data } = await apiInstance.uploadJobOrderGcodeFile(
     id,
-    file
+    file,
+    description
 );
 ```
 
@@ -502,6 +773,7 @@ const { status, data } = await apiInstance.uploadJobOrderGcodeFile(
 |------------- | ------------- | ------------- | -------------|
 | **id** | [**number**] |  | defaults to undefined|
 | **file** | [**File**] |  | defaults to undefined|
+| **description** | [**string**] | Description of the changes in this version | (optional) defaults to undefined|
 
 
 ### Return type
@@ -543,10 +815,12 @@ const apiInstance = new JobOrderApi(configuration);
 
 let id: number; // (default to undefined)
 let file: File; // (default to undefined)
+let description: string; //Description of the changes in this version (optional) (default to undefined)
 
 const { status, data } = await apiInstance.uploadJobOrderPartFile(
     id,
-    file
+    file,
+    description
 );
 ```
 
@@ -556,6 +830,7 @@ const { status, data } = await apiInstance.uploadJobOrderPartFile(
 |------------- | ------------- | ------------- | -------------|
 | **id** | [**number**] |  | defaults to undefined|
 | **file** | [**File**] |  | defaults to undefined|
+| **description** | [**string**] | Description of the changes in this version | (optional) defaults to undefined|
 
 
 ### Return type

@@ -6,18 +6,38 @@ import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Textarea from 'primevue/textarea'
 import Checkbox from 'primevue/checkbox'
+import Dialog from 'primevue/dialog'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import MultiSelect from 'primevue/multiselect'
 import { useToast } from 'primevue/usetoast'
 import {
+  type ApiJobOrderFileVersion,
   type ApiJobOrderResponse,
   type ApiUpdateJobOrderRequest,
   ApiJobOrderStatus,
 } from '@/client/printhelm-web-openapi'
-import jobOrderApi, { uploadPartFile, uploadGcodeFile, downloadPartFile, downloadGcodeFile, fetchGcodeFileBuffer, downloadInvoice, downloadQuote } from '@/api/JobOrderApi'
+import jobOrderApi, {
+  uploadPartFile,
+  uploadGcodeFile,
+  downloadPartFile,
+  downloadGcodeFile,
+  fetchGcodeFileBuffer,
+  fetchPartFileBuffer,
+  listPartFileVersions,
+  listGcodeFileVersions,
+  selectGcodeFileVersion,
+  downloadPartFileVersion,
+  downloadGcodeFileVersion,
+  fetchPartFileVersionBuffer,
+  fetchGcodeFileVersionBuffer,
+  downloadInvoice,
+  downloadQuote,
+} from '@/api/JobOrderApi'
 import { printerApi } from '@/api/PrinterApi'
 import PrintJobInfoDialog from '@/components/PrintJobInfoDialog.vue'
+import ModelViewerDialog, { isViewableModel } from '@/components/ModelViewerDialog.vue'
+import FileVersionHistory from '@/components/FileVersionHistory.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -79,14 +99,41 @@ const viewingStep = ref(1)
 
 const partFileInput = ref<HTMLInputElement | null>(null)
 const gcodeFileInput = ref<HTMLInputElement | null>(null)
-const uploadingPart = ref(false)
-const uploadingGcode = ref(false)
+const uploading = ref(false)
 const downloadingPart = ref(false)
 const downloadingGcode = ref(false)
-const showGcodeViewer = ref(false)
+
+// ── File versioning ───────────────────────────────────────────────────────
+const partVersions = ref<ApiJobOrderFileVersion[]>([])
+const gcodeVersions = ref<ApiJobOrderFileVersion[]>([])
+const selectingVersionId = ref<number | null>(null)
+
+// Upload-with-description dialog
+const showUploadDialog = ref(false)
+const uploadTarget = ref<'part' | 'gcode'>('part')
+const pendingUploadFile = ref<File | null>(null)
+const uploadDescription = ref('')
+
+// Viewer dialogs
+interface ViewerState { filename: string; fetchFile: () => Promise<ArrayBuffer> }
+const modelViewer = ref<ViewerState | null>(null)
+const gcodeViewer = ref<ViewerState | null>(null)
 
 function fetchGcodeForViewer(): Promise<ArrayBuffer> {
   return fetchGcodeFileBuffer(orderId)
+}
+
+async function fetchVersions() {
+  try {
+    const [partRes, gcodeRes] = await Promise.all([
+      listPartFileVersions(orderId),
+      listGcodeFileVersions(orderId),
+    ])
+    partVersions.value = partRes.data
+    gcodeVersions.value = gcodeRes.data
+  } catch {
+    // non-critical — version history simply stays empty
+  }
 }
 
 const statusStep = computed(() =>
@@ -246,35 +293,122 @@ async function fetchPrinterNames() {
   }
 }
 
-async function handlePartFileUpload(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
+function handlePartFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  pendingUploadFile.value = file
+  uploadTarget.value = 'part'
+  uploadDescription.value = ''
+  showUploadDialog.value = true
+}
+
+function handleGcodeFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  pendingUploadFile.value = file
+  uploadTarget.value = 'gcode'
+  uploadDescription.value = ''
+  showUploadDialog.value = true
+}
+
+async function confirmUpload() {
+  const file = pendingUploadFile.value
   if (!file || !order.value?.orderId) return
-  uploadingPart.value = true
+  uploading.value = true
+  const isPart = uploadTarget.value === 'part'
   try {
-    const res = await uploadPartFile(order.value.orderId, file)
+    const description = uploadDescription.value.trim() || undefined
+    const res = isPart
+      ? await uploadPartFile(order.value.orderId, file, description)
+      : await uploadGcodeFile(order.value.orderId, file, description)
     order.value = res.data
-    toast.add({ severity: 'success', summary: 'Uploaded', detail: '3D file uploaded successfully.', life: 3000 })
+    await fetchVersions()
+    showUploadDialog.value = false
+    pendingUploadFile.value = null
+    toast.add({
+      severity: 'success',
+      summary: 'Uploaded',
+      detail: `New ${isPart ? '3D file' : 'GCode'} version uploaded successfully.`,
+      life: 3000,
+    })
   } catch {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to upload 3D file.', life: 4000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to upload ${isPart ? '3D' : 'GCode'} file.`,
+      life: 4000,
+    })
   } finally {
-    uploadingPart.value = false
-    if (partFileInput.value) partFileInput.value.value = ''
+    uploading.value = false
   }
 }
 
-async function handleGcodeFileUpload(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file || !order.value?.orderId) return
-  uploadingGcode.value = true
+function cancelUpload() {
+  showUploadDialog.value = false
+  pendingUploadFile.value = null
+  uploadDescription.value = ''
+}
+
+function handleDownloadVersion(mode: 'part' | 'gcode', version: ApiJobOrderFileVersion) {
+  if (version.versionId == null || !version.filename) return
+  const download = mode === 'part' ? downloadPartFileVersion : downloadGcodeFileVersion
+  download(orderId, version.versionId, version.filename).catch(() => {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to download file version.', life: 4000 })
+  })
+}
+
+function handleViewPartVersion(version: ApiJobOrderFileVersion) {
+  if (version.versionId == null || !version.filename) return
+  const versionId = version.versionId
+  modelViewer.value = {
+    filename: version.filename,
+    fetchFile: () => fetchPartFileVersionBuffer(orderId, versionId),
+  }
+}
+
+function handleViewCurrentPart() {
+  if (!order.value?.partFilename) return
+  modelViewer.value = {
+    filename: order.value.partFilename,
+    fetchFile: () => fetchPartFileBuffer(orderId),
+  }
+}
+
+function handlePreviewGcodeVersion(version: ApiJobOrderFileVersion) {
+  if (version.versionId == null || !version.filename) return
+  const versionId = version.versionId
+  gcodeViewer.value = {
+    filename: version.filename,
+    fetchFile: () => fetchGcodeFileVersionBuffer(orderId, versionId),
+  }
+}
+
+function handlePreviewCurrentGcode() {
+  if (!order.value?.gcodeFilename) return
+  gcodeViewer.value = { filename: order.value.gcodeFilename, fetchFile: fetchGcodeForViewer }
+}
+
+async function handleSelectGcodeVersion(version: ApiJobOrderFileVersion) {
+  if (version.versionId == null || !order.value?.orderId) return
+  selectingVersionId.value = version.versionId
   try {
-    const res = await uploadGcodeFile(order.value.orderId, file)
+    const res = await selectGcodeFileVersion(order.value.orderId, version.versionId)
     order.value = res.data
-    toast.add({ severity: 'success', summary: 'Uploaded', detail: 'GCode file uploaded successfully.', life: 3000 })
+    await fetchVersions()
+    toast.add({
+      severity: 'success',
+      summary: 'Version Selected',
+      detail: `v${version.versionNumber} (${version.filename}) will be used for printing.`,
+      life: 3500,
+    })
   } catch {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to upload GCode file.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to select gcode version.', life: 4000 })
   } finally {
-    uploadingGcode.value = false
-    if (gcodeFileInput.value) gcodeFileInput.value.value = ''
+    selectingVersionId.value = null
   }
 }
 
@@ -372,7 +506,7 @@ async function handleDownloadInvoice() {
   }
 }
 
-onMounted(() => { fetchOrder(); fetchPrinterNames() })
+onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
 </script>
 
 <template>
@@ -632,11 +766,11 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
 
         <!-- Step 4: Design -->
         <template v-else-if="viewingStep === 4">
-          <p class="step-description">Create or finalise the 3D design file based on the documented requirements.</p>
+          <p class="step-description">Create or finalise the 3D design file based on the documented requirements. Each upload is kept as a new version.</p>
           <div class="upload-area" :class="{ 'upload-area--active': isOnCurrentStep }">
             <i class="mdi mdi-cube-scan upload-icon" />
             <p class="upload-label">3D Design File</p>
-            <p class="upload-hint">.stl · .obj · .sldprt · .sldasm · .zip</p>
+            <p class="upload-hint">.stl · .obj · .glb · .gltf · .sldprt · .sldasm · .zip</p>
             <div v-if="order.mongoPartFileId" class="upload-status">
               <i class="mdi mdi-check-circle upload-done-icon" />
               <span class="upload-filename-text">{{ order.partFilename }}</span>
@@ -644,11 +778,18 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
             <input
               ref="partFileInput"
               type="file"
-              accept=".stl,.obj,.sldprt,.sldasm,.zip"
+              accept=".stl,.obj,.glb,.gltf,.sldprt,.sldasm,.zip"
               style="display: none"
-              @change="handlePartFileUpload"
+              @change="handlePartFileSelected"
             />
             <div class="upload-actions">
+              <Button
+                v-if="order.mongoPartFileId && isViewableModel(order.partFilename)"
+                label="View 3D"
+                icon="mdi mdi-rotate-3d-variant"
+                severity="secondary"
+                @click="handleViewCurrentPart"
+              />
               <Button
                 v-if="order.mongoPartFileId"
                 label="Download"
@@ -658,20 +799,28 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
                 @click="handleDownloadPartFile"
               />
               <Button
-                :label="order.mongoPartFileId ? 'Replace 3D File' : 'Upload 3D File'"
+                :label="order.mongoPartFileId ? 'Upload New Version' : 'Upload 3D File'"
                 icon="mdi mdi-upload"
                 severity="secondary"
-                :loading="uploadingPart"
+                :loading="uploading && uploadTarget === 'part'"
                 :disabled="!isOnCurrentStep"
                 @click="partFileInput?.click()"
               />
             </div>
           </div>
+
+          <FileVersionHistory
+            :versions="partVersions"
+            mode="part"
+            :can-modify="isOnCurrentStep"
+            @download="handleDownloadVersion('part', $event)"
+            @view="handleViewPartVersion"
+          />
         </template>
 
         <!-- Step 5: Setup -->
         <template v-else-if="viewingStep === 5">
-          <p class="step-description">Upload the sliced GCode file to prepare the order for printing.</p>
+          <p class="step-description">Upload the sliced GCode file to prepare the order for printing. Each upload is kept as a new version — the selected version is the one sent to the printer.</p>
           <div class="upload-area" :class="{ 'upload-area--active': isOnCurrentStep }">
             <i class="mdi mdi-code-braces upload-icon" />
             <p class="upload-label">GCode File</p>
@@ -685,7 +834,7 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
               type="file"
               accept=".gcode,.3mf"
               style="display: none"
-              @change="handleGcodeFileUpload"
+              @change="handleGcodeFileSelected"
             />
             <div class="upload-actions">
               <Button
@@ -701,18 +850,28 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
                 label="Preview"
                 icon="mdi mdi-rotate-3d-variant"
                 severity="secondary"
-                @click="showGcodeViewer = true"
+                @click="handlePreviewCurrentGcode"
               />
               <Button
-                :label="order.mongoGcodeFileId ? 'Replace GCode File' : 'Upload GCode File'"
+                :label="order.mongoGcodeFileId ? 'Upload New Version' : 'Upload GCode File'"
                 icon="mdi mdi-upload"
                 severity="secondary"
-                :loading="uploadingGcode"
+                :loading="uploading && uploadTarget === 'gcode'"
                 :disabled="!isOnCurrentStep"
                 @click="gcodeFileInput?.click()"
               />
             </div>
           </div>
+
+          <FileVersionHistory
+            :versions="gcodeVersions"
+            mode="gcode"
+            :can-modify="isOnCurrentStep"
+            :busy-version-id="selectingVersionId"
+            @download="handleDownloadVersion('gcode', $event)"
+            @preview="handlePreviewGcodeVersion"
+            @select="handleSelectGcodeVersion"
+          />
 
           <div v-if="order.gcodeMetadata" class="print-metadata-card">
             <div class="print-metadata-header">
@@ -794,6 +953,16 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
               </p>
             </template>
           </div>
+
+          <FileVersionHistory
+            :versions="gcodeVersions"
+            mode="gcode"
+            :can-modify="isOnCurrentStep && !order.assignedPrinterId"
+            :busy-version-id="selectingVersionId"
+            @download="handleDownloadVersion('gcode', $event)"
+            @preview="handlePreviewGcodeVersion"
+            @select="handleSelectGcodeVersion"
+          />
         </template>
 
         <!-- Step 7: Printing -->
@@ -993,12 +1162,49 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
       </div>
     </template>
 
+    <!-- Upload new version dialog -->
+    <Dialog
+      v-model:visible="showUploadDialog"
+      modal
+      :header="uploadTarget === 'part' ? 'Upload 3D File Version' : 'Upload GCode Version'"
+      :style="{ width: '440px' }"
+      :closable="!uploading"
+      @hide="cancelUpload"
+    >
+      <div class="upload-dialog-body">
+        <div class="upload-dialog-file">
+          <i class="mdi mdi-file-outline" />
+          <span class="upload-dialog-filename">{{ pendingUploadFile?.name }}</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Description of changes</label>
+          <Textarea
+            v-model="uploadDescription"
+            placeholder="What changed in this version?"
+            class="field-input"
+            rows="3"
+            auto-resize
+          />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancel" severity="secondary" text :disabled="uploading" @click="cancelUpload" />
+        <Button label="Upload" icon="mdi mdi-upload" :loading="uploading" @click="confirmUpload" />
+      </template>
+    </Dialog>
+
     <Teleport to="body">
       <PrintJobInfoDialog
-        v-if="showGcodeViewer && order?.gcodeFilename"
-        :filename="order.gcodeFilename"
-        :fetch-file="fetchGcodeForViewer"
-        @close="showGcodeViewer = false"
+        v-if="gcodeViewer"
+        :filename="gcodeViewer.filename"
+        :fetch-file="gcodeViewer.fetchFile"
+        @close="gcodeViewer = null"
+      />
+      <ModelViewerDialog
+        v-if="modelViewer"
+        :filename="modelViewer.filename"
+        :fetch-file="modelViewer.fetchFile"
+        @close="modelViewer = null"
       />
     </Teleport>
   </div>
@@ -1575,6 +1781,30 @@ onMounted(() => { fetchOrder(); fetchPrinterNames() })
   display: grid;
   grid-template-columns: 1fr 100px 1fr;
   gap: 0.75rem;
+}
+
+/* ── Upload version dialog ───────────────────────────────── */
+.upload-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.upload-dialog-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  color: var(--ph-text);
+  font-size: 0.85rem;
+}
+.upload-dialog-file > i { color: var(--ph-accent); flex-shrink: 0; }
+.upload-dialog-filename {
+  font-family: monospace;
+  font-size: 0.8rem;
+  word-break: break-all;
 }
 
 .unit-cost-qty :deep(.p-inputnumber-input) { text-align: center; }

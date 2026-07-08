@@ -653,6 +653,71 @@ export interface ApiIpcam {
 /**
  * 
  * @export
+ * @enum {string}
+ */
+
+export const ApiJobOrderFileType = {
+    Part: 'PART',
+    Gcode: 'GCODE'
+} as const;
+
+export type ApiJobOrderFileType = typeof ApiJobOrderFileType[keyof typeof ApiJobOrderFileType];
+
+
+/**
+ * 
+ * @export
+ * @interface ApiJobOrderFileVersion
+ */
+export interface ApiJobOrderFileVersion {
+    /**
+     * Unique identifier of this file version
+     * @type {number}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'versionId'?: number;
+    /**
+     * Sequential version number (1-based)
+     * @type {number}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'versionNumber'?: number;
+    /**
+     * 
+     * @type {ApiJobOrderFileType}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'fileType'?: ApiJobOrderFileType;
+    /**
+     * Original filename of the uploaded file
+     * @type {string}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'filename'?: string;
+    /**
+     * Description of the changes in this version
+     * @type {string}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'description'?: string;
+    /**
+     * Timestamp when this version was uploaded
+     * @type {string}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'createdAt'?: string;
+    /**
+     * Whether this version is the currently active one on the job order
+     * @type {boolean}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'active'?: boolean;
+}
+
+
+/**
+ * 
+ * @export
  * @interface ApiJobOrderResponse
  */
 export interface ApiJobOrderResponse {
@@ -2888,6 +2953,44 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary Download a specific version of the GCode file
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderGcodeFileVersion: async (id: number, versionId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderGcodeFileVersion', 'id', id)
+            // verify required parameter 'versionId' is not null or undefined
+            assertParamExists('downloadJobOrderGcodeFileVersion', 'versionId', versionId)
+            const localVarPath = `/job-order/{id}/gcode-file/versions/{versionId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Download invoice PDF for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -2932,6 +3035,44 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             assertParamExists('downloadJobOrderPartFile', 'id', id)
             const localVarPath = `/job-order/{id}/part-file`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Download a specific version of the 3D part file
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderPartFileVersion: async (id: number, versionId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderPartFileVersion', 'id', id)
+            // verify required parameter 'versionId' is not null or undefined
+            assertParamExists('downloadJobOrderPartFileVersion', 'versionId', versionId)
+            const localVarPath = `/job-order/{id}/part-file/versions/{versionId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -3024,6 +3165,74 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary List all uploaded versions of the GCode file
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrderGcodeFileVersions: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getJobOrderGcodeFileVersions', 'id', id)
+            const localVarPath = `/job-order/{id}/gcode-file/versions`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List all uploaded versions of the 3D part file
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrderPartFileVersions: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getJobOrderPartFileVersions', 'id', id)
+            const localVarPath = `/job-order/{id}/part-file/versions`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Get all job orders
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3038,6 +3247,44 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             }
 
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Select a GCode file version as the active version used for printing
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        selectJobOrderGcodeFileVersion: async (id: number, versionId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('selectJobOrderGcodeFileVersion', 'id', id)
+            // verify required parameter 'versionId' is not null or undefined
+            assertParamExists('selectJobOrderGcodeFileVersion', 'versionId', versionId)
+            const localVarPath = `/job-order/{id}/gcode-file/versions/{versionId}/select`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -3094,13 +3341,14 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
-         * @summary Upload GCode file for a job order
+         * @summary Upload a new version of the GCode file for a job order
          * @param {number} id 
          * @param {File} file 
+         * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderGcodeFile: async (id: number, file: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        uploadJobOrderGcodeFile: async (id: number, file: File, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('uploadJobOrderGcodeFile', 'id', id)
             // verify required parameter 'file' is not null or undefined
@@ -3124,6 +3372,10 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
                 localVarFormParams.append('file', file as any);
             }
     
+            if (description !== undefined) { 
+                localVarFormParams.append('description', description as any);
+            }
+    
     
             localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
     
@@ -3139,13 +3391,14 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
-         * @summary Upload 3D part file for a job order
+         * @summary Upload a new version of the 3D part file for a job order
          * @param {number} id 
          * @param {File} file 
+         * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderPartFile: async (id: number, file: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        uploadJobOrderPartFile: async (id: number, file: File, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('uploadJobOrderPartFile', 'id', id)
             // verify required parameter 'file' is not null or undefined
@@ -3167,6 +3420,10 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
 
             if (file !== undefined) { 
                 localVarFormParams.append('file', file as any);
+            }
+    
+            if (description !== undefined) { 
+                localVarFormParams.append('description', description as any);
             }
     
     
@@ -3233,6 +3490,20 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Download a specific version of the GCode file
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderGcodeFileVersion(id, versionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderGcodeFileVersion']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Download invoice PDF for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3255,6 +3526,20 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderPartFile(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderPartFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Download a specific version of the 3D part file
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderPartFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderPartFileVersion(id, versionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderPartFileVersion']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3285,6 +3570,32 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary List all uploaded versions of the GCode file
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getJobOrderGcodeFileVersions(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiJobOrderFileVersion>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getJobOrderGcodeFileVersions(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.getJobOrderGcodeFileVersions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List all uploaded versions of the 3D part file
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getJobOrderPartFileVersions(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiJobOrderFileVersion>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getJobOrderPartFileVersions(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.getJobOrderPartFileVersions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Get all job orders
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3293,6 +3604,20 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getJobOrders(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.getJobOrders']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Select a GCode file version as the active version used for printing
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async selectJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.selectJobOrderGcodeFileVersion(id, versionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.selectJobOrderGcodeFileVersion']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3311,28 +3636,30 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Upload GCode file for a job order
+         * @summary Upload a new version of the GCode file for a job order
          * @param {number} id 
          * @param {File} file 
+         * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async uploadJobOrderGcodeFile(id: number, file: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderGcodeFile(id, file, options);
+        async uploadJobOrderGcodeFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderGcodeFile(id, file, description, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.uploadJobOrderGcodeFile']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @summary Upload 3D part file for a job order
+         * @summary Upload a new version of the 3D part file for a job order
          * @param {number} id 
          * @param {File} file 
+         * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async uploadJobOrderPartFile(id: number, file: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderPartFile(id, file, options);
+        async uploadJobOrderPartFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderPartFile(id, file, description, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.uploadJobOrderPartFile']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3379,6 +3706,17 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary Download a specific version of the GCode file
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderGcodeFileVersion(id, versionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Download invoice PDF for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3396,6 +3734,17 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
          */
         downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
             return localVarFp.downloadJobOrderPartFile(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Download a specific version of the 3D part file
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderPartFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderPartFileVersion(id, versionId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3419,12 +3768,43 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary List all uploaded versions of the GCode file
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrderGcodeFileVersions(id: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiJobOrderFileVersion>> {
+            return localVarFp.getJobOrderGcodeFileVersions(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List all uploaded versions of the 3D part file
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getJobOrderPartFileVersions(id: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiJobOrderFileVersion>> {
+            return localVarFp.getJobOrderPartFileVersions(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Get all job orders
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         getJobOrders(options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiJobOrderResponse>> {
             return localVarFp.getJobOrders(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Select a GCode file version as the active version used for printing
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        selectJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.selectJobOrderGcodeFileVersion(id, versionId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3439,25 +3819,27 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
-         * @summary Upload GCode file for a job order
+         * @summary Upload a new version of the GCode file for a job order
          * @param {number} id 
          * @param {File} file 
+         * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderGcodeFile(id: number, file: File, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
-            return localVarFp.uploadJobOrderGcodeFile(id, file, options).then((request) => request(axios, basePath));
+        uploadJobOrderGcodeFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.uploadJobOrderGcodeFile(id, file, description, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @summary Upload 3D part file for a job order
+         * @summary Upload a new version of the 3D part file for a job order
          * @param {number} id 
          * @param {File} file 
+         * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderPartFile(id: number, file: File, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
-            return localVarFp.uploadJobOrderPartFile(id, file, options).then((request) => request(axios, basePath));
+        uploadJobOrderPartFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.uploadJobOrderPartFile(id, file, description, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3507,6 +3889,19 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
+     * @summary Download a specific version of the GCode file
+     * @param {number} id 
+     * @param {number} versionId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderGcodeFileVersion(id, versionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Download invoice PDF for a job order
      * @param {number} id 
      * @param {*} [options] Override http request option.
@@ -3527,6 +3922,19 @@ export class JobOrderApi extends BaseAPI {
      */
     public downloadJobOrderPartFile(id: number, options?: RawAxiosRequestConfig) {
         return JobOrderApiFp(this.configuration).downloadJobOrderPartFile(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Download a specific version of the 3D part file
+     * @param {number} id 
+     * @param {number} versionId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderPartFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderPartFileVersion(id, versionId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3555,6 +3963,30 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
+     * @summary List all uploaded versions of the GCode file
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public getJobOrderGcodeFileVersions(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).getJobOrderGcodeFileVersions(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List all uploaded versions of the 3D part file
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public getJobOrderPartFileVersions(id: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).getJobOrderPartFileVersions(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Get all job orders
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3562,6 +3994,19 @@ export class JobOrderApi extends BaseAPI {
      */
     public getJobOrders(options?: RawAxiosRequestConfig) {
         return JobOrderApiFp(this.configuration).getJobOrders(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Select a GCode file version as the active version used for printing
+     * @param {number} id 
+     * @param {number} versionId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public selectJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).selectJobOrderGcodeFileVersion(id, versionId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3579,28 +4024,30 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
-     * @summary Upload GCode file for a job order
+     * @summary Upload a new version of the GCode file for a job order
      * @param {number} id 
      * @param {File} file 
+     * @param {string} [description] Description of the changes in this version
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof JobOrderApi
      */
-    public uploadJobOrderGcodeFile(id: number, file: File, options?: RawAxiosRequestConfig) {
-        return JobOrderApiFp(this.configuration).uploadJobOrderGcodeFile(id, file, options).then((request) => request(this.axios, this.basePath));
+    public uploadJobOrderGcodeFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).uploadJobOrderGcodeFile(id, file, description, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @summary Upload 3D part file for a job order
+     * @summary Upload a new version of the 3D part file for a job order
      * @param {number} id 
      * @param {File} file 
+     * @param {string} [description] Description of the changes in this version
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof JobOrderApi
      */
-    public uploadJobOrderPartFile(id: number, file: File, options?: RawAxiosRequestConfig) {
-        return JobOrderApiFp(this.configuration).uploadJobOrderPartFile(id, file, options).then((request) => request(this.axios, this.basePath));
+    public uploadJobOrderPartFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).uploadJobOrderPartFile(id, file, description, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
