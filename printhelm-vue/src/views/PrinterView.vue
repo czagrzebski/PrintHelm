@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import CameraPlayer from '@/components/CameraPlayer.vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
-import ProgressBar from 'primevue/progressbar'
-import { api, BASE_URL } from '@/api/Configuration'
+import { api } from '@/api/Configuration'
 import { diagnosticApi } from '@/api/DiagnosticApi'
 import type { ApiDiagnosticReport } from '@/client/printhelm-web-openapi'
 import { usePrinterSocket } from '@/composables/usePrinterSocket'
@@ -14,9 +13,10 @@ import { usePrinterCommands } from '@/composables/usePrinterCommands'
 import { usePrinterFiles } from '@/composables/usePrinterFiles'
 import { useHomingGuard } from '@/composables/useHomingGuard'
 import PrintJobInfoDialog from '@/components/PrintJobInfoDialog.vue'
-import type { ApiPrinterState, ApiFan, ApiLight, ApiMaterial, ApiIpcam, ApiXcam, ApiUpgradeState } from '@/client/printhelm-web-openapi'
+import AmsVisual from '@/components/AmsVisual.vue'
+import type { ApiPrinterState, ApiFan, ApiLight, ApiMaterial } from '@/client/printhelm-web-openapi'
 import { useNotificationsStore } from '@/stores/notifications'
-import type { ApiNotification, NotificationSeverity } from '@/service/NotificationService'
+import type { NotificationSeverity } from '@/service/NotificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -157,6 +157,129 @@ function fmtTemp(val?: number): string {
   return val != null ? `${val.toFixed(0)}°C` : '—'
 }
 
+function fmtDuration(mins?: number): string {
+  if (mins == null || mins <= 0) return '—'
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
+// ── Current print hero ───────────────────────────────────────────────────
+
+const showPrintDetails = ref(false)
+
+const RING_R = 52
+const RING_LEN = 2 * Math.PI * RING_R
+
+const ringOffset = computed(
+  () => RING_LEN * (1 - Math.min(Math.max(progressValue.value / 100, 0), 1)),
+)
+
+const etaText = computed(() => {
+  const mins = state.value?.remainTime
+  if (!mins || mins <= 0) return ''
+  return new Date(Date.now() + mins * 60000).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+})
+
+// ── Device info accordions ───────────────────────────────────────────────
+
+const devOpen = ref({ connection: false, monitoring: false, firmware: false })
+
+const xcamActiveCount = computed(() => {
+  const x = state.value?.xcam
+  if (!x) return 0
+  return [
+    x.firstLayerInspector,
+    x.buildplateMarkerDetector,
+    x.spaghettiDetector,
+    x.printingMonitor,
+    x.printHalt,
+    x.allowSkipParts,
+  ].filter(Boolean).length
+})
+
+// ── Temperature gauges ───────────────────────────────────────────────────
+
+const NOZZLE_MAX = 300
+const BED_MAX = 110
+const GAUGE_R = 50
+const GAUGE_LEN = Math.PI * GAUGE_R
+
+function gaugeFrac(temp: number | undefined, max: number): number {
+  return Math.min(Math.max((temp ?? 0) / max, 0), 1)
+}
+
+function gaugeOffset(temp: number | undefined, max: number): number {
+  return GAUGE_LEN * (1 - gaugeFrac(temp, max))
+}
+
+function gaugePoint(temp: number | undefined, max: number): { x: number; y: number } {
+  const theta = Math.PI * (1 - gaugeFrac(temp, max))
+  return { x: 60 + GAUGE_R * Math.cos(theta), y: 60 - GAUGE_R * Math.sin(theta) }
+}
+
+function gaugeColor(temp: number | undefined, max: number): string {
+  const f = gaugeFrac(temp, max)
+  if (f < 0.25) return '#22d3ee'
+  if (f < 0.6) return '#fbbf24'
+  return '#fb7185'
+}
+
+const nozzleHist = ref<number[]>([])
+const bedHist = ref<number[]>([])
+const HIST_MAX = 120
+
+watch(state, s => {
+  if (s?.nozzleTemp != null) {
+    nozzleHist.value.push(s.nozzleTemp)
+    if (nozzleHist.value.length > HIST_MAX) nozzleHist.value.shift()
+  }
+  if (s?.bedTemp != null) {
+    bedHist.value.push(s.bedTemp)
+    if (bedHist.value.length > HIST_MAX) bedHist.value.shift()
+  }
+})
+
+function sparkPoints(hist: number[]): string {
+  if (hist.length < 2) return ''
+  const min = Math.min(...hist)
+  const max = Math.max(...hist)
+  const span = Math.max(max - min, 1)
+  return hist
+    .map((v, i) => {
+      const x = (i / (hist.length - 1)) * 100
+      const y = 22 - ((v - min) / span) * 20
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+}
+
+const TEMP_PRESETS = [
+  { label: 'PLA', nozzle: 220, bed: 55 },
+  { label: 'PETG', nozzle: 240, bed: 70 },
+  { label: 'ABS', nozzle: 260, bed: 90 },
+  { label: 'Off', nozzle: 0, bed: 0 },
+]
+
+async function applyPreset(preset: (typeof TEMP_PRESETS)[number]) {
+  await commands.setNozzleTemp(preset.nozzle)
+  await commands.setBedTemp(preset.bed)
+  if (state.value) {
+    state.value.nozzleTargetTemp = preset.nozzle
+    state.value.bedTargetTemp = preset.bed
+  }
+}
+
+// ── Fans ─────────────────────────────────────────────────────────────────
+
+function fanSpinDuration(pct: number): string {
+  // 100% ≈ 0.3s per revolution, slower speeds spin proportionally slower
+  return `${(2.2 - (pct / 100) * 1.9).toFixed(2)}s`
+}
+
 function fmtFanSpeed(speed?: string): number {
   if (!speed) return 0
   const n = parseInt(speed)
@@ -245,7 +368,13 @@ function notifSeverityClass(severity: NotificationSeverity | undefined) {
 
 function notifDate(dateStr: string | undefined) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString(undefined, {
+  const d = new Date(dateStr)
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return d.toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }
@@ -353,9 +482,16 @@ onUnmounted(() => {
     <div v-if="error" class="error-msg">{{ error }}</div>
 
     <!-- Waiting for first MQTT state -->
-    <div v-if="!state && !error" class="page-loading">
-      <span class="page-spinner" />
-      <span class="page-loading-text">Waiting for printer data…</span>
+    <div v-if="!state && !error" class="skeleton-grid" aria-label="Waiting for printer data">
+      <div class="skeleton-col">
+        <div class="sk-card" style="height: 180px" />
+        <div class="sk-card" style="height: 120px" />
+        <div class="sk-card" style="height: 260px" />
+      </div>
+      <div class="skeleton-col">
+        <div class="sk-card" style="height: 240px" />
+        <div class="sk-card" style="height: 200px" />
+      </div>
     </div>
 
     <!-- Main grid -->
@@ -370,80 +506,109 @@ onUnmounted(() => {
             <i class="mdi mdi-printer-3d-nozzle-outline" /> Current Print
           </div>
           <div v-if="state?.file || state?.progress != null" class="print-info">
-            <div class="file-name" :title="state?.file">
-              <i class="mdi mdi-file-cad-box" />
-              {{ state?.file ?? '—' }}
-            </div>
-            <div v-if="state?.subtaskName" class="subtask-name">
-              {{ state.subtaskName }}
-            </div>
-
-            <div class="progress-row">
-              <ProgressBar
-                :value="progressValue"
-                :show-value="false"
-                class="print-progress"
-              />
-              <span class="progress-pct">{{ progressValue.toFixed(0) }}%</span>
-            </div>
-
-            <div class="print-stats">
-              <div class="stat-item">
-                <span class="stat-key">Layer</span>
-                <span class="stat-val">
-                  {{ state?.currentLayer != null ? `${state.currentLayer} / ${state.totalLayers}` : '—' }}
-                </span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-key">Remaining</span>
-                <span class="stat-val">{{ state?.remainTime ? `${state.remainTime}m` : '—' }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-key">Speed</span>
-                <span class="stat-val">{{ state?.spdMag ? `${state.spdMag}%` : '—' }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-key">Type</span>
-                <span class="stat-val" style="font-size:0.85rem;text-transform:capitalize">{{ state?.printType || '—' }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-key">GCode</span>
-                <span class="stat-val" style="font-size:0.78rem;font-family:monospace">{{ state?.gcodeState || '—' }}</span>
-              </div>
-              <div v-if="activeMaterial" class="stat-item">
-                <span class="stat-key">Material</span>
-                <span class="stat-val stat-val--material">
-                  <span
-                    class="active-material-dot"
-                    :style="{ background: materialColor(activeMaterial.color) }"
+            <div class="print-hero">
+              <div class="ring-wrap">
+                <svg viewBox="0 0 120 120" class="ring-svg">
+                  <defs>
+                    <linearGradient id="pv-ring-grad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#22d3ee" />
+                      <stop offset="100%" stop-color="#818cf8" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="60" cy="60" :r="RING_R" class="ring-track" />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    :r="RING_R"
+                    class="ring-fill"
+                    :class="{ 'ring-fill--active': isGcodeRunning }"
+                    :stroke-dasharray="RING_LEN"
+                    :stroke-dashoffset="ringOffset"
                   />
-                  {{ activeMaterial.name || activeMaterial.type || '—' }}
-                </span>
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-pct">{{ progressValue.toFixed(0) }}<span class="ring-pct-sign">%</span></span>
+                  <span v-if="state?.currentLayer != null" class="ring-layer">
+                    {{ state.currentLayer }} / {{ state.totalLayers }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="print-hero-body">
+                <div class="file-name" :title="state?.file">
+                  <i class="mdi mdi-file-cad-box" />
+                  {{ state?.file ?? '—' }}
+                </div>
+                <div v-if="state?.subtaskName" class="subtask-name">
+                  {{ state.subtaskName }}
+                </div>
+
+                <div class="hero-stats">
+                  <span class="hero-stat" title="Time remaining">
+                    <i class="mdi mdi-clock-outline" />
+                    {{ fmtDuration(state?.remainTime) }}
+                  </span>
+                  <span v-if="etaText" class="hero-stat" title="Estimated finish">
+                    <i class="mdi mdi-flag-checkered" />
+                    ~{{ etaText }}
+                  </span>
+                  <span v-if="state?.spdMag" class="hero-stat" title="Print speed">
+                    <i class="mdi mdi-speedometer" />
+                    {{ state.spdMag }}%
+                  </span>
+                  <span v-if="activeMaterial" class="hero-stat" title="Loaded material">
+                    <span
+                      class="active-material-dot"
+                      :style="{ background: materialColor(activeMaterial.color) }"
+                    />
+                    {{ activeMaterial.name || activeMaterial.type || '—' }}
+                  </span>
+                </div>
+
+                <button class="details-toggle" @click="showPrintDetails = !showPrintDetails">
+                  <i class="mdi" :class="showPrintDetails ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+                  {{ showPrintDetails ? 'Hide details' : 'Details' }}
+                </button>
               </div>
             </div>
 
-            <div v-if="state?.hmsErrors?.length" class="hms-errors" style="margin-top:0.75rem">
-              <div v-for="(msg, i) in state.hmsErrors" :key="i" class="ctrl-error" style="margin-bottom:0.4rem;display:flex;align-items:center;gap:0.5rem">
+            <div v-if="showPrintDetails" class="print-details">
+              <div class="detail-row">
+                <span class="detail-key">Type</span>
+                <span class="detail-val detail-val--cap">{{ state?.printType || '—' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">GCode state</span>
+                <span class="detail-val detail-val--mono">{{ state?.gcodeState || '—' }}</span>
+              </div>
+              <div class="conn-pills detail-pills">
+                <span v-if="state?.taskId" class="env-pill mono-pill"><i class="mdi mdi-identifier" /> {{ state.taskId }}</span>
+                <span v-if="state?.jobId" class="env-pill mono-pill"><i class="mdi mdi-briefcase-outline" /> {{ state.jobId }}</span>
+                <span v-if="state?.projectId" class="env-pill mono-pill"><i class="mdi mdi-folder-outline" /> {{ state.projectId }}</span>
+              </div>
+            </div>
+
+            <div v-if="state?.hmsErrors?.length" class="hms-errors">
+              <div v-for="(msg, i) in state.hmsErrors" :key="i" class="ctrl-error error-row">
                 <i class="mdi mdi-alert-circle-outline" />
-                <span style="flex:1">{{ msg }}</span>
+                <span class="error-row-msg">{{ msg }}</span>
                 <Button
                   v-if="i === 0"
                   icon="pi pi-microchip-ai"
                   label="Diagnose"
                   severity="secondary"
                   size="small"
-                  style="margin-left:auto"
+                  class="error-row-btn"
                   @click="runDiagnostics"
                 />
               </div>
             </div>
             <div
               v-else-if="state?.failReason || state?.printErrorDescription || (state?.printError != null && state.printError !== 0)"
-              class="ctrl-error"
-              style="margin-top:0.75rem;display:flex;align-items:center;gap:0.5rem"
+              class="ctrl-error error-row error-row--single"
             >
               <i class="mdi mdi-alert-circle-outline" />
-              <span style="flex:1">
+              <span class="error-row-msg">
                 <span v-if="state.failReason">{{ state.failReason }}</span>
                 <span v-else-if="state.printErrorDescription">{{ state.printErrorDescription }}</span>
                 <span v-else>Error 0x{{ state.printError!.toString(16).toUpperCase() }}<span v-if="state.mcPrintErrorCode"> · {{ state.mcPrintErrorCode }}</span></span>
@@ -453,15 +618,9 @@ onUnmounted(() => {
                 label="Diagnose"
                 severity="secondary"
                 size="small"
-                style="margin-left:auto"
+                class="error-row-btn"
                 @click="runDiagnostics"
               />
-            </div>
-
-            <div class="conn-pills" style="margin-top:0.75rem;margin-bottom:0">
-              <span v-if="state?.taskId" class="env-pill mono-pill"><i class="mdi mdi-identifier" /> {{ state.taskId }}</span>
-              <span v-if="state?.jobId" class="env-pill mono-pill"><i class="mdi mdi-briefcase-outline" /> {{ state.jobId }}</span>
-              <span v-if="state?.projectId" class="env-pill mono-pill"><i class="mdi mdi-folder-outline" /> {{ state.projectId }}</span>
             </div>
           </div>
           <div v-else class="empty-state">
@@ -502,37 +661,18 @@ onUnmounted(() => {
           <div class="section-label">
             <i class="mdi mdi-palette-swatch-outline" /> Material System (AMS)
           </div>
-          <div v-if="materials.length" class="ams-grid">
-            <div
-              v-for="(mat, i) in materials"
-              :key="i"
-              class="ams-slot"
-              :class="{ 'ams-slot--loaded': mat.loaded }"
-            >
-              <div
-                class="ams-color"
-                :style="{ background: materialColor(mat.color) }"
-              >
-                <i v-if="mat.loaded" class="mdi mdi-check ams-loaded-icon" />
-              </div>
-              <div class="ams-info">
-                <span class="ams-name">{{ mat.name ?? 'Empty' }}</span>
-                <span class="ams-slot-label">Slot {{ i + 1 }}</span>
-              </div>
-            </div>
-          </div>
+          <AmsVisual
+            v-if="materials.length"
+            :materials="materials"
+            :humidity="state?.materialSystem?.humidity"
+            :ams-temp="state?.materialSystem?.temperature"
+            :nozzle-temp="state?.nozzleTemp"
+            :nozzle-target-temp="state?.nozzleTargetTemp"
+            :printing="isPrinting"
+          />
           <div v-else class="empty-state">
             <i class="mdi mdi-tray-remove" />
             No material data
-          </div>
-
-          <div v-if="state?.materialSystem?.temperature || state?.materialSystem?.humidity" class="ams-env">
-            <span v-if="state.materialSystem?.temperature" class="env-pill">
-              <i class="mdi mdi-thermometer" /> {{ state.materialSystem.temperature }}°C
-            </span>
-            <span v-if="state.materialSystem?.humidity" class="env-pill">
-              <i class="mdi mdi-water-percent" /> {{ state.materialSystem.humidity }}% RH
-            </span>
           </div>
         </div>
 
@@ -643,77 +783,106 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Connection -->
+        <!-- Device Info -->
         <div class="section-card">
-          <div class="section-label"><i class="mdi mdi-lan-connect" /> Connection</div>
-          <div class="conn-pills">
-            <span v-if="state?.ipAddress" class="env-pill"><i class="mdi mdi-ip-network-outline" /> {{ state.ipAddress }}</span>
-            <span v-if="state?.wifiSignalStrength" class="env-pill"><i class="mdi mdi-wifi" /> {{ state.wifiSignalStrength }}</span>
-            <span v-if="printer?.connectionConfig?.connectionType" class="env-pill"><i class="mdi mdi-connection" /> {{ printer.connectionConfig.connectionType }}</span>
-          </div>
-          <div class="conn-mono-rows">
-            <div v-if="printer?.connectionConfig?.brokerUrl" class="conn-mono-row">
-              <span class="conn-mono-label">Broker</span>
-              <span class="conn-mono-val">{{ printer.connectionConfig.brokerUrl }}</span>
-            </div>
-            <div v-if="printer?.connectionConfig?.topic" class="conn-mono-row">
-              <span class="conn-mono-label">Topic</span>
-              <span class="conn-mono-val">{{ printer.connectionConfig.topic }}</span>
-            </div>
-          </div>
-        </div>
+          <div class="section-label"><i class="mdi mdi-information-outline" /> Device Info</div>
+          <div class="dev-groups">
 
-        <!-- AI Monitoring & Firmware -->
-        <div class="section-card">
-          <div class="section-label"><i class="mdi mdi-eye-outline" /> AI Monitoring</div>
-          <div v-if="state?.xcam" class="xcam-list">
-            <div v-for="feat in [
-              { label: 'First Layer Inspector',    active: state.xcam.firstLayerInspector },
-              { label: 'Build Plate Marker',       active: state.xcam.buildplateMarkerDetector },
-              { label: 'Spaghetti Detector',       active: state.xcam.spaghettiDetector },
-              { label: 'Printing Monitor',         active: state.xcam.printingMonitor },
-              { label: 'Halt on Failure',          active: state.xcam.printHalt },
-              { label: 'Allow Skip Parts',         active: state.xcam.allowSkipParts },
-            ]" :key="feat.label" class="xcam-row">
-              <span class="xcam-dot" :class="feat.active ? 'xcam-dot--on' : ''" />
-              <span class="xcam-label">{{ feat.label }}</span>
-              <span class="xcam-state" :class="feat.active ? 'xcam-state--on' : ''">{{ feat.active ? 'On' : 'Off' }}</span>
+            <div class="dev-group">
+              <button class="dev-group-head" @click="devOpen.connection = !devOpen.connection">
+                <i class="mdi mdi-lan-connect dev-group-icon" />
+                <span class="dev-group-title">Connection</span>
+                <span class="dev-group-summary">{{ state?.ipAddress ?? printer?.connectionConfig?.connectionType ?? '' }}</span>
+                <i class="mdi mdi-chevron-down dev-chevron" :class="{ 'dev-chevron--open': devOpen.connection }" />
+              </button>
+              <div v-if="devOpen.connection" class="dev-group-body">
+                <div class="conn-pills">
+                  <span v-if="state?.ipAddress" class="env-pill"><i class="mdi mdi-ip-network-outline" /> {{ state.ipAddress }}</span>
+                  <span v-if="state?.wifiSignalStrength" class="env-pill"><i class="mdi mdi-wifi" /> {{ state.wifiSignalStrength }}</span>
+                  <span v-if="printer?.connectionConfig?.connectionType" class="env-pill"><i class="mdi mdi-connection" /> {{ printer.connectionConfig.connectionType }}</span>
+                </div>
+                <div class="conn-mono-rows">
+                  <div v-if="printer?.connectionConfig?.brokerUrl" class="conn-mono-row">
+                    <span class="conn-mono-label">Broker</span>
+                    <span class="conn-mono-val">{{ printer.connectionConfig.brokerUrl }}</span>
+                  </div>
+                  <div v-if="printer?.connectionConfig?.topic" class="conn-mono-row">
+                    <span class="conn-mono-label">Topic</span>
+                    <span class="conn-mono-val">{{ printer.connectionConfig.topic }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div v-if="state.xcam.haltPrintSensitivity" class="xcam-row">
-              <span class="xcam-dot xcam-dot--neutral" />
-              <span class="xcam-label">Halt Sensitivity</span>
-              <span class="xcam-state" style="text-transform:capitalize">{{ state.xcam.haltPrintSensitivity }}</span>
-            </div>
-          </div>
-          <div v-else class="empty-state"><i class="mdi mdi-eye-off-outline" /> No AI monitoring data</div>
 
-          <div class="section-sublabel" style="margin-top:1rem"><i class="mdi mdi-update" /> Firmware</div>
-          <div v-if="state?.upgradeState" class="fw-grid">
-            <div v-if="state.upgradeState.otaNewVersionNumber" class="fw-row">
-              <span class="fw-component">OTA</span>
-              <span class="fw-version">{{ state.upgradeState.otaNewVersionNumber }}</span>
+            <div class="dev-group">
+              <button class="dev-group-head" @click="devOpen.monitoring = !devOpen.monitoring">
+                <i class="mdi mdi-eye-outline dev-group-icon" />
+                <span class="dev-group-title">AI Monitoring</span>
+                <span class="dev-group-summary">{{ state?.xcam ? `${xcamActiveCount} active` : '' }}</span>
+                <i class="mdi mdi-chevron-down dev-chevron" :class="{ 'dev-chevron--open': devOpen.monitoring }" />
+              </button>
+              <div v-if="devOpen.monitoring" class="dev-group-body">
+                <div v-if="state?.xcam" class="xcam-list">
+                  <div v-for="feat in [
+                    { label: 'First Layer Inspector',    active: state.xcam.firstLayerInspector },
+                    { label: 'Build Plate Marker',       active: state.xcam.buildplateMarkerDetector },
+                    { label: 'Spaghetti Detector',       active: state.xcam.spaghettiDetector },
+                    { label: 'Printing Monitor',         active: state.xcam.printingMonitor },
+                    { label: 'Halt on Failure',          active: state.xcam.printHalt },
+                    { label: 'Allow Skip Parts',         active: state.xcam.allowSkipParts },
+                  ]" :key="feat.label" class="xcam-row">
+                    <span class="xcam-dot" :class="feat.active ? 'xcam-dot--on' : ''" />
+                    <span class="xcam-label">{{ feat.label }}</span>
+                    <span class="xcam-state" :class="feat.active ? 'xcam-state--on' : ''">{{ feat.active ? 'On' : 'Off' }}</span>
+                  </div>
+                  <div v-if="state.xcam.haltPrintSensitivity" class="xcam-row">
+                    <span class="xcam-dot xcam-dot--neutral" />
+                    <span class="xcam-label">Halt Sensitivity</span>
+                    <span class="xcam-state xcam-state--cap">{{ state.xcam.haltPrintSensitivity }}</span>
+                  </div>
+                </div>
+                <div v-else class="empty-state"><i class="mdi mdi-eye-off-outline" /> No AI monitoring data</div>
+              </div>
             </div>
-            <div v-if="state.upgradeState.amsNewVersionNumber" class="fw-row">
-              <span class="fw-component">AMS</span>
-              <span class="fw-version">{{ state.upgradeState.amsNewVersionNumber }}</span>
+
+            <div class="dev-group">
+              <button class="dev-group-head" @click="devOpen.firmware = !devOpen.firmware">
+                <i class="mdi mdi-update dev-group-icon" />
+                <span class="dev-group-title">Firmware</span>
+                <span class="dev-group-summary">{{ state?.upgradeState?.status ?? '' }}</span>
+                <i class="mdi mdi-chevron-down dev-chevron" :class="{ 'dev-chevron--open': devOpen.firmware }" />
+              </button>
+              <div v-if="devOpen.firmware" class="dev-group-body">
+                <div v-if="state?.upgradeState" class="fw-grid">
+                  <div v-if="state.upgradeState.otaNewVersionNumber" class="fw-row">
+                    <span class="fw-component">OTA</span>
+                    <span class="fw-version">{{ state.upgradeState.otaNewVersionNumber }}</span>
+                  </div>
+                  <div v-if="state.upgradeState.amsNewVersionNumber" class="fw-row">
+                    <span class="fw-component">AMS</span>
+                    <span class="fw-version">{{ state.upgradeState.amsNewVersionNumber }}</span>
+                  </div>
+                  <div v-if="state.upgradeState.ahbNewVersionNumber" class="fw-row">
+                    <span class="fw-component">AHB</span>
+                    <span class="fw-version">{{ state.upgradeState.ahbNewVersionNumber }}</span>
+                  </div>
+                  <div v-if="state.upgradeState.extNewVersionNumber" class="fw-row">
+                    <span class="fw-component">EXT</span>
+                    <span class="fw-version">{{ state.upgradeState.extNewVersionNumber }}</span>
+                  </div>
+                </div>
+                <div v-if="state?.upgradeState?.status" class="conn-pills fw-status-pills">
+                  <span class="env-pill" :class="{ 'env-pill--warn': state.upgradeState.forceUpgrade }">
+                    <i class="mdi" :class="state.upgradeState.forceUpgrade ? 'mdi-alert-outline' : 'mdi-check-circle-outline'" />
+                    {{ state.upgradeState.status }}
+                    <span v-if="state.upgradeState.progress && state.upgradeState.progress !== '0'"> · {{ state.upgradeState.progress }}%</span>
+                  </span>
+                </div>
+                <div v-if="!state?.upgradeState" class="empty-state"><i class="mdi mdi-update" /> No firmware data</div>
+              </div>
             </div>
-            <div v-if="state.upgradeState.ahbNewVersionNumber" class="fw-row">
-              <span class="fw-component">AHB</span>
-              <span class="fw-version">{{ state.upgradeState.ahbNewVersionNumber }}</span>
-            </div>
-            <div v-if="state.upgradeState.extNewVersionNumber" class="fw-row">
-              <span class="fw-component">EXT</span>
-              <span class="fw-version">{{ state.upgradeState.extNewVersionNumber }}</span>
-            </div>
+
           </div>
-          <div v-if="state?.upgradeState?.status" class="conn-pills" style="margin-top:0.5rem">
-            <span class="env-pill" :class="{ 'env-pill--warn': state.upgradeState.forceUpgrade }">
-              <i class="mdi" :class="state.upgradeState.forceUpgrade ? 'mdi-alert-outline' : 'mdi-check-circle-outline'" />
-              {{ state.upgradeState.status }}
-              <span v-if="state.upgradeState.progress && state.upgradeState.progress !== '0'"> · {{ state.upgradeState.progress }}%</span>
-            </span>
-          </div>
-          <div v-if="!state?.upgradeState" class="empty-state"><i class="mdi mdi-update" /> No firmware data</div>
         </div>
 
       </div>
@@ -801,19 +970,39 @@ onUnmounted(() => {
             <i class="mdi mdi-thermometer-lines" /> Temperatures
           </div>
           <div class="temp-grid">
-            <div class="temp-card" :class="{ 'temp-card--hot': (state?.nozzleTemp ?? 0) > 100 }">
-              <div class="temp-icon-wrap">
+            <div class="temp-card">
+              <div class="temp-head">
                 <i class="mdi mdi-printer-3d-nozzle-heat" />
-              </div>
-              <div class="temp-body">
                 <span class="temp-label">Nozzle</span>
-                <span class="temp-current">{{ fmtTemp(state?.nozzleTemp) }}</span>
-                <span class="temp-target">→ {{ fmtTemp(state?.nozzleTargetTemp) }}</span>
+                <span class="temp-target" title="Target">→ {{ fmtTemp(state?.nozzleTargetTemp) }}</span>
+              </div>
+              <div class="temp-gauge">
+                <svg viewBox="0 0 120 66" class="gauge-svg">
+                  <path d="M 10 60 A 50 50 0 0 1 110 60" class="gauge-track" />
+                  <path
+                    d="M 10 60 A 50 50 0 0 1 110 60"
+                    class="gauge-fill"
+                    :stroke="gaugeColor(state?.nozzleTemp, NOZZLE_MAX)"
+                    :stroke-dasharray="GAUGE_LEN"
+                    :stroke-dashoffset="gaugeOffset(state?.nozzleTemp, NOZZLE_MAX)"
+                  />
+                  <circle
+                    v-if="state?.nozzleTargetTemp"
+                    :cx="gaugePoint(state.nozzleTargetTemp, NOZZLE_MAX).x"
+                    :cy="gaugePoint(state.nozzleTargetTemp, NOZZLE_MAX).y"
+                    r="3"
+                    class="gauge-target-dot"
+                  />
+                </svg>
+                <span class="gauge-value">{{ fmtTemp(state?.nozzleTemp) }}</span>
               </div>
               <div v-if="state?.nozzleType || state?.nozzleDiameter" class="temp-meta">
                 <span v-if="state?.nozzleType">{{ state.nozzleType }}</span>
                 <span v-if="state?.nozzleDiameter">Ø{{ state.nozzleDiameter }}mm</span>
               </div>
+              <svg v-if="nozzleHist.length > 1" viewBox="0 0 100 24" class="temp-spark" preserveAspectRatio="none">
+                <polyline :points="sparkPoints(nozzleHist)" />
+              </svg>
               <div class="temp-set-row">
                 <input
                   v-model.number="nozzleTempInput"
@@ -833,15 +1022,35 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="temp-card" :class="{ 'temp-card--warm': (state?.bedTemp ?? 0) > 30 }">
-              <div class="temp-icon-wrap bed">
+            <div class="temp-card">
+              <div class="temp-head">
                 <i class="mdi mdi-heating-coil" />
-              </div>
-              <div class="temp-body">
                 <span class="temp-label">Bed</span>
-                <span class="temp-current">{{ fmtTemp(state?.bedTemp) }}</span>
-                <span class="temp-target">→ {{ fmtTemp(state?.bedTargetTemp) }}</span>
+                <span class="temp-target" title="Target">→ {{ fmtTemp(state?.bedTargetTemp) }}</span>
               </div>
+              <div class="temp-gauge">
+                <svg viewBox="0 0 120 66" class="gauge-svg">
+                  <path d="M 10 60 A 50 50 0 0 1 110 60" class="gauge-track" />
+                  <path
+                    d="M 10 60 A 50 50 0 0 1 110 60"
+                    class="gauge-fill"
+                    :stroke="gaugeColor(state?.bedTemp, BED_MAX)"
+                    :stroke-dasharray="GAUGE_LEN"
+                    :stroke-dashoffset="gaugeOffset(state?.bedTemp, BED_MAX)"
+                  />
+                  <circle
+                    v-if="state?.bedTargetTemp"
+                    :cx="gaugePoint(state.bedTargetTemp, BED_MAX).x"
+                    :cy="gaugePoint(state.bedTargetTemp, BED_MAX).y"
+                    r="3"
+                    class="gauge-target-dot"
+                  />
+                </svg>
+                <span class="gauge-value">{{ fmtTemp(state?.bedTemp) }}</span>
+              </div>
+              <svg v-if="bedHist.length > 1" viewBox="0 0 100 24" class="temp-spark" preserveAspectRatio="none">
+                <polyline :points="sparkPoints(bedHist)" />
+              </svg>
               <div class="temp-set-row">
                 <input
                   v-model.number="bedTempInput"
@@ -861,6 +1070,18 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
+
+          <div class="temp-presets">
+            <span class="temp-presets-label">Presets</span>
+            <button
+              v-for="p in TEMP_PRESETS"
+              :key="p.label"
+              class="temp-preset-chip"
+              :disabled="commands.loading.value"
+              :title="`Nozzle ${p.nozzle}°C · Bed ${p.bed}°C`"
+              @click="applyPreset(p)"
+            >{{ p.label }}</button>
+          </div>
         </div>
 
         <!-- Fans -->
@@ -870,6 +1091,11 @@ onUnmounted(() => {
           </div>
           <div v-if="fans.length" class="fans-list">
             <div v-for="fan in fans" :key="fan.name" class="fan-row">
+              <i
+                class="mdi mdi-fan fan-icon"
+                :class="{ 'fan-icon--on': fmtFanSpeed(fan.speed) > 0 }"
+                :style="fmtFanSpeed(fan.speed) > 0 ? { animationDuration: fanSpinDuration(fmtFanSpeed(fan.speed)) } : undefined"
+              />
               <span class="fan-name">{{ fan.name }}</span>
               <div class="fan-bar-wrap">
                 <div class="fan-bar">
@@ -1316,7 +1542,12 @@ onUnmounted(() => {
   padding: 1.25rem;
   box-shadow: var(--ph-shadow-card), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
   animation: ph-fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.section-card:hover {
+  border-color: var(--ph-border-strong);
+  transform: translateY(-1px);
 }
 
 .section-card:hover {
@@ -1410,15 +1641,6 @@ onUnmounted(() => {
 }
 
 /* ── Page loading ────────────────────────────────────────────────────── */
-.page-loading {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
 .page-spinner {
   width: 40px;
   height: 40px;
@@ -1428,9 +1650,42 @@ onUnmounted(() => {
   animation: spin 0.7s linear infinite;
 }
 
-.page-loading-text {
-  font-size: 0.875rem;
-  color: var(--ph-text-muted);
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.25rem;
+  flex: 1;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skeleton-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sk-card {
+  border-radius: 16px;
+  border: 1px solid var(--ph-glass-border);
+  background: linear-gradient(
+    100deg,
+    rgba(148, 210, 230, 0.04) 30%,
+    rgba(148, 210, 230, 0.09) 50%,
+    rgba(148, 210, 230, 0.04) 70%
+  );
+  background-size: 250% 100%;
+  animation: sk-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 /* ── Camera loading ──────────────────────────────────────────────────── */
@@ -1570,72 +1825,7 @@ onUnmounted(() => {
 }
 
 /* ── AMS ─────────────────────────────────────────────────────────────── */
-.ams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 0.75rem;
-}
-
-.ams-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 0.5rem;
-  border-radius: 10px;
-  border: 1px solid var(--ph-border);
-  background: rgba(255,255,255,0.02);
-  transition: border-color 0.15s;
-}
-
-.ams-slot--loaded {
-  border-color: var(--ph-accent);
-  background: var(--ph-accent-dim);
-}
-
-.ams-color {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.ams-loaded-icon {
-  font-size: 0.75rem;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
-}
-
-.ams-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.ams-name {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--ph-text);
-  text-align: center;
-  line-height: 1.2;
-}
-
-.ams-slot-label {
-  font-size: 0.7rem;
-  color: var(--ph-text-muted);
-}
-
-.ams-env {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.875rem;
-  flex-wrap: wrap;
-}
+/* Visual AMS diagram lives in AmsVisual.vue */
 
 .env-pill {
   display: flex;
@@ -1675,59 +1865,190 @@ onUnmounted(() => {
   margin-bottom: 0.75rem;
 }
 
-.progress-row {
+/* ── Print hero (progress ring) ─────────────────────────────────────── */
+.print-hero {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 1.25rem;
 }
 
-.print-progress {
-  flex: 1;
-  height: 8px !important;
+.ring-wrap {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
 }
 
-.progress-pct {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--ph-accent);
-  min-width: 2.5rem;
-  text-align: right;
+.ring-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
 }
 
-.print-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.5rem;
+.ring-track {
+  fill: none;
+  stroke: rgba(148, 210, 230, 0.1);
+  stroke-width: 8;
 }
 
-.stat-item {
+.ring-fill {
+  fill: none;
+  stroke: url(#pv-ring-grad);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ring-fill--active {
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.45));
+}
+
+.ring-center {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 0.1rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--ph-border);
 }
 
-.stat-key {
+.ring-pct {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ph-text);
+  line-height: 1;
+}
+
+.ring-pct-sign {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ph-text-muted);
+}
+
+.ring-layer {
+  font-size: 0.7rem;
+  color: var(--ph-text-muted);
+}
+
+.print-hero-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ph-text);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--ph-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hero-stat i {
+  color: var(--ph-text-muted);
+  font-size: 0.85rem;
+}
+
+.details-toggle {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.4rem 0.15rem 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ph-text-muted);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.details-toggle:hover {
+  color: var(--ph-text);
+}
+
+.print-details {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ph-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.detail-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.detail-key {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ph-text-muted);
+  min-width: 90px;
 }
 
-.stat-val {
-  font-size: 1rem;
-  font-weight: 600;
+.detail-val {
+  font-size: 0.82rem;
   color: var(--ph-text);
 }
 
-.stat-val--material {
+.detail-val--cap {
+  text-transform: capitalize;
+}
+
+.detail-val--mono {
+  font-family: monospace;
+  font-size: 0.78rem;
+}
+
+.detail-pills {
+  margin-top: 0.25rem;
+}
+
+.error-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.hms-errors .error-row {
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+}
+
+.hms-errors {
+  margin-top: 0.75rem;
+}
+
+.error-row-msg {
+  flex: 1;
+}
+
+.error-row-btn {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .active-material-dot {
@@ -1756,35 +2077,15 @@ onUnmounted(() => {
   transition: border-color 0.2s;
 }
 
-.temp-card--hot {
-  border-color: rgba(248, 113, 113, 0.4);
-}
-
-.temp-card--warm {
-  border-color: rgba(251, 146, 60, 0.4);
-}
-
-.temp-icon-wrap {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 8px;
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+.temp-head {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.4rem;
+}
+
+.temp-head i {
   font-size: 1rem;
-}
-
-.temp-icon-wrap.bed {
-  background: rgba(251, 146, 60, 0.12);
-  color: #fb923c;
-}
-
-.temp-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  color: var(--ph-text-muted);
 }
 
 .temp-label {
@@ -1792,18 +2093,109 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ph-text-muted);
-}
-
-.temp-current {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--ph-text);
-  line-height: 1.1;
+  font-weight: 600;
 }
 
 .temp-target {
   font-size: 0.78rem;
   color: var(--ph-text-muted);
+  margin-left: auto;
+}
+
+.temp-gauge {
+  position: relative;
+  margin: 0.25rem auto 0;
+  width: 120px;
+}
+
+.gauge-svg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.gauge-track {
+  fill: none;
+  stroke: rgba(148, 210, 230, 0.1);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s;
+}
+
+.gauge-target-dot {
+  fill: var(--ph-text);
+  stroke: var(--ph-bg-mid);
+  stroke-width: 1.5;
+}
+
+.gauge-value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ph-text);
+  line-height: 1;
+}
+
+.temp-spark {
+  width: 100%;
+  height: 24px;
+  opacity: 0.75;
+}
+
+.temp-spark polyline {
+  fill: none;
+  stroke: var(--ph-accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.temp-presets {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.temp-presets-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ph-text-muted);
+  margin-right: 0.25rem;
+}
+
+.temp-preset-chip {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--ph-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ph-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.temp-preset-chip:hover:not(:disabled) {
+  border-color: rgba(34, 211, 238, 0.4);
+  background: var(--ph-accent-dim);
+}
+
+.temp-preset-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .temp-meta {
@@ -1889,10 +2281,28 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
+.fan-icon {
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+
+.fan-icon--on {
+  color: var(--ph-accent);
+  animation: fan-spin linear infinite;
+}
+
+@keyframes fan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .fan-name {
   font-size: 0.8rem;
   color: var(--ph-text-muted);
-  min-width: 130px;
+  min-width: 110px;
   flex-shrink: 0;
 }
 
@@ -2664,17 +3074,78 @@ onUnmounted(() => {
 .jog-right  { grid-column: 3; grid-row: 2; }
 .jog-bottom { grid-column: 2; grid-row: 3; }
 
-/* ── Printer details ─────────────────────────────────────────────────── */
-.section-sublabel {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--ph-text-muted);
-  margin-bottom: 0.625rem;
+/* ── Device info accordions ─────────────────────────────────────────── */
+.dev-groups {
+  display: flex;
+  flex-direction: column;
+}
+
+.dev-group + .dev-group {
+  border-top: 1px solid var(--ph-border);
+}
+
+.dev-group-head {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
+  padding: 0.6rem 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ph-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.dev-group-head:hover {
+  color: var(--ph-accent);
+}
+
+.dev-group-icon {
+  font-size: 0.95rem;
+  color: var(--ph-text-muted);
+}
+
+.dev-group-title {
+  flex-shrink: 0;
+}
+
+.dev-group-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ph-text-muted);
+}
+
+.dev-chevron {
+  font-size: 1rem;
+  color: var(--ph-text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.dev-chevron--open {
+  transform: rotate(180deg);
+}
+
+.dev-group-body {
+  padding: 0.25rem 0.25rem 0.85rem;
+}
+
+.xcam-state--cap {
+  text-transform: capitalize;
+}
+
+.fw-status-pills {
+  margin-top: 0.5rem;
 }
 
 .conn-pills {

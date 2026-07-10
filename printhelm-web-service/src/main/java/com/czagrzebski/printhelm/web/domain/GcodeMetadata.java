@@ -14,6 +14,8 @@ public class GcodeMetadata {
     private List<GcodeFilamentInfo> filaments;
     private boolean multiColor;
     private int colorCount;
+    private Integer estimatedDurationSeconds;
+    private Double totalWeightGrams;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -29,4 +31,10 @@ public class GcodeMetadata {
 
     public int getColorCount() { return colorCount; }
     public void setColorCount(int colorCount) { this.colorCount = colorCount; }
+
+    public Integer getEstimatedDurationSeconds() { return estimatedDurationSeconds; }
+    public void setEstimatedDurationSeconds(Integer estimatedDurationSeconds) { this.estimatedDurationSeconds = estimatedDurationSeconds; }
+
+    public Double getTotalWeightGrams() { return totalWeightGrams; }
+    public void setTotalWeightGrams(Double totalWeightGrams) { this.totalWeightGrams = totalWeightGrams; }
 }

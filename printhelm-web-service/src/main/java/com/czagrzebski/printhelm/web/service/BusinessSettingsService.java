@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class BusinessSettingsService {
 
     private final BusinessSettingsRepository repository;
+    private final AuditLogService auditLogService;
 
-    public BusinessSettingsService(BusinessSettingsRepository repository) {
+    public BusinessSettingsService(BusinessSettingsRepository repository, AuditLogService auditLogService) {
         this.repository = repository;
+        this.auditLogService = auditLogService;
     }
 
     public BusinessSettings getSettings() {
@@ -29,6 +31,8 @@ public class BusinessSettingsService {
         settings.setBusinessAddress(businessAddress);
         settings.setBusinessEmail(businessEmail);
         settings.setBusinessPhone(businessPhone);
-        return repository.save(settings);
+        BusinessSettings saved = repository.save(settings);
+        auditLogService.record("SETTINGS_UPDATED", "BusinessSettings", saved.getId(), businessName);
+        return saved;
     }
 }

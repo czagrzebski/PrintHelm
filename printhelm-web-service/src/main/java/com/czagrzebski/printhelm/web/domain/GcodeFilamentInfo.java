@@ -5,6 +5,7 @@ public class GcodeFilamentInfo {
     private int slotIndex;
     private String type;
     private String color;
+    private Double usedGrams;
 
     public GcodeFilamentInfo() {}
 
@@ -22,4 +23,7 @@ public class GcodeFilamentInfo {
 
     public String getColor() { return color; }
     public void setColor(String color) { this.color = color; }
+
+    public Double getUsedGrams() { return usedGrams; }
+    public void setUsedGrams(Double usedGrams) { this.usedGrams = usedGrams; }
 }

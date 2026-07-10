@@ -4,6 +4,7 @@ import com.czagrzebski.printhelm.model.ApiCreateJobOrderRequest;
 import com.czagrzebski.printhelm.model.ApiJobOrderFileVersion;
 import com.czagrzebski.printhelm.model.ApiJobOrderResponse;
 import com.czagrzebski.printhelm.model.ApiUpdateJobOrderRequest;
+import com.czagrzebski.printhelm.model.ApiVersionFileQuantity;
 import com.czagrzebski.printhelm.web.domain.JobOrderFileType;
 import com.czagrzebski.printhelm.web.service.JobOrderFileService;
 import com.czagrzebski.printhelm.web.service.JobOrderService;
@@ -59,16 +60,16 @@ public class JobOrderController {
 
     @PostMapping("/{id}/part-file")
     public ResponseEntity<ApiJobOrderResponse> uploadPartFile(@PathVariable long id,
-                                                              @RequestParam("file") MultipartFile file,
+                                                              @RequestParam("files") List<MultipartFile> files,
                                                               @RequestParam(value = "description", required = false) String description) throws IOException {
-        return ResponseEntity.ok(jobOrderService.uploadPartFile(id, file, description));
+        return ResponseEntity.ok(jobOrderService.uploadPartFiles(id, files, description));
     }
 
     @PostMapping("/{id}/gcode-file")
     public ResponseEntity<ApiJobOrderResponse> uploadGcodeFile(@PathVariable long id,
-                                                               @RequestParam("file") MultipartFile file,
+                                                               @RequestParam("files") List<MultipartFile> files,
                                                                @RequestParam(value = "description", required = false) String description) throws IOException {
-        return ResponseEntity.ok(jobOrderService.uploadGcodeFile(id, file, description));
+        return ResponseEntity.ok(jobOrderService.uploadGcodeFiles(id, files, description));
     }
 
     @GetMapping("/{id}/part-file/versions")
@@ -82,6 +83,13 @@ public class JobOrderController {
         return buildFileResponse(jobOrderService.getFileVersion(id, versionId, JobOrderFileType.PART).getMongoFileId());
     }
 
+    @GetMapping("/{id}/part-file/versions/{versionId}/files/{fileIndex}")
+    public ResponseEntity<Resource> downloadPartFileVersionFile(@PathVariable long id,
+                                                                @PathVariable long versionId,
+                                                                @PathVariable int fileIndex) throws IOException {
+        return buildFileResponse(jobOrderService.getVersionFileId(id, versionId, JobOrderFileType.PART, fileIndex));
+    }
+
     @GetMapping("/{id}/gcode-file/versions")
     public ResponseEntity<List<ApiJobOrderFileVersion>> getGcodeFileVersions(@PathVariable long id) {
         return ResponseEntity.ok(jobOrderService.getFileVersions(id, JobOrderFileType.GCODE));
@@ -93,10 +101,26 @@ public class JobOrderController {
         return buildFileResponse(jobOrderService.getFileVersion(id, versionId, JobOrderFileType.GCODE).getMongoFileId());
     }
 
+    @GetMapping("/{id}/gcode-file/versions/{versionId}/files/{fileIndex}")
+    public ResponseEntity<Resource> downloadGcodeFileVersionFile(@PathVariable long id,
+                                                                 @PathVariable long versionId,
+                                                                 @PathVariable int fileIndex) throws IOException {
+        return buildFileResponse(jobOrderService.getVersionFileId(id, versionId, JobOrderFileType.GCODE, fileIndex));
+    }
+
+    @PutMapping("/{id}/gcode-file/versions/{versionId}/quantities")
+    public ResponseEntity<ApiJobOrderFileVersion> updateGcodeFileVersionQuantities(
+            @PathVariable long id,
+            @PathVariable long versionId,
+            @RequestBody List<ApiVersionFileQuantity> quantities) {
+        return ResponseEntity.ok(jobOrderService.updateGcodeVersionQuantities(id, versionId, quantities));
+    }
+
     @PostMapping("/{id}/gcode-file/versions/{versionId}/select")
     public ResponseEntity<ApiJobOrderResponse> selectGcodeFileVersion(@PathVariable long id,
-                                                                      @PathVariable long versionId) {
-        return ResponseEntity.ok(jobOrderService.selectGcodeVersion(id, versionId));
+                                                                      @PathVariable long versionId,
+                                                                      @RequestParam(value = "fileIndex", required = false, defaultValue = "0") int fileIndex) {
+        return ResponseEntity.ok(jobOrderService.selectGcodeVersion(id, versionId, fileIndex));
     }
 
     @GetMapping("/{id}/part-file")

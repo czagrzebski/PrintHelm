@@ -6,6 +6,8 @@ import com.czagrzebski.printhelm.model.ApiGcodeMetadata;
 import com.czagrzebski.printhelm.model.ApiJobOrderFileType;
 import com.czagrzebski.printhelm.model.ApiJobOrderFileVersion;
 import com.czagrzebski.printhelm.model.ApiJobOrderResponse;
+import com.czagrzebski.printhelm.model.ApiJobOrderVersionFile;
+import com.czagrzebski.printhelm.model.ApiVersionFileQuantity;
 import com.czagrzebski.printhelm.model.ApiQuoteLineItem;
 import com.czagrzebski.printhelm.model.ApiUpdateJobOrderRequest;
 import com.czagrzebski.printhelm.web.domain.GcodeFilamentInfo;
@@ -14,6 +16,7 @@ import com.czagrzebski.printhelm.web.domain.JobOrder;
 import com.czagrzebski.printhelm.web.domain.JobOrderFileType;
 import com.czagrzebski.printhelm.web.domain.JobOrderFileVersion;
 import com.czagrzebski.printhelm.web.domain.JobOrderStatus;
+import com.czagrzebski.printhelm.web.domain.JobOrderVersionFile;
 import com.czagrzebski.printhelm.web.domain.QuoteLineItem;
 import com.czagrzebski.printhelm.web.mapper.JobOrderMapper;
 import com.czagrzebski.printhelm.web.repository.GcodeMetadataRepository;
@@ -27,6 +30,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +48,7 @@ public class JobOrderService {
     private final JobOrderFileVersionRepository fileVersionRepository;
     private final InvoiceService invoiceService;
     private final QuoteService quoteService;
+    private final AuditLogService auditLogService;
 
     public JobOrderService(JobOrderRepository jobOrderRepository,
                            JobOrderMapper jobOrderMapper,
@@ -52,7 +57,9 @@ public class JobOrderService {
                            GcodeMetadataRepository gcodeMetadataRepository,
                            JobOrderFileVersionRepository fileVersionRepository,
                            InvoiceService invoiceService,
-                           QuoteService quoteService) {
+                           QuoteService quoteService,
+                           AuditLogService auditLogService) {
+        this.auditLogService = auditLogService;
         this.jobOrderRepository = jobOrderRepository;
         this.jobOrderMapper = jobOrderMapper;
         this.jobOrderFileService = jobOrderFileService;
@@ -75,12 +82,16 @@ public class JobOrderService {
 
     public ApiJobOrderResponse createOrder(ApiCreateJobOrderRequest request) {
         JobOrder order = jobOrderMapper.apiCreateJobOrderRequestToJobOrder(request);
-        return toEnrichedResponse(jobOrderRepository.save(order));
+        JobOrder saved = jobOrderRepository.save(order);
+        auditLogService.record("JOB_ORDER_CREATED", "JobOrder", saved.getOrderId(),
+                "Customer: " + saved.getCustomerName());
+        return toEnrichedResponse(saved);
     }
 
     @Transactional
     public ApiJobOrderResponse updateOrder(long id, ApiUpdateJobOrderRequest request) {
         JobOrder order = findOrThrow(id);
+        JobOrderStatus previousStatus = order.getStatus();
         if (request.getCustomerName() != null) order.setCustomerName(request.getCustomerName());
         if (request.getCustomerEmail() != null) order.setCustomerEmail(request.getCustomerEmail());
         if (request.getDescription() != null) order.setDescription(request.getDescription());
@@ -88,6 +99,9 @@ public class JobOrderService {
             JobOrderStatus next = JobOrderStatus.valueOf(request.getStatus().getValue());
             if (next == JobOrderStatus.PRINTING) {
                 throw new IllegalArgumentException("Status PRINTING is managed by the scheduler and cannot be set manually");
+            }
+            if (next == JobOrderStatus.READY_TO_PRINT && order.getMongoGcodeFileId() == null) {
+                throw new IllegalArgumentException("A GCode or 3MF file must be uploaded and selected before the order can be marked Ready to Print");
             }
             order.setStatus(next);
             if (next == JobOrderStatus.QUOTED && order.getQuotedAt() == null) {
@@ -119,50 +133,91 @@ public class JobOrderService {
         if (request.getSetupFee() != null) order.setSetupFee(BigDecimal.valueOf(request.getSetupFee()));
         if (request.getDiscount() != null) order.setDiscount(BigDecimal.valueOf(request.getDiscount()));
         if (request.getInvoiceNotes() != null) order.setInvoiceNotes(request.getInvoiceNotes());
-        return toEnrichedResponse(jobOrderRepository.save(order));
+        JobOrder saved = jobOrderRepository.save(order);
+        auditLogService.record("JOB_ORDER_UPDATED", "JobOrder", id,
+                saved.getStatus() != previousStatus
+                        ? "Status: " + previousStatus + " → " + saved.getStatus()
+                        : "Details updated");
+        return toEnrichedResponse(saved);
     }
 
     @Transactional
-    public ApiJobOrderResponse uploadPartFile(long id, MultipartFile file, String description) throws IOException {
+    public ApiJobOrderResponse uploadPartFiles(long id, List<MultipartFile> files, String description) throws IOException {
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("At least one file is required");
+        }
+        for (MultipartFile file : files) {
+            String name = file.getOriginalFilename();
+            String lower = name != null ? name.toLowerCase() : "";
+            if (!lower.endsWith(".glb") && !lower.endsWith(".gltf")) {
+                throw new IllegalArgumentException("Unsupported file type: " + name + " (only .glb and .gltf are accepted)");
+            }
+        }
         JobOrder order = findOrThrow(id);
         backfillInitialVersion(order, JobOrderFileType.PART);
 
-        String fileId = jobOrderFileService.storeFile(id, "part", file);
-        createVersion(order, JobOrderFileType.PART, file.getOriginalFilename(), fileId, null, description);
+        List<JobOrderVersionFile> versionFiles = new ArrayList<>();
+        for (MultipartFile file : files) {
+            String fileId = jobOrderFileService.storeFile(id, "part", file);
+            versionFiles.add(new JobOrderVersionFile(file.getOriginalFilename(), fileId));
+        }
+        createVersion(order, JobOrderFileType.PART, versionFiles, null, description);
 
-        order.setMongoPartFileId(fileId);
-        order.setPartFilename(file.getOriginalFilename());
+        order.setMongoPartFileId(versionFiles.get(0).getMongoFileId());
+        order.setPartFilename(versionFiles.get(0).getFilename());
+        auditLogService.record("PART_FILE_UPLOADED", "JobOrder", id,
+                versionFiles.stream().map(JobOrderVersionFile::getFilename).collect(Collectors.joining(", ")));
         return toEnrichedResponse(jobOrderRepository.save(order));
     }
 
     @Transactional
-    public ApiJobOrderResponse uploadGcodeFile(long id, MultipartFile file, String description) throws IOException {
+    public ApiJobOrderResponse uploadGcodeFiles(long id, List<MultipartFile> files, String description) throws IOException {
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("At least one file is required");
+        }
+        for (MultipartFile file : files) {
+            String name = file.getOriginalFilename();
+            String lower = name != null ? name.toLowerCase() : "";
+            if (!lower.endsWith(".gcode") && !lower.endsWith(".3mf")) {
+                throw new IllegalArgumentException("Unsupported file type: " + name + " (only .gcode and .3mf are accepted)");
+            }
+        }
         JobOrder order = findOrThrow(id);
         backfillInitialVersion(order, JobOrderFileType.GCODE);
 
-        String fileId = jobOrderFileService.storeFile(id, "gcode", file);
-        order.setMongoGcodeFileId(fileId);
-        order.setGcodeFilename(file.getOriginalFilename());
-        order.setMongoGcodeMetadataId(null);
-
-        String filename = file.getOriginalFilename();
-        if (filename != null && filename.toLowerCase().endsWith(".3mf")) {
-            ThreeMfParserService.ParsedThreeMfData parsed = threeMfParserService.parse(file.getInputStream());
-            if (!parsed.getFilaments().isEmpty()) {
-                GcodeMetadata meta = new GcodeMetadata();
-                meta.setOrderId(id);
-                meta.setFilaments(parsed.getFilaments());
-                meta.setMultiColor(parsed.isMultiColor());
-                meta.setColorCount(parsed.getColorCount());
-                GcodeMetadata saved = gcodeMetadataRepository.save(meta);
-                order.setMongoGcodeMetadataId(saved.getId());
-            }
+        List<JobOrderVersionFile> versionFiles = new ArrayList<>();
+        for (MultipartFile file : files) {
+            String fileId = jobOrderFileService.storeFile(id, "gcode", file);
+            versionFiles.add(new JobOrderVersionFile(file.getOriginalFilename(), fileId,
+                    extractGcodeMetadataId(id, file)));
         }
+        createVersion(order, JobOrderFileType.GCODE, versionFiles,
+                versionFiles.get(0).getMongoGcodeMetadataId(), description);
 
-        createVersion(order, JobOrderFileType.GCODE, file.getOriginalFilename(), fileId,
-                order.getMongoGcodeMetadataId(), description);
+        // The first file of a new upload becomes the file selected for printing
+        order.setMongoGcodeFileId(versionFiles.get(0).getMongoFileId());
+        order.setGcodeFilename(versionFiles.get(0).getFilename());
+        order.setMongoGcodeMetadataId(versionFiles.get(0).getMongoGcodeMetadataId());
 
+        auditLogService.record("GCODE_FILE_UPLOADED", "JobOrder", id,
+                versionFiles.stream().map(JobOrderVersionFile::getFilename).collect(Collectors.joining(", ")));
         return toEnrichedResponse(jobOrderRepository.save(order));
+    }
+
+    /** Parses filament/color metadata out of a .3mf upload; null for plain gcode or when absent */
+    private String extractGcodeMetadataId(long orderId, MultipartFile file) throws IOException {
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".3mf")) return null;
+        ThreeMfParserService.ParsedThreeMfData parsed = threeMfParserService.parse(file.getInputStream());
+        if (parsed.getFilaments().isEmpty()) return null;
+        GcodeMetadata meta = new GcodeMetadata();
+        meta.setOrderId(orderId);
+        meta.setFilaments(parsed.getFilaments());
+        meta.setMultiColor(parsed.isMultiColor());
+        meta.setColorCount(parsed.getColorCount());
+        meta.setEstimatedDurationSeconds(parsed.getEstimatedDurationSeconds());
+        meta.setTotalWeightGrams(parsed.getTotalWeightGrams());
+        return gcodeMetadataRepository.save(meta).getId();
     }
 
     public List<ApiJobOrderFileVersion> getFileVersions(long id, JobOrderFileType fileType) {
@@ -186,16 +241,21 @@ public class JobOrderService {
     }
 
     @Transactional
-    public ApiJobOrderResponse selectGcodeVersion(long id, long versionId) {
+    public ApiJobOrderResponse selectGcodeVersion(long id, long versionId, int fileIndex) {
         JobOrder order = findOrThrow(id);
         if (order.getStatus() == JobOrderStatus.PRINTING) {
             throw new IllegalStateException("Cannot change the gcode version while the job is printing");
         }
         JobOrderFileVersion version = getFileVersion(id, versionId, JobOrderFileType.GCODE);
+        List<JobOrderVersionFile> files = version.getEffectiveFiles();
+        if (fileIndex < 0 || fileIndex >= files.size()) {
+            throw new IllegalArgumentException("File index " + fileIndex + " not found in version " + versionId);
+        }
+        JobOrderVersionFile file = files.get(fileIndex);
 
-        order.setMongoGcodeFileId(version.getMongoFileId());
-        order.setGcodeFilename(version.getFilename());
-        order.setMongoGcodeMetadataId(version.getMongoGcodeMetadataId());
+        order.setMongoGcodeFileId(file.getMongoFileId());
+        order.setGcodeFilename(file.getFilename());
+        order.setMongoGcodeMetadataId(file.getMongoGcodeMetadataId());
         return toEnrichedResponse(jobOrderRepository.save(order));
     }
 
@@ -219,6 +279,10 @@ public class JobOrderService {
         if (order.getMongoGcodeMetadataId() != null) metadataIds.add(order.getMongoGcodeMetadataId());
         for (JobOrderFileVersion version : versions) {
             fileIds.add(version.getMongoFileId());
+            for (JobOrderVersionFile file : version.getEffectiveFiles()) {
+                fileIds.add(file.getMongoFileId());
+                if (file.getMongoGcodeMetadataId() != null) metadataIds.add(file.getMongoGcodeMetadataId());
+            }
             if (version.getMongoGcodeMetadataId() != null) metadataIds.add(version.getMongoGcodeMetadataId());
         }
 
@@ -226,6 +290,8 @@ public class JobOrderService {
         metadataIds.forEach(gcodeMetadataRepository::deleteById);
         fileVersionRepository.deleteAll(versions);
         jobOrderRepository.delete(order);
+        auditLogService.record("JOB_ORDER_DELETED", "JobOrder", id,
+                "Customer: " + order.getCustomerName());
     }
 
     private ApiJobOrderResponse toEnrichedResponse(JobOrder order) {
@@ -252,6 +318,8 @@ public class JobOrderService {
         ApiGcodeMetadata api = new ApiGcodeMetadata();
         api.setMultiColor(meta.isMultiColor());
         api.setColorCount(meta.getColorCount());
+        api.setEstimatedDurationSeconds(meta.getEstimatedDurationSeconds());
+        api.setTotalWeightGrams(meta.getTotalWeightGrams());
         if (meta.getFilaments() != null) {
             api.setFilaments(meta.getFilaments().stream()
                     .map(this::toApiFilamentInfo)
@@ -265,6 +333,7 @@ public class JobOrderService {
         api.setSlotIndex(f.getSlotIndex());
         api.setType(f.getType());
         api.setColor(f.getColor());
+        api.setUsedGrams(f.getUsedGrams());
         return api;
     }
 
@@ -284,11 +353,13 @@ public class JobOrderService {
                 ? order.getPartFilename()
                 : order.getGcodeFilename();
         String metadataId = fileType == JobOrderFileType.GCODE ? order.getMongoGcodeMetadataId() : null;
-        createVersion(order, fileType, existingFilename, existingFileId, metadataId, "Initial upload");
+        createVersion(order, fileType, List.of(new JobOrderVersionFile(existingFilename, existingFileId)),
+                metadataId, "Initial upload");
     }
 
-    private JobOrderFileVersion createVersion(JobOrder order, JobOrderFileType fileType, String filename,
-                                              String mongoFileId, String mongoGcodeMetadataId, String description) {
+    private JobOrderFileVersion createVersion(JobOrder order, JobOrderFileType fileType,
+                                              List<JobOrderVersionFile> files,
+                                              String mongoGcodeMetadataId, String description) {
         int nextNumber = fileVersionRepository
                 .findFirstByOrderIdAndFileTypeOrderByVersionNumberDesc(order.getOrderId(), fileType)
                 .map(v -> v.getVersionNumber() + 1)
@@ -297,11 +368,60 @@ public class JobOrderService {
         version.setOrderId(order.getOrderId());
         version.setFileType(fileType);
         version.setVersionNumber(nextNumber);
-        version.setFilename(filename);
-        version.setMongoFileId(mongoFileId);
+        version.setFilename(files.get(0).getFilename());
+        version.setMongoFileId(files.get(0).getMongoFileId());
+        version.setFiles(new ArrayList<>(files));
         version.setMongoGcodeMetadataId(mongoGcodeMetadataId);
         version.setDescription(description != null && !description.isBlank() ? description.trim() : null);
         return fileVersionRepository.save(version);
+    }
+
+    /**
+     * Sets the required print count per file of a gcode version. Legacy single-file rows are
+     * materialized into the files collection first so the quantity has somewhere to live.
+     */
+    @Transactional
+    public ApiJobOrderFileVersion updateGcodeVersionQuantities(long id, long versionId, List<ApiVersionFileQuantity> quantities) {
+        JobOrder order = findOrThrow(id);
+        JobOrderFileVersion version = getFileVersion(id, versionId, JobOrderFileType.GCODE);
+        if (version.getFiles() == null || version.getFiles().isEmpty()) {
+            version.setFiles(new ArrayList<>(version.getEffectiveFiles()));
+        }
+        List<JobOrderVersionFile> files = version.getFiles();
+        for (ApiVersionFileQuantity entry : quantities) {
+            Integer index = entry.getFileIndex();
+            Integer quantity = entry.getQuantity();
+            if (index == null || index < 0 || index >= files.size()) {
+                throw new IllegalArgumentException("File index " + index + " not found in version " + versionId);
+            }
+            if (quantity == null || quantity < 0 || quantity > 999) {
+                throw new IllegalArgumentException("Quantity must be between 0 and 999");
+            }
+            files.get(index).setPrintQuantity(quantity);
+        }
+        fileVersionRepository.save(version);
+        return toApiFileVersion(version, order.getMongoGcodeFileId());
+    }
+
+    /** The gcode version whose files include the given Mongo file id, or null (legacy orders) */
+    public JobOrderFileVersion findGcodeVersionContainingFile(long orderId, String mongoFileId) {
+        if (mongoFileId == null) return null;
+        return fileVersionRepository.findByOrderIdAndFileTypeOrderByVersionNumberDesc(orderId, JobOrderFileType.GCODE)
+                .stream()
+                .filter(v -> v.getEffectiveFiles().stream()
+                        .anyMatch(f -> Objects.equals(f.getMongoFileId(), mongoFileId)))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** Resolve the Mongo file id for a single file within a version (legacy rows expose index 0). */
+    public String getVersionFileId(long id, long versionId, JobOrderFileType fileType, int fileIndex) {
+        JobOrderFileVersion version = getFileVersion(id, versionId, fileType);
+        List<JobOrderVersionFile> files = version.getEffectiveFiles();
+        if (fileIndex < 0 || fileIndex >= files.size()) {
+            throw new IllegalArgumentException("File index " + fileIndex + " not found in version " + versionId);
+        }
+        return files.get(fileIndex).getMongoFileId();
     }
 
     private ApiJobOrderFileVersion toApiFileVersion(JobOrderFileVersion version, String activeFileId) {
@@ -312,7 +432,22 @@ public class JobOrderService {
         api.setFilename(version.getFilename());
         api.setDescription(version.getDescription());
         api.setCreatedAt(version.getCreatedAt() != null ? version.getCreatedAt().atOffset(ZoneOffset.UTC) : null);
-        api.setActive(Objects.equals(version.getMongoFileId(), activeFileId));
+        List<JobOrderVersionFile> files = version.getEffectiveFiles();
+        List<ApiJobOrderVersionFile> apiFiles = new ArrayList<>(files.size());
+        boolean anyActive = false;
+        for (int i = 0; i < files.size(); i++) {
+            ApiJobOrderVersionFile apiFile = new ApiJobOrderVersionFile();
+            apiFile.setFileIndex(i);
+            apiFile.setFilename(files.get(i).getFilename());
+            apiFile.setPrintQuantity(files.get(i).effectiveQuantity());
+            apiFile.setCompletedPrints(files.get(i).effectiveCompleted());
+            boolean fileActive = Objects.equals(files.get(i).getMongoFileId(), activeFileId);
+            apiFile.setActive(fileActive);
+            anyActive |= fileActive;
+            apiFiles.add(apiFile);
+        }
+        api.setFiles(apiFiles);
+        api.setActive(anyActive || Objects.equals(version.getMongoFileId(), activeFileId));
         return api;
     }
 

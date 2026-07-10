@@ -28,19 +28,22 @@ public class UserService {
     private final JWTService jwtService;
     private final RoleRepository roleRepository;
     private final UserDetailsServiceImpl userDetailsService;
+    private final AuditLogService auditLogService;
 
     public UserService(final UserRepository userRepository,
                        final PasswordEncoder passwordEncoder,
                        final AuthenticationManager authenticationManager,
                        final JWTService jwtService,
                        final UserDetailsServiceImpl userDetailsService,
-                       final RoleRepository roleRepository) {
+                       final RoleRepository roleRepository,
+                       final AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.roleRepository = roleRepository;
+        this.auditLogService = auditLogService;
     }
 
     public AuthenticationDTO authenticateUser(String username, String password) {
@@ -108,6 +111,7 @@ public class UserService {
             newUser.setUserRoles(roles);
         }
         userRepository.save(newUser);
+        auditLogService.record("USER_CREATED", "User", newUser.getUserId(), username);
         return newUser;
     }
 
@@ -148,13 +152,16 @@ public class UserService {
             user.setUserRoles(roles);
         }
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        auditLogService.record("USER_UPDATED", "User", id, saved.getUsername());
+        return saved;
     }
 
     @Transactional
     public void deleteUser(Long id) {
         User user = getUserById(id);
         userRepository.delete(user);
+        auditLogService.record("USER_DELETED", "User", id, user.getUsername());
     }
 
     @Transactional
@@ -174,6 +181,7 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(mustChangePassword);
         userRepository.save(user);
+        auditLogService.record("USER_PASSWORD_RESET", "User", id, user.getUsername());
     }
 
     public List<Role> getAllRoles() {

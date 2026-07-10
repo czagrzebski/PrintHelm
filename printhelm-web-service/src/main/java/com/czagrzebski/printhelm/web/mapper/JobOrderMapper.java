@@ -49,12 +49,15 @@ public abstract class JobOrderMapper {
             ApiGcodeMetadata apiMeta = new ApiGcodeMetadata();
             apiMeta.setMultiColor(meta.isMultiColor());
             apiMeta.setColorCount(meta.getColorCount());
+            apiMeta.setEstimatedDurationSeconds(meta.getEstimatedDurationSeconds());
+            apiMeta.setTotalWeightGrams(meta.getTotalWeightGrams());
             if (meta.getFilaments() != null) {
                 List<ApiGcodeFilamentInfo> filaments = meta.getFilaments().stream().map(f -> {
                     ApiGcodeFilamentInfo info = new ApiGcodeFilamentInfo();
                     info.setSlotIndex(f.getSlotIndex());
                     info.setType(f.getType());
                     info.setColor(f.getColor());
+                    info.setUsedGrams(f.getUsedGrams());
                     return info;
                 }).collect(Collectors.toList());
                 apiMeta.setFilaments(filaments);

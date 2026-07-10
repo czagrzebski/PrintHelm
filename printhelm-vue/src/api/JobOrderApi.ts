@@ -4,12 +4,12 @@ import { JobOrderApi } from '@/client/printhelm-web-openapi'
 const jobOrderApi = new JobOrderApi(undefined, BASE_URL, api)
 export default jobOrderApi
 
-export async function uploadPartFile(orderId: number, file: File, description?: string) {
-  return jobOrderApi.uploadJobOrderPartFile(orderId, file, description)
+export async function uploadPartFiles(orderId: number, files: File[], description?: string) {
+  return jobOrderApi.uploadJobOrderPartFile(orderId, files, description)
 }
 
-export async function uploadGcodeFile(orderId: number, file: File, description?: string) {
-  return jobOrderApi.uploadJobOrderGcodeFile(orderId, file, description)
+export async function uploadGcodeFiles(orderId: number, files: File[], description?: string) {
+  return jobOrderApi.uploadJobOrderGcodeFile(orderId, files, description)
 }
 
 export async function listPartFileVersions(orderId: number) {
@@ -20,27 +20,35 @@ export async function listGcodeFileVersions(orderId: number) {
   return jobOrderApi.getJobOrderGcodeFileVersions(orderId)
 }
 
-export async function selectGcodeFileVersion(orderId: number, versionId: number) {
-  return jobOrderApi.selectJobOrderGcodeFileVersion(orderId, versionId)
+export async function selectGcodeFileVersion(orderId: number, versionId: number, fileIndex = 0) {
+  return jobOrderApi.selectJobOrderGcodeFileVersion(orderId, versionId, fileIndex)
 }
 
-export async function downloadPartFileVersion(orderId: number, versionId: number, filename: string) {
-  const res = await jobOrderApi.downloadJobOrderPartFileVersion(orderId, versionId, { responseType: 'blob' })
+export async function updateGcodeVersionQuantities(
+  orderId: number,
+  versionId: number,
+  quantities: { fileIndex: number; quantity: number }[],
+) {
+  return jobOrderApi.updateJobOrderGcodeFileVersionQuantities(orderId, versionId, quantities)
+}
+
+export async function downloadGcodeFileVersionFile(orderId: number, versionId: number, fileIndex: number, filename: string) {
+  const res = await jobOrderApi.downloadJobOrderGcodeFileVersionFile(orderId, versionId, fileIndex, { responseType: 'blob' })
   triggerDownload(res.data as unknown as Blob, filename)
 }
 
-export async function downloadGcodeFileVersion(orderId: number, versionId: number, filename: string) {
-  const res = await jobOrderApi.downloadJobOrderGcodeFileVersion(orderId, versionId, { responseType: 'blob' })
+export async function downloadPartFileVersionFile(orderId: number, versionId: number, fileIndex: number, filename: string) {
+  const res = await jobOrderApi.downloadJobOrderPartFileVersionFile(orderId, versionId, fileIndex, { responseType: 'blob' })
   triggerDownload(res.data as unknown as Blob, filename)
 }
 
-export async function fetchPartFileVersionBuffer(orderId: number, versionId: number): Promise<ArrayBuffer> {
-  const res = await jobOrderApi.downloadJobOrderPartFileVersion(orderId, versionId, { responseType: 'arraybuffer' })
+export async function fetchPartFileVersionFileBuffer(orderId: number, versionId: number, fileIndex: number): Promise<ArrayBuffer> {
+  const res = await jobOrderApi.downloadJobOrderPartFileVersionFile(orderId, versionId, fileIndex, { responseType: 'arraybuffer' })
   return res.data as unknown as ArrayBuffer
 }
 
-export async function fetchGcodeFileVersionBuffer(orderId: number, versionId: number): Promise<ArrayBuffer> {
-  const res = await jobOrderApi.downloadJobOrderGcodeFileVersion(orderId, versionId, { responseType: 'arraybuffer' })
+export async function fetchGcodeFileVersionFileBuffer(orderId: number, versionId: number, fileIndex: number): Promise<ArrayBuffer> {
+  const res = await jobOrderApi.downloadJobOrderGcodeFileVersionFile(orderId, versionId, fileIndex, { responseType: 'arraybuffer' })
   return res.data as unknown as ArrayBuffer
 }
 

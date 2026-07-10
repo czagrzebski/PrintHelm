@@ -4,8 +4,13 @@ api.ts
 base.ts
 common.ts
 configuration.ts
+docs/AnalyticsApi.md
 docs/ApiAddPrinterConnectionRequest.md
 docs/ApiAdminResetPasswordRequest.md
+docs/ApiAnalyticsSummary.md
+docs/ApiAnalyticsTrendPoint.md
+docs/ApiAuditLogEntry.md
+docs/ApiAuditLogPage.md
 docs/ApiAuthResponse.md
 docs/ApiBusinessSettings.md
 docs/ApiChangePasswordRequest.md
@@ -22,6 +27,8 @@ docs/ApiCreateUserRequest.md
 docs/ApiDiagnosticReport.md
 docs/ApiErrorResponse.md
 docs/ApiFan.md
+docs/ApiFilamentSpool.md
+docs/ApiFilamentSpoolRequest.md
 docs/ApiGcodeFilamentInfo.md
 docs/ApiGcodeMetadata.md
 docs/ApiIpcam.md
@@ -29,6 +36,7 @@ docs/ApiJobOrderFileType.md
 docs/ApiJobOrderFileVersion.md
 docs/ApiJobOrderResponse.md
 docs/ApiJobOrderStatus.md
+docs/ApiJobOrderVersionFile.md
 docs/ApiJogRequest.md
 docs/ApiLight.md
 docs/ApiLightRequest.md
@@ -38,6 +46,7 @@ docs/ApiMaterialSystem.md
 docs/ApiMqttConnectionConfig.md
 docs/ApiNotification.md
 docs/ApiPrintFileRequest.md
+docs/ApiPrinterAnalytics.md
 docs/ApiPrinterFile.md
 docs/ApiPrinterResponse.md
 docs/ApiPrinterState.md
@@ -57,11 +66,15 @@ docs/ApiUpdatePrinterRequest.md
 docs/ApiUpdateUserRequest.md
 docs/ApiUpgradeState.md
 docs/ApiUserResponse.md
+docs/ApiVersionFileQuantity.md
 docs/ApiXcam.md
+docs/AuditApi.md
 docs/AuthApi.md
 docs/ChatApi.md
 docs/ConnectionType.md
 docs/CreatePrinter201Response.md
+docs/FilamentApi.md
+docs/FilamentSpoolStatus.md
 docs/JobOrderApi.md
 docs/NotificationSeverity.md
 docs/NotificationType.md

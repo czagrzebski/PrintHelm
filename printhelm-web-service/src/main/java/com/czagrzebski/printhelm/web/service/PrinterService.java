@@ -26,15 +26,18 @@ public class PrinterService {
     private final PrinterMapper printerMapper;
     private final MqttConnectionManager mqttConnectionManager;
     private final ConnectionConfigurationMapper connectionConfigurationMapper;
+    private final AuditLogService auditLogService;
 
     private final Logger logger = LogManager.getLogger(PrinterService.class);
 
     public PrinterService(PrinterRepository printerRepository, PrinterMapper printerMapper,
-                          MqttConnectionManager mqttConnectionManager, ConnectionConfigurationMapper connectionConfigurationMapper) {
+                          MqttConnectionManager mqttConnectionManager, ConnectionConfigurationMapper connectionConfigurationMapper,
+                          AuditLogService auditLogService) {
         this.printerRepository = printerRepository;
         this.printerMapper = printerMapper;
         this.mqttConnectionManager = mqttConnectionManager;
         this.connectionConfigurationMapper = connectionConfigurationMapper;
+        this.auditLogService = auditLogService;
     }
 
     public Printer createPrinter(ApiCreatePrinterRequest apiCreatePrinterRequest) {
@@ -53,6 +56,8 @@ public class PrinterService {
             }
 
             printerRepository.save(printer);
+            auditLogService.record("PRINTER_CREATED", "Printer", printer.getPrinterId(),
+                    printer.getPrinterName() + " (" + printer.getPrinterModel() + ")");
             return printer;
         } else {
             throw new IllegalArgumentException("Unsupported printer type: " + printerType);
@@ -83,6 +88,7 @@ public class PrinterService {
             printerRepository.save(printer);
         }
 
+        auditLogService.record("PRINTER_UPDATED", "Printer", id, printer.getPrinterName());
         return printer;
     }
 
@@ -91,6 +97,7 @@ public class PrinterService {
         Printer printer = getPrinterById(id);
         mqttConnectionManager.disconnect(id);
         printerRepository.delete(printer);
+        auditLogService.record("PRINTER_DELETED", "Printer", id, printer.getPrinterName());
     }
 
     public List<Printer> getAllPrinters() {

@@ -908,7 +908,7 @@ paths:
     post:
       tags:
         - JobOrder
-      summary: Upload a new version of the 3D part file for a job order
+      summary: Upload a new version of the 3D design files for a job order (one or more .glb/.gltf files forming an assembly)
       operationId: uploadJobOrderPartFile
       parameters:
         - name: id
@@ -924,21 +924,26 @@ paths:
             schema:
               type: object
               required:
-                - file
+                - files
               properties:
-                file:
-                  type: string
-                  format: binary
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: One or more .glb/.gltf files uploaded together as a single version
                 description:
                   type: string
                   description: Description of the changes in this version
       responses:
         '200':
-          description: File uploaded; returns updated job order
+          description: Files uploaded; returns updated job order
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiJobOrderResponse'
+        '400':
+          description: Unsupported file type (only .glb/.gltf are accepted)
         '404':
           description: Job order not found
     get:
@@ -968,7 +973,7 @@ paths:
     post:
       tags:
         - JobOrder
-      summary: Upload a new version of the GCode file for a job order
+      summary: Upload a new version of the GCode files for a job order (multiple files when an assembly is sliced into one file per part)
       operationId: uploadJobOrderGcodeFile
       parameters:
         - name: id
@@ -984,21 +989,26 @@ paths:
             schema:
               type: object
               required:
-                - file
+                - files
               properties:
-                file:
-                  type: string
-                  format: binary
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: One or more .gcode/.3mf files uploaded together as a single version
                 description:
                   type: string
                   description: Description of the changes in this version
       responses:
         '200':
-          description: File uploaded; returns updated job order
+          description: Files uploaded; returns updated job order
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiJobOrderResponse'
+        '400':
+          description: Unsupported file type (only .gcode/.3mf are accepted)
         '404':
           description: Job order not found
     get:
@@ -1079,6 +1089,42 @@ paths:
         '404':
           description: Job order or version not found
 
+  /job-order/{id}/part-file/versions/{versionId}/files/{fileIndex}:
+    get:
+      tags:
+        - JobOrder
+      summary: Download a single file from a specific version of the 3D design files
+      operationId: downloadJobOrderPartFileVersionFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fileIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order, version, or file not found
+
   /job-order/{id}/gcode-file/versions:
     get:
       tags:
@@ -1134,11 +1180,86 @@ paths:
         '404':
           description: Job order or version not found
 
+  /job-order/{id}/gcode-file/versions/{versionId}/files/{fileIndex}:
+    get:
+      tags:
+        - JobOrder
+      summary: Download a single file from a specific version of the GCode files
+      operationId: downloadJobOrderGcodeFileVersionFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fileIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Job order, version, or file not found
+
+  /job-order/{id}/gcode-file/versions/{versionId}/quantities:
+    put:
+      tags:
+        - JobOrder
+      summary: Set the required print quantity per file of a GCode version (the print plan)
+      operationId: updateJobOrderGcodeFileVersionQuantities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiVersionFileQuantity'
+      responses:
+        '200':
+          description: Quantities updated; returns the updated version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiJobOrderFileVersion'
+        '400':
+          description: Invalid file index or quantity
+        '404':
+          description: Job order or version not found
+
   /job-order/{id}/gcode-file/versions/{versionId}/select:
     post:
       tags:
         - JobOrder
-      summary: Select a GCode file version as the active version used for printing
+      summary: Select a GCode file version (and file within it) as the active file used for printing
       operationId: selectJobOrderGcodeFileVersion
       parameters:
         - name: id
@@ -1153,6 +1274,14 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: fileIndex
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+          description: 0-based index of the file within the version to print (for multi-file versions)
       responses:
         '200':
           description: Version selected; returns updated job order
@@ -1481,6 +1610,202 @@ paths:
           description: Session deleted
         '404':
           description: Session not found
+
+  # === FilamentSpoolController ===
+  /filament/spools:
+    get:
+      tags:
+        - Filament
+      summary: List all filament spools
+      operationId: getFilamentSpools
+      responses:
+        '200':
+          description: List of filament spools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiFilamentSpool'
+    post:
+      tags:
+        - Filament
+      summary: Add a filament spool to the inventory
+      operationId: createFilamentSpool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiFilamentSpoolRequest'
+      responses:
+        '201':
+          description: Spool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiFilamentSpool'
+        '400':
+          description: Bad Request
+
+  /filament/spools/{id}:
+    put:
+      tags:
+        - Filament
+      summary: Update a filament spool
+      operationId: updateFilamentSpool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiFilamentSpoolRequest'
+      responses:
+        '200':
+          description: Spool updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiFilamentSpool'
+        '404':
+          description: Spool not found
+    delete:
+      tags:
+        - Filament
+      summary: Delete a filament spool
+      operationId: deleteFilamentSpool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Spool deleted
+        '404':
+          description: Spool not found
+
+  # === AnalyticsController ===
+  /analytics/summary:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate print/order stats for the last N days
+      operationId: getAnalyticsSummary
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiAnalyticsSummary'
+
+  /analytics/printers:
+    get:
+      tags:
+        - Analytics
+      summary: Per-printer utilization stats for the last N days
+      operationId: getPrinterAnalytics
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Per-printer analytics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiPrinterAnalytics'
+
+  /analytics/trends:
+    get:
+      tags:
+        - Analytics
+      summary: Daily print activity series for the last N days
+      operationId: getAnalyticsTrends
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Daily trend points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiAnalyticsTrendPoint'
+
+  # === AuditLogController ===
+  /audit:
+    get:
+      tags:
+        - Audit
+      summary: Search the audit log (admin only)
+      operationId: getAuditLog
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - name: entityType
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Page of audit log entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiAuditLogPage'
+        '403':
+          description: Forbidden
 
 components:
   schemas:
@@ -2300,6 +2625,43 @@ components:
     ApiJobOrderFileType:
       type: string
       enum: [PART, GCODE]
+    ApiJobOrderVersionFile:
+      type: object
+      properties:
+        fileIndex:
+          type: integer
+          format: int32
+          description: 0-based index of the file within its version
+        filename:
+          type: string
+          description: Original filename of the uploaded file
+        active:
+          type: boolean
+          description: Whether this file is the currently active one on the job order (e.g. selected for printing)
+        printQuantity:
+          type: integer
+          format: int32
+          description: How many copies of this file must be printed (gcode files; 0 = skip, default 1)
+        completedPrints:
+          type: integer
+          format: int32
+          description: How many copies of this file have finished printing
+    ApiVersionFileQuantity:
+      type: object
+      required:
+        - fileIndex
+        - quantity
+      properties:
+        fileIndex:
+          type: integer
+          format: int32
+          description: 0-based index of the file within the version
+        quantity:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 999
+          description: Required number of prints for this file (0 = skip)
     ApiJobOrderFileVersion:
       type: object
       properties:
@@ -2315,7 +2677,12 @@ components:
           $ref: '#/components/schemas/ApiJobOrderFileType'
         filename:
           type: string
-          description: Original filename of the uploaded file
+          description: Original filename of the uploaded file (first file for multi-file versions)
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiJobOrderVersionFile'
+          description: All files uploaded in this version (a part version may contain multiple assembly files)
         description:
           type: string
           description: Description of the changes in this version
@@ -2339,6 +2706,10 @@ components:
         color:
           type: string
           description: Hex color code (#RRGGBB)
+        usedGrams:
+          type: number
+          format: double
+          description: Grams of this filament the print consumes (from slice_info.config)
     ApiGcodeMetadata:
       type: object
       properties:
@@ -2349,6 +2720,14 @@ components:
           type: integer
           format: int32
           description: Number of distinct filament slots used
+        estimatedDurationSeconds:
+          type: integer
+          format: int32
+          description: Predicted print time in seconds (from slice_info.config)
+        totalWeightGrams:
+          type: number
+          format: double
+          description: Total filament weight of the print in grams
         filaments:
           type: array
           items:
@@ -2512,3 +2891,226 @@ components:
         watchFor:
           type: string
           description: What to monitor after applying the fixes
+    FilamentSpoolStatus:
+      type: string
+      enum: [ACTIVE, EMPTY, ARCHIVED]
+    ApiFilamentSpool:
+      type: object
+      properties:
+        spoolId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        brand:
+          type: string
+        material:
+          type: string
+          description: Material type (PLA, PETG, ABS, ...)
+        colorHex:
+          type: string
+          description: Hex color code (#RRGGBB)
+        colorName:
+          type: string
+        diameter:
+          type: number
+          format: double
+          description: Filament diameter in mm
+        initialWeightGrams:
+          type: number
+          format: double
+        remainingWeightGrams:
+          type: number
+          format: double
+        spoolCost:
+          type: number
+          format: double
+        lowStockThresholdGrams:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/FilamentSpoolStatus'
+        assignedPrinterId:
+          type: integer
+          format: int64
+        assignedPrinterName:
+          type: string
+        amsSlot:
+          type: integer
+          format: int32
+          description: 0-based AMS tray index the spool is loaded in
+        notes:
+          type: string
+        lowStock:
+          type: boolean
+          description: True when remaining weight is at or below the low-stock threshold
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiFilamentSpoolRequest:
+      type: object
+      required:
+        - name
+        - material
+        - initialWeightGrams
+      properties:
+        name:
+          type: string
+        brand:
+          type: string
+        material:
+          type: string
+        colorHex:
+          type: string
+        colorName:
+          type: string
+        diameter:
+          type: number
+          format: double
+        initialWeightGrams:
+          type: number
+          format: double
+        remainingWeightGrams:
+          type: number
+          format: double
+        spoolCost:
+          type: number
+          format: double
+        lowStockThresholdGrams:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/FilamentSpoolStatus'
+        assignedPrinterId:
+          type: integer
+          format: int64
+        amsSlot:
+          type: integer
+          format: int32
+        notes:
+          type: string
+    ApiAnalyticsSummary:
+      type: object
+      properties:
+        days:
+          type: integer
+          description: Window size the summary covers
+        printsCompleted:
+          type: integer
+          format: int64
+        printsFailed:
+          type: integer
+          format: int64
+        printsCanceled:
+          type: integer
+          format: int64
+        successRate:
+          type: number
+          format: double
+          description: Completed / all finished attempts (null when no attempts)
+        totalPrintMinutes:
+          type: integer
+          format: int64
+        filamentGramsUsed:
+          type: number
+          format: double
+        revenue:
+          type: number
+          format: double
+          description: Sum of invoiced totals within the window
+        invoicedOrders:
+          type: integer
+          format: int64
+        openOrders:
+          type: integer
+          format: int64
+          description: Orders not yet finished or invoiced (all time)
+        ordersByStatus:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+    ApiPrinterAnalytics:
+      type: object
+      properties:
+        printerId:
+          type: integer
+          format: int64
+        printerName:
+          type: string
+        printsCompleted:
+          type: integer
+          format: int64
+        printsFailed:
+          type: integer
+          format: int64
+        printsCanceled:
+          type: integer
+          format: int64
+        totalPrintMinutes:
+          type: integer
+          format: int64
+        filamentGramsUsed:
+          type: number
+          format: double
+        successRate:
+          type: number
+          format: double
+    ApiAnalyticsTrendPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        printsCompleted:
+          type: integer
+          format: int64
+        printsFailed:
+          type: integer
+          format: int64
+          description: Failed and canceled attempts
+        printMinutes:
+          type: integer
+          format: int64
+        filamentGramsUsed:
+          type: number
+          format: double
+    ApiAuditLogEntry:
+      type: object
+      properties:
+        auditId:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+        username:
+          type: string
+        action:
+          type: string
+          description: Machine-readable action code (e.g. JOB_ORDER_CREATED)
+        entityType:
+          type: string
+        entityId:
+          type: string
+        details:
+          type: string
+    ApiAuditLogPage:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiAuditLogEntry'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer

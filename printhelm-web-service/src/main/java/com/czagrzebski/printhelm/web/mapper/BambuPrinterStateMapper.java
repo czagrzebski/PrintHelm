@@ -186,7 +186,7 @@ public abstract class BambuPrinterStateMapper {
             apiMaterialSystem.setHumidity(amsItemDTO.getHumidityRaw());
             apiMaterialSystem.setTemperature(amsItemDTO.getTemp());
             for(TrayDTO tray : amsItemDTO.getTray()) {
-                var selectedTray = (Integer.parseInt(amsItemDTO.getId()) * 4) + tray.getId();
+                var selectedTray = (Integer.parseInt(amsItemDTO.getId()) * 4) + Integer.parseInt(tray.getId());
                 ApiMaterial material = new ApiMaterial();
                 if(tray.getTraySubBrands() != null) {
                     material.setName(tray.getTraySubBrands());
@@ -194,7 +194,7 @@ public abstract class BambuPrinterStateMapper {
                 } else {
                     material.setName("Unknown Material");
                 }
-                material.setLoaded(amsDTO.getTrayNow().equals(selectedTray));
+                material.setLoaded(String.valueOf(selectedTray).equals(amsDTO.getTrayNow()));
                 material.setType(tray.getTrayType());
                 material.setRemain(tray.getRemain());
                 material.setTrayDiameter(tray.getTrayDiameter());

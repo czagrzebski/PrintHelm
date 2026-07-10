@@ -22,6 +22,9 @@ const pages: PaletteItem[] = [
   { id: 'page-dashboard', label: 'Dashboard',   hint: 'Page', icon: 'mdi mdi-view-dashboard-outline',  action: () => router.push('/dashboard') },
   { id: 'page-orders',    label: 'Job Orders',  hint: 'Page', icon: 'mdi mdi-clipboard-list-outline',  action: () => router.push('/job-orders') },
   { id: 'page-queue',     label: 'Print Queue', hint: 'Page', icon: 'mdi mdi-format-list-numbered',    action: () => router.push('/queue') },
+  { id: 'page-filament',  label: 'Filament',    hint: 'Page', icon: 'mdi mdi-circle-slice-6',          action: () => router.push('/filament') },
+  { id: 'page-analytics', label: 'Analytics',   hint: 'Page', icon: 'mdi mdi-chart-line',              action: () => router.push('/analytics') },
+  { id: 'page-audit',     label: 'Audit Log',   hint: 'Page', icon: 'mdi mdi-shield-search',           action: () => router.push('/audit') },
   { id: 'page-settings',  label: 'Settings',    hint: 'Page', icon: 'mdi mdi-cog-outline',             action: () => router.push('/settings') },
 ]
 

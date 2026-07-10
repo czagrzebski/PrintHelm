@@ -1,24 +1,55 @@
 <script setup lang="ts">
 import Button from 'primevue/button'
-import type { ApiJobOrderFileVersion } from '@/client/printhelm-web-openapi'
+import InputNumber from 'primevue/inputnumber'
+import type { ApiJobOrderFileVersion, ApiJobOrderVersionFile } from '@/client/printhelm-web-openapi'
 import { isViewableModel } from '@/components/ModelViewerDialog.vue'
 
 const props = defineProps<{
   versions: ApiJobOrderFileVersion[]
   mode: 'part' | 'gcode'
   canModify: boolean
-  busyVersionId?: number | null
+  /** `${versionId}:${fileIndex}` of the file whose select request is in flight */
+  busyKey?: string | null
 }>()
 
 const emit = defineEmits<{
-  download: [version: ApiJobOrderFileVersion]
+  download: [version: ApiJobOrderFileVersion, file?: ApiJobOrderVersionFile]
   view: [version: ApiJobOrderFileVersion]
-  preview: [version: ApiJobOrderFileVersion]
-  select: [version: ApiJobOrderFileVersion]
+  preview: [version: ApiJobOrderFileVersion, file?: ApiJobOrderVersionFile]
+  select: [version: ApiJobOrderFileVersion, fileIndex: number]
+  quantity: [version: ApiJobOrderFileVersion, fileIndex: number, quantity: number]
 }>()
 
-function is3mf(v: ApiJobOrderFileVersion) {
-  return v.filename?.toLowerCase().endsWith('.3mf') ?? false
+function onQuantityChange(v: ApiJobOrderFileVersion, f: ApiJobOrderVersionFile, value: number | null) {
+  const qty = Math.max(0, Math.min(999, Math.round(value ?? 1)))
+  if (qty === (f.printQuantity ?? 1)) return
+  emit('quantity', v, f.fileIndex ?? 0, qty)
+}
+
+/** Files of a version with legacy fallback (pre-multi-file rows only carry `filename`) */
+function filesOf(v: ApiJobOrderFileVersion): ApiJobOrderVersionFile[] {
+  if (v.files?.length) return v.files
+  return v.filename ? [{ fileIndex: 0, filename: v.filename, active: v.active }] : []
+}
+
+function is3mf(name?: string) {
+  return name?.toLowerCase().endsWith('.3mf') ?? false
+}
+
+function isViewable(v: ApiJobOrderFileVersion) {
+  return filesOf(v).some((f) => isViewableModel(f.filename))
+}
+
+function isMultiFile(v: ApiJobOrderFileVersion) {
+  return filesOf(v).length > 1
+}
+
+function singleFile(v: ApiJobOrderFileVersion): ApiJobOrderVersionFile | undefined {
+  return filesOf(v)[0]
+}
+
+function busy(v: ApiJobOrderFileVersion, f: ApiJobOrderVersionFile) {
+  return props.busyKey === `${v.versionId}:${f.fileIndex ?? 0}`
 }
 
 function formatDate(iso?: string) {
@@ -43,53 +74,109 @@ function formatDate(iso?: string) {
       >
         <div class="fvh-badge">v{{ v.versionNumber }}</div>
         <div class="fvh-info">
-          <div class="fvh-name-line">
-            <span class="fvh-filename">{{ v.filename }}</span>
-            <span v-if="v.active" class="fvh-active-tag">
-              <i class="mdi mdi-check-circle-outline" />
-              {{ props.mode === 'gcode' ? 'Selected for print' : 'Current' }}
+          <div v-if="props.mode === 'part' || isMultiFile(v)" class="fvh-name-line">
+            <span v-if="isMultiFile(v)" class="fvh-filename">
+              <i class="mdi mdi-file-multiple-outline" />
+              {{ filesOf(v).length }} files {{ props.mode === 'part' ? '(assembly)' : '' }}
+            </span>
+            <span v-else class="fvh-filename">{{ singleFile(v)?.filename }}</span>
+            <span v-if="v.active && props.mode === 'part'" class="fvh-active-tag">
+              <i class="mdi mdi-check-circle-outline" /> Current
             </span>
           </div>
+
+          <!-- Part assembly: compact file chips -->
+          <div v-if="props.mode === 'part' && isMultiFile(v)" class="fvh-file-chips">
+            <span v-for="f in filesOf(v)" :key="f.fileIndex" class="fvh-file-chip">{{ f.filename }}</span>
+          </div>
+
+          <!-- GCode: one row per file with quantity, progress, and its own actions -->
+          <div v-if="props.mode === 'gcode'" class="fvh-file-list">
+            <div
+              v-for="f in filesOf(v)"
+              :key="f.fileIndex"
+              class="fvh-file-row"
+              :class="{ 'fvh-file-row--active': f.active }"
+            >
+              <span class="fvh-file-name">{{ f.filename }}</span>
+              <span v-if="f.active" class="fvh-active-tag">
+                <i class="mdi mdi-check-circle-outline" /> Selected for print
+              </span>
+              <span
+                class="fvh-progress-chip"
+                :class="{ 'fvh-progress-chip--done': (f.completedPrints ?? 0) >= (f.printQuantity ?? 1) && (f.printQuantity ?? 1) > 0 }"
+                :title="`${f.completedPrints ?? 0} of ${f.printQuantity ?? 1} prints completed`"
+              >
+                <i class="mdi mdi-printer-3d-nozzle-outline" />
+                {{ f.completedPrints ?? 0 }}/{{ f.printQuantity ?? 1 }}
+              </span>
+              <span class="fvh-qty" title="Required prints (0 = skip this file)">
+                <label class="fvh-qty-label">Qty</label>
+                <InputNumber
+                  :model-value="f.printQuantity ?? 1"
+                  :min="0"
+                  :max="999"
+                  :disabled="!canModify"
+                  show-buttons
+                  size="small"
+                  button-layout="stacked"
+                  class="fvh-qty-input"
+                  @update:model-value="(val: number | null) => onQuantityChange(v, f, val)"
+                />
+              </span>
+              <span class="fvh-file-actions">
+                <Button
+                  v-if="is3mf(f.filename)"
+                  icon="mdi mdi-rotate-3d-variant"
+                  severity="secondary"
+                  text
+                  size="small"
+                  title="Preview"
+                  @click="emit('preview', v, f)"
+                />
+                <Button
+                  icon="pi pi-download"
+                  severity="secondary"
+                  text
+                  size="small"
+                  title="Download"
+                  @click="emit('download', v, f)"
+                />
+                <Button
+                  v-if="!f.active"
+                  label="Use for Print"
+                  icon="mdi mdi-printer-check"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  :disabled="!canModify"
+                  :loading="busy(v, f)"
+                  @click="emit('select', v, f.fileIndex ?? 0)"
+                />
+              </span>
+            </div>
+          </div>
+
           <p v-if="v.description" class="fvh-description">{{ v.description }}</p>
           <span class="fvh-date">{{ formatDate(v.createdAt) }}</span>
         </div>
-        <div class="fvh-actions">
+        <div v-if="props.mode === 'part'" class="fvh-actions">
           <Button
-            v-if="props.mode === 'part' && isViewableModel(v.filename)"
+            v-if="isViewable(v)"
             icon="mdi mdi-rotate-3d-variant"
             severity="secondary"
             text
             size="small"
-            title="View in 3D"
+            :title="isMultiFile(v) ? 'View assembly in 3D' : 'View in 3D'"
             @click="emit('view', v)"
-          />
-          <Button
-            v-if="props.mode === 'gcode' && is3mf(v)"
-            icon="mdi mdi-rotate-3d-variant"
-            severity="secondary"
-            text
-            size="small"
-            title="Preview"
-            @click="emit('preview', v)"
           />
           <Button
             icon="pi pi-download"
             severity="secondary"
             text
             size="small"
-            title="Download"
+            :title="isMultiFile(v) ? 'Download all files' : 'Download'"
             @click="emit('download', v)"
-          />
-          <Button
-            v-if="props.mode === 'gcode' && !v.active"
-            label="Use for Print"
-            icon="mdi mdi-printer-check"
-            severity="secondary"
-            outlined
-            size="small"
-            :disabled="!canModify"
-            :loading="busyVersionId === v.versionId"
-            @click="emit('select', v)"
           />
         </div>
       </div>
@@ -171,7 +258,7 @@ function formatDate(iso?: string) {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.3rem;
 }
 
 .fvh-name-line {
@@ -186,6 +273,102 @@ function formatDate(iso?: string) {
   font-size: 0.8rem;
   color: var(--ph-text);
   word-break: break-all;
+}
+
+.fvh-file-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.fvh-file-chip {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: var(--ph-text-muted);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--ph-border);
+  border-radius: 4px;
+  padding: 0.08rem 0.4rem;
+  word-break: break-all;
+}
+
+.fvh-file-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fvh-file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.3rem 0.55rem;
+  border-bottom: 1px solid var(--ph-border);
+  background: rgba(255,255,255,0.02);
+}
+.fvh-file-row:last-child { border-bottom: none; }
+.fvh-file-row--active { background: rgba(34, 211, 238, 0.06); }
+
+.fvh-file-name {
+  font-family: monospace;
+  font-size: 0.74rem;
+  color: var(--ph-text);
+  word-break: break-all;
+  flex: 1;
+  min-width: 8rem;
+}
+
+.fvh-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+}
+
+.fvh-progress-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--ph-border);
+  color: var(--ph-text-muted);
+  white-space: nowrap;
+}
+.fvh-progress-chip--done {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+
+.fvh-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.fvh-qty-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ph-text-muted);
+  opacity: 0.7;
+}
+.fvh-qty-input {
+  width: 4.4rem;
+}
+.fvh-qty-input :deep(.p-inputnumber-input) {
+  width: 100%;
+  font-size: 0.74rem;
+  padding: 0.2rem 0.4rem;
+  text-align: center;
 }
 
 .fvh-active-tag {

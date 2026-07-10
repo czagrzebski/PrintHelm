@@ -45,6 +45,21 @@ const router = createRouter({
           component: () => import('../views/PrintQueueView.vue'),
         },
         {
+          path: 'filament',
+          name: 'filament',
+          component: () => import('../views/FilamentView.vue'),
+        },
+        {
+          path: 'analytics',
+          name: 'analytics',
+          component: () => import('../views/AnalyticsView.vue'),
+        },
+        {
+          path: 'audit',
+          name: 'audit',
+          component: () => import('../views/AuditLogView.vue'),
+        },
+        {
           path: 'settings',
           name: 'settings',
           component: () => import('../views/SettingsView.vue'),

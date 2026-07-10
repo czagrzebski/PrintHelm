@@ -44,6 +44,18 @@ async function logout() {
           <i class="mdi mdi-format-list-numbered" />
           Print Queue
         </RouterLink>
+        <RouterLink to="/filament" class="nav-link">
+          <i class="mdi mdi-circle-slice-6" />
+          Filament
+        </RouterLink>
+        <RouterLink to="/analytics" class="nav-link">
+          <i class="mdi mdi-chart-line" />
+          Analytics
+        </RouterLink>
+        <RouterLink v-if="authStore.isAdmin" to="/audit" class="nav-link">
+          <i class="mdi mdi-shield-search" />
+          Audit Log
+        </RouterLink>
         <RouterLink to="/settings" class="nav-link">
           <i class="mdi mdi-cog-outline" />
           Settings

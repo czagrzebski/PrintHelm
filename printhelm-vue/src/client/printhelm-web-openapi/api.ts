@@ -80,6 +80,202 @@ export interface ApiAdminResetPasswordRequest {
 /**
  * 
  * @export
+ * @interface ApiAnalyticsSummary
+ */
+export interface ApiAnalyticsSummary {
+    /**
+     * Window size the summary covers
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'days'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'printsCompleted'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'printsFailed'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'printsCanceled'?: number;
+    /**
+     * Completed / all finished attempts (null when no attempts)
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'successRate'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'totalPrintMinutes'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'filamentGramsUsed'?: number;
+    /**
+     * Sum of invoiced totals within the window
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'revenue'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'invoicedOrders'?: number;
+    /**
+     * Orders not yet finished or invoiced (all time)
+     * @type {number}
+     * @memberof ApiAnalyticsSummary
+     */
+    'openOrders'?: number;
+    /**
+     * 
+     * @type {{ [key: string]: number; }}
+     * @memberof ApiAnalyticsSummary
+     */
+    'ordersByStatus'?: { [key: string]: number; };
+}
+/**
+ * 
+ * @export
+ * @interface ApiAnalyticsTrendPoint
+ */
+export interface ApiAnalyticsTrendPoint {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiAnalyticsTrendPoint
+     */
+    'date'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsTrendPoint
+     */
+    'printsCompleted'?: number;
+    /**
+     * Failed and canceled attempts
+     * @type {number}
+     * @memberof ApiAnalyticsTrendPoint
+     */
+    'printsFailed'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsTrendPoint
+     */
+    'printMinutes'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAnalyticsTrendPoint
+     */
+    'filamentGramsUsed'?: number;
+}
+/**
+ * 
+ * @export
+ * @interface ApiAuditLogEntry
+ */
+export interface ApiAuditLogEntry {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAuditLogEntry
+     */
+    'auditId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiAuditLogEntry
+     */
+    'timestamp'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiAuditLogEntry
+     */
+    'username'?: string;
+    /**
+     * Machine-readable action code (e.g. JOB_ORDER_CREATED)
+     * @type {string}
+     * @memberof ApiAuditLogEntry
+     */
+    'action'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiAuditLogEntry
+     */
+    'entityType'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiAuditLogEntry
+     */
+    'entityId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiAuditLogEntry
+     */
+    'details'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiAuditLogPage
+ */
+export interface ApiAuditLogPage {
+    /**
+     * 
+     * @type {Array<ApiAuditLogEntry>}
+     * @memberof ApiAuditLogPage
+     */
+    'entries'?: Array<ApiAuditLogEntry>;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAuditLogPage
+     */
+    'page'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAuditLogPage
+     */
+    'size'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAuditLogPage
+     */
+    'totalElements'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiAuditLogPage
+     */
+    'totalPages'?: number;
+}
+/**
+ * 
+ * @export
  * @interface ApiAuthResponse
  */
 export interface ApiAuthResponse {
@@ -566,6 +762,222 @@ export interface ApiFan {
 /**
  * 
  * @export
+ * @interface ApiFilamentSpool
+ */
+export interface ApiFilamentSpool {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'spoolId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'name'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'brand'?: string;
+    /**
+     * Material type (PLA, PETG, ABS, ...)
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'material'?: string;
+    /**
+     * Hex color code (#RRGGBB)
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'colorHex'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'colorName'?: string;
+    /**
+     * Filament diameter in mm
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'diameter'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'initialWeightGrams'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'remainingWeightGrams'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'spoolCost'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'lowStockThresholdGrams'?: number;
+    /**
+     * 
+     * @type {FilamentSpoolStatus}
+     * @memberof ApiFilamentSpool
+     */
+    'status'?: FilamentSpoolStatus;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'assignedPrinterId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'assignedPrinterName'?: string;
+    /**
+     * 0-based AMS tray index the spool is loaded in
+     * @type {number}
+     * @memberof ApiFilamentSpool
+     */
+    'amsSlot'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'notes'?: string;
+    /**
+     * True when remaining weight is at or below the low-stock threshold
+     * @type {boolean}
+     * @memberof ApiFilamentSpool
+     */
+    'lowStock'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpool
+     */
+    'updatedAt'?: string;
+}
+
+
+/**
+ * 
+ * @export
+ * @interface ApiFilamentSpoolRequest
+ */
+export interface ApiFilamentSpoolRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'name': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'brand'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'material': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'colorHex'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'colorName'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'diameter'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'initialWeightGrams': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'remainingWeightGrams'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'spoolCost'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'lowStockThresholdGrams'?: number;
+    /**
+     * 
+     * @type {FilamentSpoolStatus}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'status'?: FilamentSpoolStatus;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'assignedPrinterId'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'amsSlot'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiFilamentSpoolRequest
+     */
+    'notes'?: string;
+}
+
+
+/**
+ * 
+ * @export
  * @interface ApiGcodeFilamentInfo
  */
 export interface ApiGcodeFilamentInfo {
@@ -587,6 +999,12 @@ export interface ApiGcodeFilamentInfo {
      * @memberof ApiGcodeFilamentInfo
      */
     'color'?: string;
+    /**
+     * Grams of this filament the print consumes (from slice_info.config)
+     * @type {number}
+     * @memberof ApiGcodeFilamentInfo
+     */
+    'usedGrams'?: number;
 }
 /**
  * 
@@ -606,6 +1024,18 @@ export interface ApiGcodeMetadata {
      * @memberof ApiGcodeMetadata
      */
     'colorCount'?: number;
+    /**
+     * Predicted print time in seconds (from slice_info.config)
+     * @type {number}
+     * @memberof ApiGcodeMetadata
+     */
+    'estimatedDurationSeconds'?: number;
+    /**
+     * Total filament weight of the print in grams
+     * @type {number}
+     * @memberof ApiGcodeMetadata
+     */
+    'totalWeightGrams'?: number;
     /**
      * 
      * @type {Array<ApiGcodeFilamentInfo>}
@@ -689,11 +1119,17 @@ export interface ApiJobOrderFileVersion {
      */
     'fileType'?: ApiJobOrderFileType;
     /**
-     * Original filename of the uploaded file
+     * Original filename of the uploaded file (first file for multi-file versions)
      * @type {string}
      * @memberof ApiJobOrderFileVersion
      */
     'filename'?: string;
+    /**
+     * All files uploaded in this version (a part version may contain multiple assembly files)
+     * @type {Array<ApiJobOrderVersionFile>}
+     * @memberof ApiJobOrderFileVersion
+     */
+    'files'?: Array<ApiJobOrderVersionFile>;
     /**
      * Description of the changes in this version
      * @type {string}
@@ -943,6 +1379,43 @@ export const ApiJobOrderStatus = {
 export type ApiJobOrderStatus = typeof ApiJobOrderStatus[keyof typeof ApiJobOrderStatus];
 
 
+/**
+ * 
+ * @export
+ * @interface ApiJobOrderVersionFile
+ */
+export interface ApiJobOrderVersionFile {
+    /**
+     * 0-based index of the file within its version
+     * @type {number}
+     * @memberof ApiJobOrderVersionFile
+     */
+    'fileIndex'?: number;
+    /**
+     * Original filename of the uploaded file
+     * @type {string}
+     * @memberof ApiJobOrderVersionFile
+     */
+    'filename'?: string;
+    /**
+     * Whether this file is the currently active one on the job order (e.g. selected for printing)
+     * @type {boolean}
+     * @memberof ApiJobOrderVersionFile
+     */
+    'active'?: boolean;
+    /**
+     * How many copies of this file must be printed (gcode files; 0 = skip, default 1)
+     * @type {number}
+     * @memberof ApiJobOrderVersionFile
+     */
+    'printQuantity'?: number;
+    /**
+     * How many copies of this file have finished printing
+     * @type {number}
+     * @memberof ApiJobOrderVersionFile
+     */
+    'completedPrints'?: number;
+}
 /**
  * 
  * @export
@@ -1291,6 +1764,61 @@ export interface ApiPrintFileRequest {
      * @memberof ApiPrintFileRequest
      */
     'layerInspect': boolean;
+}
+/**
+ * 
+ * @export
+ * @interface ApiPrinterAnalytics
+ */
+export interface ApiPrinterAnalytics {
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'printerId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiPrinterAnalytics
+     */
+    'printerName'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'printsCompleted'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'printsFailed'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'printsCanceled'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'totalPrintMinutes'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'filamentGramsUsed'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ApiPrinterAnalytics
+     */
+    'successRate'?: number;
 }
 /**
  * 
@@ -2164,6 +2692,25 @@ export interface ApiUserResponse {
     'roles'?: Array<ApiRole>;
 }
 /**
+ * 
+ * @export
+ * @interface ApiVersionFileQuantity
+ */
+export interface ApiVersionFileQuantity {
+    /**
+     * 0-based index of the file within the version
+     * @type {number}
+     * @memberof ApiVersionFileQuantity
+     */
+    'fileIndex': number;
+    /**
+     * Required number of prints for this file (0 = skip)
+     * @type {number}
+     * @memberof ApiVersionFileQuantity
+     */
+    'quantity': number;
+}
+/**
  * AI-based visual monitoring settings (X1 series)
  * @export
  * @interface ApiXcam
@@ -2248,6 +2795,21 @@ export interface CreatePrinter201Response {
  * @enum {string}
  */
 
+export const FilamentSpoolStatus = {
+    Active: 'ACTIVE',
+    Empty: 'EMPTY',
+    Archived: 'ARCHIVED'
+} as const;
+
+export type FilamentSpoolStatus = typeof FilamentSpoolStatus[keyof typeof FilamentSpoolStatus];
+
+
+/**
+ * 
+ * @export
+ * @enum {string}
+ */
+
 export const NotificationSeverity = {
     Info: 'INFO',
     Warning: 'WARNING',
@@ -2294,6 +2856,396 @@ export const PrinterType = {
 } as const;
 
 export type PrinterType = typeof PrinterType[keyof typeof PrinterType];
+
+
+
+/**
+ * AnalyticsApi - axios parameter creator
+ * @export
+ */
+export const AnalyticsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Aggregate print/order stats for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAnalyticsSummary: async (days?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/analytics/summary`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (days !== undefined) {
+                localVarQueryParameter['days'] = days;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Daily print activity series for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAnalyticsTrends: async (days?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/analytics/trends`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (days !== undefined) {
+                localVarQueryParameter['days'] = days;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Per-printer utilization stats for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterAnalytics: async (days?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/analytics/printers`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (days !== undefined) {
+                localVarQueryParameter['days'] = days;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * AnalyticsApi - functional programming interface
+ * @export
+ */
+export const AnalyticsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = AnalyticsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Aggregate print/order stats for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAnalyticsSummary(days?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiAnalyticsSummary>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAnalyticsSummary(days, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AnalyticsApi.getAnalyticsSummary']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Daily print activity series for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAnalyticsTrends(days?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiAnalyticsTrendPoint>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAnalyticsTrends(days, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AnalyticsApi.getAnalyticsTrends']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Per-printer utilization stats for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getPrinterAnalytics(days?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiPrinterAnalytics>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getPrinterAnalytics(days, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AnalyticsApi.getPrinterAnalytics']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * AnalyticsApi - factory interface
+ * @export
+ */
+export const AnalyticsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = AnalyticsApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Aggregate print/order stats for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAnalyticsSummary(days?: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiAnalyticsSummary> {
+            return localVarFp.getAnalyticsSummary(days, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Daily print activity series for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAnalyticsTrends(days?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiAnalyticsTrendPoint>> {
+            return localVarFp.getAnalyticsTrends(days, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Per-printer utilization stats for the last N days
+         * @param {number} [days] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterAnalytics(days?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiPrinterAnalytics>> {
+            return localVarFp.getPrinterAnalytics(days, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * AnalyticsApi - object-oriented interface
+ * @export
+ * @class AnalyticsApi
+ * @extends {BaseAPI}
+ */
+export class AnalyticsApi extends BaseAPI {
+    /**
+     * 
+     * @summary Aggregate print/order stats for the last N days
+     * @param {number} [days] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AnalyticsApi
+     */
+    public getAnalyticsSummary(days?: number, options?: RawAxiosRequestConfig) {
+        return AnalyticsApiFp(this.configuration).getAnalyticsSummary(days, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Daily print activity series for the last N days
+     * @param {number} [days] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AnalyticsApi
+     */
+    public getAnalyticsTrends(days?: number, options?: RawAxiosRequestConfig) {
+        return AnalyticsApiFp(this.configuration).getAnalyticsTrends(days, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Per-printer utilization stats for the last N days
+     * @param {number} [days] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AnalyticsApi
+     */
+    public getPrinterAnalytics(days?: number, options?: RawAxiosRequestConfig) {
+        return AnalyticsApiFp(this.configuration).getPrinterAnalytics(days, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * AuditApi - axios parameter creator
+ * @export
+ */
+export const AuditApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Search the audit log (admin only)
+         * @param {number} [page] 
+         * @param {number} [size] 
+         * @param {string} [entityType] 
+         * @param {string} [username] 
+         * @param {string} [action] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAuditLog: async (page?: number, size?: number, entityType?: string, username?: string, action?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/audit`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (size !== undefined) {
+                localVarQueryParameter['size'] = size;
+            }
+
+            if (entityType !== undefined) {
+                localVarQueryParameter['entityType'] = entityType;
+            }
+
+            if (username !== undefined) {
+                localVarQueryParameter['username'] = username;
+            }
+
+            if (action !== undefined) {
+                localVarQueryParameter['action'] = action;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * AuditApi - functional programming interface
+ * @export
+ */
+export const AuditApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = AuditApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Search the audit log (admin only)
+         * @param {number} [page] 
+         * @param {number} [size] 
+         * @param {string} [entityType] 
+         * @param {string} [username] 
+         * @param {string} [action] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAuditLog(page?: number, size?: number, entityType?: string, username?: string, action?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiAuditLogPage>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAuditLog(page, size, entityType, username, action, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuditApi.getAuditLog']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * AuditApi - factory interface
+ * @export
+ */
+export const AuditApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = AuditApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Search the audit log (admin only)
+         * @param {number} [page] 
+         * @param {number} [size] 
+         * @param {string} [entityType] 
+         * @param {string} [username] 
+         * @param {string} [action] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAuditLog(page?: number, size?: number, entityType?: string, username?: string, action?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiAuditLogPage> {
+            return localVarFp.getAuditLog(page, size, entityType, username, action, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * AuditApi - object-oriented interface
+ * @export
+ * @class AuditApi
+ * @extends {BaseAPI}
+ */
+export class AuditApi extends BaseAPI {
+    /**
+     * 
+     * @summary Search the audit log (admin only)
+     * @param {number} [page] 
+     * @param {number} [size] 
+     * @param {string} [entityType] 
+     * @param {string} [username] 
+     * @param {string} [action] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuditApi
+     */
+    public getAuditLog(page?: number, size?: number, entityType?: string, username?: string, action?: string, options?: RawAxiosRequestConfig) {
+        return AuditApiFp(this.configuration).getAuditLog(page, size, entityType, username, action, options).then((request) => request(this.axios, this.basePath));
+    }
+}
 
 
 
@@ -2842,6 +3794,325 @@ export class ChatApi extends BaseAPI {
 
 
 /**
+ * FilamentApi - axios parameter creator
+ * @export
+ */
+export const FilamentApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Add a filament spool to the inventory
+         * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createFilamentSpool: async (apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiFilamentSpoolRequest' is not null or undefined
+            assertParamExists('createFilamentSpool', 'apiFilamentSpoolRequest', apiFilamentSpoolRequest)
+            const localVarPath = `/filament/spools`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiFilamentSpoolRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete a filament spool
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteFilamentSpool: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteFilamentSpool', 'id', id)
+            const localVarPath = `/filament/spools/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List all filament spools
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getFilamentSpools: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/filament/spools`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update a filament spool
+         * @param {number} id 
+         * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateFilamentSpool: async (id: number, apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateFilamentSpool', 'id', id)
+            // verify required parameter 'apiFilamentSpoolRequest' is not null or undefined
+            assertParamExists('updateFilamentSpool', 'apiFilamentSpoolRequest', apiFilamentSpoolRequest)
+            const localVarPath = `/filament/spools/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiFilamentSpoolRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * FilamentApi - functional programming interface
+ * @export
+ */
+export const FilamentApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = FilamentApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Add a filament spool to the inventory
+         * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createFilamentSpool(apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiFilamentSpool>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createFilamentSpool(apiFilamentSpoolRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FilamentApi.createFilamentSpool']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete a filament spool
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteFilamentSpool(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteFilamentSpool(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FilamentApi.deleteFilamentSpool']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List all filament spools
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getFilamentSpools(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiFilamentSpool>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getFilamentSpools(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FilamentApi.getFilamentSpools']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update a filament spool
+         * @param {number} id 
+         * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateFilamentSpool(id: number, apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiFilamentSpool>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateFilamentSpool(id, apiFilamentSpoolRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FilamentApi.updateFilamentSpool']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * FilamentApi - factory interface
+ * @export
+ */
+export const FilamentApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = FilamentApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Add a filament spool to the inventory
+         * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createFilamentSpool(apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiFilamentSpool> {
+            return localVarFp.createFilamentSpool(apiFilamentSpoolRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete a filament spool
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteFilamentSpool(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteFilamentSpool(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List all filament spools
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getFilamentSpools(options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiFilamentSpool>> {
+            return localVarFp.getFilamentSpools(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update a filament spool
+         * @param {number} id 
+         * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateFilamentSpool(id: number, apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiFilamentSpool> {
+            return localVarFp.updateFilamentSpool(id, apiFilamentSpoolRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * FilamentApi - object-oriented interface
+ * @export
+ * @class FilamentApi
+ * @extends {BaseAPI}
+ */
+export class FilamentApi extends BaseAPI {
+    /**
+     * 
+     * @summary Add a filament spool to the inventory
+     * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FilamentApi
+     */
+    public createFilamentSpool(apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options?: RawAxiosRequestConfig) {
+        return FilamentApiFp(this.configuration).createFilamentSpool(apiFilamentSpoolRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete a filament spool
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FilamentApi
+     */
+    public deleteFilamentSpool(id: number, options?: RawAxiosRequestConfig) {
+        return FilamentApiFp(this.configuration).deleteFilamentSpool(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List all filament spools
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FilamentApi
+     */
+    public getFilamentSpools(options?: RawAxiosRequestConfig) {
+        return FilamentApiFp(this.configuration).getFilamentSpools(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update a filament spool
+     * @param {number} id 
+     * @param {ApiFilamentSpoolRequest} apiFilamentSpoolRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FilamentApi
+     */
+    public updateFilamentSpool(id: number, apiFilamentSpoolRequest: ApiFilamentSpoolRequest, options?: RawAxiosRequestConfig) {
+        return FilamentApiFp(this.configuration).updateFilamentSpool(id, apiFilamentSpoolRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * JobOrderApi - axios parameter creator
  * @export
  */
@@ -2991,6 +4262,48 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary Download a single file from a specific version of the GCode files
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {number} fileIndex 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderGcodeFileVersionFile: async (id: number, versionId: number, fileIndex: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderGcodeFileVersionFile', 'id', id)
+            // verify required parameter 'versionId' is not null or undefined
+            assertParamExists('downloadJobOrderGcodeFileVersionFile', 'versionId', versionId)
+            // verify required parameter 'fileIndex' is not null or undefined
+            assertParamExists('downloadJobOrderGcodeFileVersionFile', 'fileIndex', fileIndex)
+            const localVarPath = `/job-order/{id}/gcode-file/versions/{versionId}/files/{fileIndex}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)))
+                .replace(`{${"fileIndex"}}`, encodeURIComponent(String(fileIndex)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Download invoice PDF for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3073,6 +4386,48 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             const localVarPath = `/job-order/{id}/part-file/versions/{versionId}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)))
                 .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Download a single file from a specific version of the 3D design files
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {number} fileIndex 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderPartFileVersionFile: async (id: number, versionId: number, fileIndex: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('downloadJobOrderPartFileVersionFile', 'id', id)
+            // verify required parameter 'versionId' is not null or undefined
+            assertParamExists('downloadJobOrderPartFileVersionFile', 'versionId', versionId)
+            // verify required parameter 'fileIndex' is not null or undefined
+            assertParamExists('downloadJobOrderPartFileVersionFile', 'fileIndex', fileIndex)
+            const localVarPath = `/job-order/{id}/part-file/versions/{versionId}/files/{fileIndex}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)))
+                .replace(`{${"fileIndex"}}`, encodeURIComponent(String(fileIndex)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -3263,13 +4618,14 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
-         * @summary Select a GCode file version as the active version used for printing
+         * @summary Select a GCode file version (and file within it) as the active file used for printing
          * @param {number} id 
          * @param {number} versionId 
+         * @param {number} [fileIndex] 0-based index of the file within the version to print (for multi-file versions)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        selectJobOrderGcodeFileVersion: async (id: number, versionId: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        selectJobOrderGcodeFileVersion: async (id: number, versionId: number, fileIndex?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('selectJobOrderGcodeFileVersion', 'id', id)
             // verify required parameter 'versionId' is not null or undefined
@@ -3287,6 +4643,10 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (fileIndex !== undefined) {
+                localVarQueryParameter['fileIndex'] = fileIndex;
+            }
 
 
     
@@ -3341,18 +4701,62 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
-         * @summary Upload a new version of the GCode file for a job order
+         * @summary Set the required print quantity per file of a GCode version (the print plan)
          * @param {number} id 
-         * @param {File} file 
+         * @param {number} versionId 
+         * @param {Array<ApiVersionFileQuantity>} apiVersionFileQuantity 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateJobOrderGcodeFileVersionQuantities: async (id: number, versionId: number, apiVersionFileQuantity: Array<ApiVersionFileQuantity>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateJobOrderGcodeFileVersionQuantities', 'id', id)
+            // verify required parameter 'versionId' is not null or undefined
+            assertParamExists('updateJobOrderGcodeFileVersionQuantities', 'versionId', versionId)
+            // verify required parameter 'apiVersionFileQuantity' is not null or undefined
+            assertParamExists('updateJobOrderGcodeFileVersionQuantities', 'apiVersionFileQuantity', apiVersionFileQuantity)
+            const localVarPath = `/job-order/{id}/gcode-file/versions/{versionId}/quantities`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"versionId"}}`, encodeURIComponent(String(versionId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiVersionFileQuantity, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Upload a new version of the GCode files for a job order (multiple files when an assembly is sliced into one file per part)
+         * @param {number} id 
+         * @param {Array<File>} files One or more .gcode/.3mf files uploaded together as a single version
          * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderGcodeFile: async (id: number, file: File, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        uploadJobOrderGcodeFile: async (id: number, files: Array<File>, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('uploadJobOrderGcodeFile', 'id', id)
-            // verify required parameter 'file' is not null or undefined
-            assertParamExists('uploadJobOrderGcodeFile', 'file', file)
+            // verify required parameter 'files' is not null or undefined
+            assertParamExists('uploadJobOrderGcodeFile', 'files', files)
             const localVarPath = `/job-order/{id}/gcode-file`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3367,10 +4771,12 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             const localVarQueryParameter = {} as any;
             const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
-
-            if (file !== undefined) { 
-                localVarFormParams.append('file', file as any);
+            if (files) {
+                files.forEach((element) => {
+                    localVarFormParams.append('files', element as any);
+                })
             }
+
     
             if (description !== undefined) { 
                 localVarFormParams.append('description', description as any);
@@ -3391,18 +4797,18 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
-         * @summary Upload a new version of the 3D part file for a job order
+         * @summary Upload a new version of the 3D design files for a job order (one or more .glb/.gltf files forming an assembly)
          * @param {number} id 
-         * @param {File} file 
+         * @param {Array<File>} files One or more .glb/.gltf files uploaded together as a single version
          * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderPartFile: async (id: number, file: File, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        uploadJobOrderPartFile: async (id: number, files: Array<File>, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('uploadJobOrderPartFile', 'id', id)
-            // verify required parameter 'file' is not null or undefined
-            assertParamExists('uploadJobOrderPartFile', 'file', file)
+            // verify required parameter 'files' is not null or undefined
+            assertParamExists('uploadJobOrderPartFile', 'files', files)
             const localVarPath = `/job-order/{id}/part-file`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3417,10 +4823,12 @@ export const JobOrderApiAxiosParamCreator = function (configuration?: Configurat
             const localVarQueryParameter = {} as any;
             const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
-
-            if (file !== undefined) { 
-                localVarFormParams.append('file', file as any);
+            if (files) {
+                files.forEach((element) => {
+                    localVarFormParams.append('files', element as any);
+                })
             }
+
     
             if (description !== undefined) { 
                 localVarFormParams.append('description', description as any);
@@ -3504,6 +4912,21 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Download a single file from a specific version of the GCode files
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {number} fileIndex 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderGcodeFileVersionFile(id: number, versionId: number, fileIndex: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderGcodeFileVersionFile(id, versionId, fileIndex, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderGcodeFileVersionFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Download invoice PDF for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3540,6 +4963,21 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderPartFileVersion(id, versionId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderPartFileVersion']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Download a single file from a specific version of the 3D design files
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {number} fileIndex 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async downloadJobOrderPartFileVersionFile(id: number, versionId: number, fileIndex: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.downloadJobOrderPartFileVersionFile(id, versionId, fileIndex, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.downloadJobOrderPartFileVersionFile']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -3608,14 +5046,15 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Select a GCode file version as the active version used for printing
+         * @summary Select a GCode file version (and file within it) as the active file used for printing
          * @param {number} id 
          * @param {number} versionId 
+         * @param {number} [fileIndex] 0-based index of the file within the version to print (for multi-file versions)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async selectJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.selectJobOrderGcodeFileVersion(id, versionId, options);
+        async selectJobOrderGcodeFileVersion(id: number, versionId: number, fileIndex?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.selectJobOrderGcodeFileVersion(id, versionId, fileIndex, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.selectJobOrderGcodeFileVersion']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3636,30 +5075,45 @@ export const JobOrderApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Upload a new version of the GCode file for a job order
+         * @summary Set the required print quantity per file of a GCode version (the print plan)
          * @param {number} id 
-         * @param {File} file 
+         * @param {number} versionId 
+         * @param {Array<ApiVersionFileQuantity>} apiVersionFileQuantity 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateJobOrderGcodeFileVersionQuantities(id: number, versionId: number, apiVersionFileQuantity: Array<ApiVersionFileQuantity>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderFileVersion>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateJobOrderGcodeFileVersionQuantities(id, versionId, apiVersionFileQuantity, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['JobOrderApi.updateJobOrderGcodeFileVersionQuantities']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Upload a new version of the GCode files for a job order (multiple files when an assembly is sliced into one file per part)
+         * @param {number} id 
+         * @param {Array<File>} files One or more .gcode/.3mf files uploaded together as a single version
          * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async uploadJobOrderGcodeFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderGcodeFile(id, file, description, options);
+        async uploadJobOrderGcodeFile(id: number, files: Array<File>, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderGcodeFile(id, files, description, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.uploadJobOrderGcodeFile']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @summary Upload a new version of the 3D part file for a job order
+         * @summary Upload a new version of the 3D design files for a job order (one or more .glb/.gltf files forming an assembly)
          * @param {number} id 
-         * @param {File} file 
+         * @param {Array<File>} files One or more .glb/.gltf files uploaded together as a single version
          * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async uploadJobOrderPartFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderPartFile(id, file, description, options);
+        async uploadJobOrderPartFile(id: number, files: Array<File>, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiJobOrderResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadJobOrderPartFile(id, files, description, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['JobOrderApi.uploadJobOrderPartFile']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3717,6 +5171,18 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary Download a single file from a specific version of the GCode files
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {number} fileIndex 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderGcodeFileVersionFile(id: number, versionId: number, fileIndex: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderGcodeFileVersionFile(id, versionId, fileIndex, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Download invoice PDF for a job order
          * @param {number} id 
          * @param {*} [options] Override http request option.
@@ -3745,6 +5211,18 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
          */
         downloadJobOrderPartFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
             return localVarFp.downloadJobOrderPartFileVersion(id, versionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Download a single file from a specific version of the 3D design files
+         * @param {number} id 
+         * @param {number} versionId 
+         * @param {number} fileIndex 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        downloadJobOrderPartFileVersionFile(id: number, versionId: number, fileIndex: number, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.downloadJobOrderPartFileVersionFile(id, versionId, fileIndex, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3797,14 +5275,15 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
-         * @summary Select a GCode file version as the active version used for printing
+         * @summary Select a GCode file version (and file within it) as the active file used for printing
          * @param {number} id 
          * @param {number} versionId 
+         * @param {number} [fileIndex] 0-based index of the file within the version to print (for multi-file versions)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        selectJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
-            return localVarFp.selectJobOrderGcodeFileVersion(id, versionId, options).then((request) => request(axios, basePath));
+        selectJobOrderGcodeFileVersion(id: number, versionId: number, fileIndex?: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.selectJobOrderGcodeFileVersion(id, versionId, fileIndex, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3819,27 +5298,39 @@ export const JobOrderApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
-         * @summary Upload a new version of the GCode file for a job order
+         * @summary Set the required print quantity per file of a GCode version (the print plan)
          * @param {number} id 
-         * @param {File} file 
-         * @param {string} [description] Description of the changes in this version
+         * @param {number} versionId 
+         * @param {Array<ApiVersionFileQuantity>} apiVersionFileQuantity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderGcodeFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
-            return localVarFp.uploadJobOrderGcodeFile(id, file, description, options).then((request) => request(axios, basePath));
+        updateJobOrderGcodeFileVersionQuantities(id: number, versionId: number, apiVersionFileQuantity: Array<ApiVersionFileQuantity>, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderFileVersion> {
+            return localVarFp.updateJobOrderGcodeFileVersionQuantities(id, versionId, apiVersionFileQuantity, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @summary Upload a new version of the 3D part file for a job order
+         * @summary Upload a new version of the GCode files for a job order (multiple files when an assembly is sliced into one file per part)
          * @param {number} id 
-         * @param {File} file 
+         * @param {Array<File>} files One or more .gcode/.3mf files uploaded together as a single version
          * @param {string} [description] Description of the changes in this version
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        uploadJobOrderPartFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
-            return localVarFp.uploadJobOrderPartFile(id, file, description, options).then((request) => request(axios, basePath));
+        uploadJobOrderGcodeFile(id: number, files: Array<File>, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.uploadJobOrderGcodeFile(id, files, description, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Upload a new version of the 3D design files for a job order (one or more .glb/.gltf files forming an assembly)
+         * @param {number} id 
+         * @param {Array<File>} files One or more .glb/.gltf files uploaded together as a single version
+         * @param {string} [description] Description of the changes in this version
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadJobOrderPartFile(id: number, files: Array<File>, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiJobOrderResponse> {
+            return localVarFp.uploadJobOrderPartFile(id, files, description, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3902,6 +5393,20 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
+     * @summary Download a single file from a specific version of the GCode files
+     * @param {number} id 
+     * @param {number} versionId 
+     * @param {number} fileIndex 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderGcodeFileVersionFile(id: number, versionId: number, fileIndex: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderGcodeFileVersionFile(id, versionId, fileIndex, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Download invoice PDF for a job order
      * @param {number} id 
      * @param {*} [options] Override http request option.
@@ -3935,6 +5440,20 @@ export class JobOrderApi extends BaseAPI {
      */
     public downloadJobOrderPartFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig) {
         return JobOrderApiFp(this.configuration).downloadJobOrderPartFileVersion(id, versionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Download a single file from a specific version of the 3D design files
+     * @param {number} id 
+     * @param {number} versionId 
+     * @param {number} fileIndex 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public downloadJobOrderPartFileVersionFile(id: number, versionId: number, fileIndex: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).downloadJobOrderPartFileVersionFile(id, versionId, fileIndex, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3998,15 +5517,16 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
-     * @summary Select a GCode file version as the active version used for printing
+     * @summary Select a GCode file version (and file within it) as the active file used for printing
      * @param {number} id 
      * @param {number} versionId 
+     * @param {number} [fileIndex] 0-based index of the file within the version to print (for multi-file versions)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof JobOrderApi
      */
-    public selectJobOrderGcodeFileVersion(id: number, versionId: number, options?: RawAxiosRequestConfig) {
-        return JobOrderApiFp(this.configuration).selectJobOrderGcodeFileVersion(id, versionId, options).then((request) => request(this.axios, this.basePath));
+    public selectJobOrderGcodeFileVersion(id: number, versionId: number, fileIndex?: number, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).selectJobOrderGcodeFileVersion(id, versionId, fileIndex, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4024,30 +5544,44 @@ export class JobOrderApi extends BaseAPI {
 
     /**
      * 
-     * @summary Upload a new version of the GCode file for a job order
+     * @summary Set the required print quantity per file of a GCode version (the print plan)
      * @param {number} id 
-     * @param {File} file 
-     * @param {string} [description] Description of the changes in this version
+     * @param {number} versionId 
+     * @param {Array<ApiVersionFileQuantity>} apiVersionFileQuantity 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof JobOrderApi
      */
-    public uploadJobOrderGcodeFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig) {
-        return JobOrderApiFp(this.configuration).uploadJobOrderGcodeFile(id, file, description, options).then((request) => request(this.axios, this.basePath));
+    public updateJobOrderGcodeFileVersionQuantities(id: number, versionId: number, apiVersionFileQuantity: Array<ApiVersionFileQuantity>, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).updateJobOrderGcodeFileVersionQuantities(id, versionId, apiVersionFileQuantity, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @summary Upload a new version of the 3D part file for a job order
+     * @summary Upload a new version of the GCode files for a job order (multiple files when an assembly is sliced into one file per part)
      * @param {number} id 
-     * @param {File} file 
+     * @param {Array<File>} files One or more .gcode/.3mf files uploaded together as a single version
      * @param {string} [description] Description of the changes in this version
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof JobOrderApi
      */
-    public uploadJobOrderPartFile(id: number, file: File, description?: string, options?: RawAxiosRequestConfig) {
-        return JobOrderApiFp(this.configuration).uploadJobOrderPartFile(id, file, description, options).then((request) => request(this.axios, this.basePath));
+    public uploadJobOrderGcodeFile(id: number, files: Array<File>, description?: string, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).uploadJobOrderGcodeFile(id, files, description, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Upload a new version of the 3D design files for a job order (one or more .glb/.gltf files forming an assembly)
+     * @param {number} id 
+     * @param {Array<File>} files One or more .glb/.gltf files uploaded together as a single version
+     * @param {string} [description] Description of the changes in this version
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof JobOrderApi
+     */
+    public uploadJobOrderPartFile(id: number, files: Array<File>, description?: string, options?: RawAxiosRequestConfig) {
+        return JobOrderApiFp(this.configuration).uploadJobOrderPartFile(id, files, description, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

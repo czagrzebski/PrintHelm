@@ -9,5 +9,7 @@ public enum NotificationType {
     PRINT_STOPPED,
     PRINT_FAILED,
     PRINT_ERROR,
-    JOB_QUEUED
+    JOB_QUEUED,
+    FILAMENT_LOW,
+    FILAMENT_EMPTY
 }

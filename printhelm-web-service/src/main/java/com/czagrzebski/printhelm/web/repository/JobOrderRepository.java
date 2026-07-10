@@ -20,5 +20,7 @@ public interface JobOrderRepository extends JpaRepository<JobOrder, Long> {
 
     Optional<JobOrder> findTopByStatusAndAssignedPrinterIsNullOrderByCreatedAtAsc(JobOrderStatus status);
 
+    List<JobOrder> findByStatusAndAssignedPrinterIsNullOrderByCreatedAtAsc(JobOrderStatus status);
+
     List<JobOrder> findByAssignedPrinter_PrinterIdAndStatus(long printerId, JobOrderStatus status);
 }
