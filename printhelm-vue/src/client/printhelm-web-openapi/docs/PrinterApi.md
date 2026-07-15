@@ -8,6 +8,8 @@ All URIs are relative to *https://printhelm.czagrzebski.dev/api/v1*
 |[**deletePrinter**](#deleteprinter) | **DELETE** /printer/{id} | Delete a printer|
 |[**diagnosePrinter**](#diagnoseprinter) | **POST** /printer/{id}/diagnose | Run an AI-powered diagnostic on a printer|
 |[**getPrinterById**](#getprinterbyid) | **GET** /printer/{id} | Get a printer by ID|
+|[**getPrinterState**](#getprinterstate) | **GET** /printer/{id}/state | Get the last known state of a printer|
+|[**getPrinterStates**](#getprinterstates) | **GET** /printer/states | Get last known states for all printers|
 |[**getPrinters**](#getprinters) | **GET** /printer | Get all printers|
 |[**updatePrinter**](#updateprinter) | **PUT** /printer/{id} | Update a printer|
 
@@ -213,6 +215,103 @@ No authorization required
 |-------------|-------------|------------------|
 |**200** | Printer details |  -  |
 |**404** | Not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getPrinterState**
+> ApiPrinterState getPrinterState()
+
+Returns the most recent state received from the printer over MQTT. 404 if the printer has not reported since startup.
+
+### Example
+
+```typescript
+import {
+    PrinterApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PrinterApi(configuration);
+
+let id: number; // (default to undefined)
+
+const { status, data } = await apiInstance.getPrinterState(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**number**] |  | defaults to undefined|
+
+
+### Return type
+
+**ApiPrinterState**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Last known printer state |  -  |
+|**404** | No state received yet |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getPrinterStates**
+> { [key: string]: ApiPrinterState; } getPrinterStates()
+
+Returns the most recent state received over MQTT for each printer, keyed by printer ID. Printers that have not reported since startup are absent.
+
+### Example
+
+```typescript
+import {
+    PrinterApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new PrinterApi(configuration);
+
+const { status, data } = await apiInstance.getPrinterStates();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**{ [key: string]: ApiPrinterState; }**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Map of printer ID to last known state |  -  |
+|**401** | Unauthorized |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

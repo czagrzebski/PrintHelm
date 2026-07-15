@@ -326,6 +326,47 @@ paths:
           description: Printer deleted
         '404':
           description: Not found
+  /printer/states:
+    get:
+      tags:
+        - Printer
+      summary: Get last known states for all printers
+      description: Returns the most recent state received over MQTT for each printer, keyed by printer ID. Printers that have not reported since startup are absent.
+      operationId: getPrinterStates
+      responses:
+        '200':
+          description: Map of printer ID to last known state
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ApiPrinterState'
+        '401':
+          description: Unauthorized
+  /printer/{id}/state:
+    get:
+      tags:
+        - Printer
+      summary: Get the last known state of a printer
+      description: Returns the most recent state received from the printer over MQTT. 404 if the printer has not reported since startup.
+      operationId: getPrinterState
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Last known printer state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPrinterState'
+        '404':
+          description: No state received yet
   # === PrinterCommandController ===
   /printer/{id}/command/stop:
     post:

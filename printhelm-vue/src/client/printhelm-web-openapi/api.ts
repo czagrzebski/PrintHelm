@@ -6651,6 +6651,70 @@ export const PrinterApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Returns the most recent state received from the printer over MQTT. 404 if the printer has not reported since startup.
+         * @summary Get the last known state of a printer
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterState: async (id: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getPrinterState', 'id', id)
+            const localVarPath = `/printer/{id}/state`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns the most recent state received over MQTT for each printer, keyed by printer ID. Printers that have not reported since startup are absent.
+         * @summary Get last known states for all printers
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterStates: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/printer/states`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 
          * @summary Get all printers
          * @param {*} [options] Override http request option.
@@ -6783,6 +6847,31 @@ export const PrinterApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns the most recent state received from the printer over MQTT. 404 if the printer has not reported since startup.
+         * @summary Get the last known state of a printer
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getPrinterState(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiPrinterState>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getPrinterState(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterApi.getPrinterState']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns the most recent state received over MQTT for each printer, keyed by printer ID. Printers that have not reported since startup are absent.
+         * @summary Get last known states for all printers
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getPrinterStates(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: ApiPrinterState; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getPrinterStates(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PrinterApi.getPrinterStates']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 
          * @summary Get all printers
          * @param {*} [options] Override http request option.
@@ -6857,6 +6946,25 @@ export const PrinterApiFactory = function (configuration?: Configuration, basePa
          */
         getPrinterById(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiPrinterResponse> {
             return localVarFp.getPrinterById(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the most recent state received from the printer over MQTT. 404 if the printer has not reported since startup.
+         * @summary Get the last known state of a printer
+         * @param {number} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterState(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiPrinterState> {
+            return localVarFp.getPrinterState(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns the most recent state received over MQTT for each printer, keyed by printer ID. Printers that have not reported since startup are absent.
+         * @summary Get last known states for all printers
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPrinterStates(options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: ApiPrinterState; }> {
+            return localVarFp.getPrinterStates(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -6934,6 +7042,29 @@ export class PrinterApi extends BaseAPI {
      */
     public getPrinterById(id: number, options?: RawAxiosRequestConfig) {
         return PrinterApiFp(this.configuration).getPrinterById(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the most recent state received from the printer over MQTT. 404 if the printer has not reported since startup.
+     * @summary Get the last known state of a printer
+     * @param {number} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterApi
+     */
+    public getPrinterState(id: number, options?: RawAxiosRequestConfig) {
+        return PrinterApiFp(this.configuration).getPrinterState(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns the most recent state received over MQTT for each printer, keyed by printer ID. Printers that have not reported since startup are absent.
+     * @summary Get last known states for all printers
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrinterApi
+     */
+    public getPrinterStates(options?: RawAxiosRequestConfig) {
+        return PrinterApiFp(this.configuration).getPrinterStates(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

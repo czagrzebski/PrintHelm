@@ -6,6 +6,7 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import { api } from '@/api/Configuration'
+import { printerApi } from '@/api/PrinterApi'
 import { diagnosticApi } from '@/api/DiagnosticApi'
 import type { ApiDiagnosticReport } from '@/client/printhelm-web-openapi'
 import { usePrinterSocket } from '@/composables/usePrinterSocket'
@@ -416,6 +417,15 @@ onMounted(async () => {
   loading.value = true
   error.value = ''
   try {
+    // Last known state from the backend cache — instant render instead of
+    // waiting for the next MQTT push; live socket data overwrites it.
+    printerApi
+      .getPrinterState(printerId)
+      .then(res => {
+        if (!state.value) state.value = res.data
+      })
+      .catch(() => { /* no cached state yet */ })
+
     const res = await api.get<PrinterInfo>(`/printer/${printerId}`)
     printer.value = res.data
 

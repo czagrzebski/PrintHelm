@@ -8,6 +8,7 @@ import Tag from 'primevue/tag'
 import ProgressBar from 'primevue/progressbar'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/Configuration'
+import { printerApi } from '@/api/PrinterApi'
 import { usePrinterSocket } from '@/composables/usePrinterSocket'
 import { useCountUp } from '@/composables/useCountUp'
 import type { ApiPrinterState } from '@/client/printhelm-web-openapi'
@@ -97,6 +98,23 @@ function truncateFile(name?: string): string {
   return name.length > 24 ? name.slice(0, 22) + '…' : name
 }
 
+function applyState(row: PrinterRow, state: ApiPrinterState) {
+  row.state = state.state
+  row.progress = state.progress
+  row.currentLayer = state.currentLayer
+  row.totalLayers = state.totalLayers
+  row.nozzleTemp = state.nozzleTemp
+  row.nozzleTargetTemp = state.nozzleTargetTemp
+  row.bedTemp = state.bedTemp
+  row.bedTargetTemp = state.bedTargetTemp
+  row.file = state.file ?? state.subtaskName
+  row.subtaskName = state.subtaskName
+  row.wifiSignalStrength = state.wifiSignalStrength
+  row.lastUpdated = state.timestamp
+    ? new Date(state.timestamp).toLocaleTimeString()
+    : new Date().toLocaleTimeString()
+}
+
 async function fetchPrinters() {
   loading.value = true
   error.value = ''
@@ -105,25 +123,23 @@ async function fetchPrinters() {
     printers.value = res.data
 
     if (printers.value.length > 0) {
+      // Last known states from the backend cache — fills the table instantly;
+      // live socket data overwrites as it arrives.
+      printerApi
+        .getPrinterStates()
+        .then(({ data }) => {
+          for (const [id, cached] of Object.entries(data)) {
+            const row = printers.value.find((p) => p.printerId === Number(id))
+            if (row) applyState(row, cached)
+          }
+        })
+        .catch(() => { /* no cached states yet */ })
+
       connect(
         printers.value.map((p) => p.printerId),
         (printerId, state: ApiPrinterState) => {
           const row = printers.value.find((p) => p.printerId === printerId)
-          if (!row) return
-          row.state = state.state
-          row.progress = state.progress
-          row.currentLayer = state.currentLayer
-          row.totalLayers = state.totalLayers
-          row.nozzleTemp = state.nozzleTemp
-          row.nozzleTargetTemp = state.nozzleTargetTemp
-          row.bedTemp = state.bedTemp
-          row.bedTargetTemp = state.bedTargetTemp
-          row.file = state.file ?? state.subtaskName
-          row.subtaskName = state.subtaskName
-          row.wifiSignalStrength = state.wifiSignalStrength
-          row.lastUpdated = state.timestamp
-            ? new Date(state.timestamp).toLocaleTimeString()
-            : new Date().toLocaleTimeString()
+          if (row) applyState(row, state)
         },
       )
     }
