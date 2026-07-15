@@ -38,6 +38,10 @@ Name | Type | Description | Notes
 **quoteExpiresAt** | **string** | Date until which the quote is valid | [optional] [default to undefined]
 **quoteLineItems** | [**Array&lt;ApiQuoteLineItem&gt;**](ApiQuoteLineItem.md) | Custom line items on the quote | [optional] [default to undefined]
 **quoteMaterials** | **Array&lt;string&gt;** | Material types selected for this quote | [optional] [default to undefined]
+**quotedPrintTimeHours** | **number** | Estimated total print time in hours | [optional] [default to undefined]
+**quotedFilamentGrams** | **number** | Estimated filament usage in grams | [optional] [default to undefined]
+**quotedLeadTimeDays** | **number** | Estimated lead time in business days | [optional] [default to undefined]
+**designNotes** | **string** | Notes written during the design phase | [optional] [default to undefined]
 
 ## Example
 
@@ -78,6 +82,10 @@ const instance: ApiJobOrderResponse = {
     quoteExpiresAt,
     quoteLineItems,
     quoteMaterials,
+    quotedPrintTimeHours,
+    quotedFilamentGrams,
+    quotedLeadTimeDays,
+    designNotes,
 };
 ```
 

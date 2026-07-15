@@ -100,6 +100,18 @@ public class JobOrder {
     @Column(name = "quote_materials", columnDefinition = "TEXT")
     private List<String> quoteMaterials;
 
+    @Column(name = "quoted_print_time_hours", precision = 10, scale = 2)
+    private BigDecimal quotedPrintTimeHours;
+
+    @Column(name = "quoted_filament_grams", precision = 10, scale = 2)
+    private BigDecimal quotedFilamentGrams;
+
+    @Column(name = "quoted_lead_time_days")
+    private Integer quotedLeadTimeDays;
+
+    @Column(name = "design_notes", length = 2000)
+    private String designNotes;
+
     @Column(name = "material_cost", precision = 10, scale = 2)
     private BigDecimal materialCost;
 
@@ -206,6 +218,18 @@ public class JobOrder {
 
     public List<String> getQuoteMaterials() { return quoteMaterials; }
     public void setQuoteMaterials(List<String> quoteMaterials) { this.quoteMaterials = quoteMaterials; }
+
+    public BigDecimal getQuotedPrintTimeHours() { return quotedPrintTimeHours; }
+    public void setQuotedPrintTimeHours(BigDecimal quotedPrintTimeHours) { this.quotedPrintTimeHours = quotedPrintTimeHours; }
+
+    public BigDecimal getQuotedFilamentGrams() { return quotedFilamentGrams; }
+    public void setQuotedFilamentGrams(BigDecimal quotedFilamentGrams) { this.quotedFilamentGrams = quotedFilamentGrams; }
+
+    public Integer getQuotedLeadTimeDays() { return quotedLeadTimeDays; }
+    public void setQuotedLeadTimeDays(Integer quotedLeadTimeDays) { this.quotedLeadTimeDays = quotedLeadTimeDays; }
+
+    public String getDesignNotes() { return designNotes; }
+    public void setDesignNotes(String designNotes) { this.designNotes = designNotes; }
 
     public BigDecimal getMaterialCost() { return materialCost; }
     public void setMaterialCost(BigDecimal materialCost) { this.materialCost = materialCost; }

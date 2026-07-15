@@ -41,9 +41,11 @@ public class PrinterFileService {
     public record PrinterFileDTO(String name, long sizeBytes, Instant lastModified) {}
 
     private final PrinterService printerService;
+    private final AuditLogService auditLogService;
 
-    public PrinterFileService(PrinterService printerService) {
+    public PrinterFileService(PrinterService printerService, AuditLogService auditLogService) {
         this.printerService = printerService;
+        this.auditLogService = auditLogService;
     }
 
     public List<PrinterFileDTO> listFiles(long printerId) throws IOException {
@@ -70,6 +72,8 @@ public class PrinterFileService {
             );
             runCurl(cmd, "uploadFile:" + filename, printerId);
             logger.info("Uploaded {} to printer [ID={}]", filename, printerId);
+            auditLogService.record("PRINTER_FILE_UPLOADED", "Printer", printerId,
+                    "Uploaded " + filename + " to " + config.printerName());
         } finally {
             Files.deleteIfExists(tmp);
         }
@@ -136,16 +140,18 @@ public class PrinterFileService {
         );
         runCurl(cmd, "deleteFile:" + filename, printerId);
         logger.info("Deleted {} from printer [ID={}]", filename, printerId);
+        auditLogService.record("PRINTER_FILE_DELETED", "Printer", printerId,
+                "Deleted " + filename + " from " + config.printerName());
     }
 
-    private record FtpsConfig(String host, String password) {}
+    private record FtpsConfig(String host, String password, String printerName) {}
 
     private FtpsConfig resolveConfig(long printerId) throws IOException {
         var printer = printerService.getPrinterById(printerId);
         if (!(printer.getConnectionConfig() instanceof MQTTConnectionConfig mqttConfig)) {
             throw new IllegalArgumentException("Printer [ID=" + printerId + "] has no MQTT config");
         }
-        return new FtpsConfig(extractHost(mqttConfig.getBrokerUrl()), mqttConfig.getPassword());
+        return new FtpsConfig(extractHost(mqttConfig.getBrokerUrl()), mqttConfig.getPassword(), printer.getPrinterName());
     }
 
     private static String ftpsUrl(String host, String path) {

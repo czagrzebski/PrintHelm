@@ -21,6 +21,10 @@ Name | Type | Description | Notes
 **quoteExpiresAt** | **string** | Date until which the quote is valid | [optional] [default to undefined]
 **quoteLineItems** | [**Array&lt;ApiQuoteLineItem&gt;**](ApiQuoteLineItem.md) | Optional custom line items for the quote | [optional] [default to undefined]
 **quoteMaterials** | **Array&lt;string&gt;** | Material types selected for this quote | [optional] [default to undefined]
+**quotedPrintTimeHours** | **number** | Estimated total print time in hours | [optional] [default to undefined]
+**quotedFilamentGrams** | **number** | Estimated filament usage in grams | [optional] [default to undefined]
+**quotedLeadTimeDays** | **number** | Estimated lead time in business days | [optional] [default to undefined]
+**designNotes** | **string** | Notes written during the design phase | [optional] [default to undefined]
 **materialCost** | **number** | Cost of materials/filament used | [optional] [default to undefined]
 **laborCost** | **number** | Labor or design fee | [optional] [default to undefined]
 **setupFee** | **number** | One-time setup fee | [optional] [default to undefined]
@@ -49,6 +53,10 @@ const instance: ApiUpdateJobOrderRequest = {
     quoteExpiresAt,
     quoteLineItems,
     quoteMaterials,
+    quotedPrintTimeHours,
+    quotedFilamentGrams,
+    quotedLeadTimeDays,
+    designNotes,
     materialCost,
     laborCost,
     setupFee,

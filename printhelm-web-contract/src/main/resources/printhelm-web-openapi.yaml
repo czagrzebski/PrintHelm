@@ -2517,6 +2517,21 @@ components:
           items:
             type: string
           description: Material types selected for this quote
+        quotedPrintTimeHours:
+          type: number
+          format: double
+          description: Estimated total print time in hours
+        quotedFilamentGrams:
+          type: number
+          format: double
+          description: Estimated filament usage in grams
+        quotedLeadTimeDays:
+          type: integer
+          format: int32
+          description: Estimated lead time in business days
+        designNotes:
+          type: string
+          description: Notes written during the design phase
         materialCost:
           type: number
           format: double
@@ -2653,6 +2668,21 @@ components:
           items:
             type: string
           description: Material types selected for this quote
+        quotedPrintTimeHours:
+          type: number
+          format: double
+          description: Estimated total print time in hours
+        quotedFilamentGrams:
+          type: number
+          format: double
+          description: Estimated filament usage in grams
+        quotedLeadTimeDays:
+          type: integer
+          format: int32
+          description: Estimated lead time in business days
+        designNotes:
+          type: string
+          description: Notes written during the design phase
     ApiQuoteLineItem:
       type: object
       properties:

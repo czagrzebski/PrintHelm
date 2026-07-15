@@ -122,6 +122,10 @@ public class JobOrderService {
         if (request.getQuoteNotes() != null) order.setQuoteNotes(request.getQuoteNotes());
         if (request.getQuoteExpiresAt() != null) order.setQuoteExpiresAt(request.getQuoteExpiresAt());
         if (request.getQuoteMaterials() != null) order.setQuoteMaterials(request.getQuoteMaterials());
+        if (request.getQuotedPrintTimeHours() != null) order.setQuotedPrintTimeHours(BigDecimal.valueOf(request.getQuotedPrintTimeHours()));
+        if (request.getQuotedFilamentGrams() != null) order.setQuotedFilamentGrams(BigDecimal.valueOf(request.getQuotedFilamentGrams()));
+        if (request.getQuotedLeadTimeDays() != null) order.setQuotedLeadTimeDays(request.getQuotedLeadTimeDays());
+        if (request.getDesignNotes() != null) order.setDesignNotes(request.getDesignNotes());
         if (request.getQuoteLineItems() != null) {
             List<QuoteLineItem> lineItems = request.getQuoteLineItems().stream()
                     .map(api -> new QuoteLineItem(api.getLabel(), api.getAmount() != null ? BigDecimal.valueOf(api.getAmount()) : null))

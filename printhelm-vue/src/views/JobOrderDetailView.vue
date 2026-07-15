@@ -6,6 +6,7 @@ import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Textarea from 'primevue/textarea'
 import Checkbox from 'primevue/checkbox'
+import DatePicker from 'primevue/datepicker'
 import Dialog from 'primevue/dialog'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
@@ -179,17 +180,32 @@ const MATERIAL_OPTIONS = [
   'PPS', 'PPS-CF',
 ]
 
-const quoteMaterials     = ref<string[]>([])
-const quotedMaterialCost = ref<number | null>(null)
-const quotedCostPerUnit  = ref<number | null>(null)
-const quotedQuantity     = ref<number | null>(null)
-const quotedLaborCost    = ref<number | null>(null)
-const quotedSetupFee     = ref<number | null>(null)
-const quotedDiscount     = ref<number | null>(null)
-const quoteNotes         = ref('')
-const quoteExpiresAt     = ref('')
-const savingQuote        = ref(false)
-const downloadingQuote   = ref(false)
+const quoteMaterials       = ref<string[]>([])
+const quotedMaterialCost   = ref<number | null>(null)
+const quotedCostPerUnit    = ref<number | null>(null)
+const quotedQuantity       = ref<number | null>(null)
+const quotedLaborCost      = ref<number | null>(null)
+const quotedSetupFee       = ref<number | null>(null)
+const quotedDiscount       = ref<number | null>(null)
+const quotedPrintTimeHours = ref<number | null>(null)
+const quotedFilamentGrams  = ref<number | null>(null)
+const quotedLeadTimeDays   = ref<number | null>(null)
+const quoteNotes           = ref('')
+const quoteExpiresAt       = ref<Date | null>(null)
+const savingQuote          = ref(false)
+const downloadingQuote     = ref(false)
+
+/** Serialize a Date to the API's `date` format (local YYYY-MM-DD, no TZ shift) */
+function toIsoDate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
+function formatDateOnly(iso?: string) {
+  if (!iso) return '—'
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+}
 
 watch([quotedCostPerUnit, quotedQuantity], ([perUnit, qty]) => {
   if (perUnit != null && qty != null && qty > 0) {
@@ -207,16 +223,20 @@ const quoteTotal = computed(() => {
 })
 
 function syncQuoteFields(data: ApiJobOrderResponse) {
-  quoteMaterials.value     = data.quoteMaterials     ?? []
-  quotedMaterialCost.value = data.quotedMaterialCost ?? null
-  quotedCostPerUnit.value  = data.quotedCostPerUnit  ?? null
-  quotedQuantity.value     = data.quotedQuantity     ?? null
-  quotedLaborCost.value    = data.quotedLaborCost    ?? null
-  quotedSetupFee.value     = data.quotedSetupFee     ?? null
-  quotedDiscount.value     = data.quotedDiscount     ?? null
-  quoteNotes.value         = data.quoteNotes         ?? ''
-  quoteExpiresAt.value     = data.quoteExpiresAt     ?? ''
-  quoteLineItems.value     = (data.quoteLineItems ?? []).map(i => ({ label: i.label ?? '', amount: i.amount ?? null }))
+  quoteMaterials.value       = data.quoteMaterials       ?? []
+  quotedMaterialCost.value   = data.quotedMaterialCost   ?? null
+  quotedCostPerUnit.value    = data.quotedCostPerUnit    ?? null
+  quotedQuantity.value       = data.quotedQuantity       ?? null
+  quotedLaborCost.value      = data.quotedLaborCost      ?? null
+  quotedSetupFee.value       = data.quotedSetupFee       ?? null
+  quotedDiscount.value       = data.quotedDiscount       ?? null
+  quotedPrintTimeHours.value = data.quotedPrintTimeHours ?? null
+  quotedFilamentGrams.value  = data.quotedFilamentGrams  ?? null
+  quotedLeadTimeDays.value   = data.quotedLeadTimeDays   ?? null
+  quoteNotes.value           = data.quoteNotes           ?? ''
+  quoteExpiresAt.value       = data.quoteExpiresAt ? new Date(`${data.quoteExpiresAt}T00:00:00`) : null
+  quoteLineItems.value       = (data.quoteLineItems ?? []).map(i => ({ label: i.label ?? '', amount: i.amount ?? null }))
+  designNotes.value          = data.designNotes ?? ''
 }
 
 function addLineItem() {
@@ -225,6 +245,32 @@ function addLineItem() {
 
 function removeLineItem(index: number) {
   quoteLineItems.value.splice(index, 1)
+}
+
+// ── Design step ───────────────────────────────────────────────────────────
+const designNotes = ref('')
+const savingDesignNotes = ref(false)
+
+async function saveDesignNotes() {
+  if (!order.value?.orderId) return
+  savingDesignNotes.value = true
+  try {
+    const res = await jobOrderApi.updateJobOrder(order.value.orderId, {
+      designNotes: designNotes.value.trim() || undefined,
+    })
+    order.value = res.data
+    toast.add({ severity: 'success', summary: 'Saved', detail: 'Design notes saved.', life: 2500 })
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to save design notes.', life: 4000 })
+  } finally {
+    savingDesignNotes.value = false
+  }
+}
+
+function completeDesign() {
+  advanceStatus(ApiJobOrderStatus.Setup, {
+    designNotes: designNotes.value.trim() || undefined,
+  })
 }
 
 const invoiceMaterialCost = ref<number | null>(null)
@@ -545,16 +591,19 @@ async function handleSaveAndDownloadQuote() {
       .filter(i => i.label.trim() && i.amount != null && i.amount > 0)
       .map(i => ({ label: i.label.trim(), amount: i.amount! }))
     const res = await jobOrderApi.updateJobOrder(order.value.orderId, {
-      quoteMaterials:     quoteMaterials.value.length > 0 ? quoteMaterials.value : undefined,
-      quotedMaterialCost: quotedMaterialCost.value ?? undefined,
-      quotedCostPerUnit:  quotedCostPerUnit.value  ?? undefined,
-      quotedQuantity:     quotedQuantity.value     ?? undefined,
-      quotedLaborCost:    quotedLaborCost.value    ?? undefined,
-      quotedSetupFee:     quotedSetupFee.value     ?? undefined,
-      quotedDiscount:     quotedDiscount.value     ?? undefined,
-      quoteNotes:         quoteNotes.value.trim()  || undefined,
-      quoteExpiresAt:     quoteExpiresAt.value     || undefined,
-      quoteLineItems:     validLineItems.length > 0 ? validLineItems : undefined,
+      quoteMaterials:       quoteMaterials.value.length > 0 ? quoteMaterials.value : undefined,
+      quotedMaterialCost:   quotedMaterialCost.value   ?? undefined,
+      quotedCostPerUnit:    quotedCostPerUnit.value    ?? undefined,
+      quotedQuantity:       quotedQuantity.value       ?? undefined,
+      quotedLaborCost:      quotedLaborCost.value      ?? undefined,
+      quotedSetupFee:       quotedSetupFee.value       ?? undefined,
+      quotedDiscount:       quotedDiscount.value       ?? undefined,
+      quotedPrintTimeHours: quotedPrintTimeHours.value ?? undefined,
+      quotedFilamentGrams:  quotedFilamentGrams.value  ?? undefined,
+      quotedLeadTimeDays:   quotedLeadTimeDays.value   ?? undefined,
+      quoteNotes:           quoteNotes.value.trim()    || undefined,
+      quoteExpiresAt:       quoteExpiresAt.value ? toIsoDate(quoteExpiresAt.value) : undefined,
+      quoteLineItems:       validLineItems.length > 0 ? validLineItems : undefined,
     })
     order.value = res.data
     syncQuoteFields(res.data)
@@ -750,8 +799,27 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
                 <span class="invoice-summary-label">Materials</span>
                 <span class="invoice-summary-value">{{ order.quoteMaterials.join(', ') }}</span>
               </div>
+              <div class="invoice-summary-row" v-if="order.quotedPrintTimeHours">
+                <span class="invoice-summary-label">Est. Print Time</span>
+                <span class="invoice-summary-value">{{ order.quotedPrintTimeHours }} h</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.quotedFilamentGrams">
+                <span class="invoice-summary-label">Est. Filament Usage</span>
+                <span class="invoice-summary-value">{{ order.quotedFilamentGrams }} g</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.quotedLeadTimeDays">
+                <span class="invoice-summary-label">Est. Lead Time</span>
+                <span class="invoice-summary-value">{{ order.quotedLeadTimeDays }} business day{{ order.quotedLeadTimeDays === 1 ? '' : 's' }}</span>
+              </div>
+              <div class="invoice-summary-row" v-if="order.quoteExpiresAt">
+                <span class="invoice-summary-label">Valid Until</span>
+                <span class="invoice-summary-value">{{ formatDateOnly(order.quoteExpiresAt) }}</span>
+              </div>
+              <div class="invoice-summary-divider" v-if="order.quoteMaterials?.length || order.quotedPrintTimeHours || order.quotedFilamentGrams || order.quotedLeadTimeDays || order.quoteExpiresAt" />
               <div class="invoice-summary-row" v-if="order.quotedMaterialCost">
-                <span class="invoice-summary-label">Est. Material Cost</span>
+                <span class="invoice-summary-label">
+                  Est. Material Cost<template v-if="order.quotedQuantity && order.quotedCostPerUnit"> ({{ order.quotedQuantity }} × ${{ order.quotedCostPerUnit.toFixed(2) }})</template>
+                </span>
                 <span class="invoice-summary-value">${{ order.quotedMaterialCost.toFixed(2) }}</span>
               </div>
               <div class="invoice-summary-row" v-if="order.quotedLaborCost">
@@ -791,74 +859,108 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
           </template>
           <template v-else>
             <!-- Active quote step: cost entry form -->
-            <p class="step-description">Enter the estimated costs for this job to generate a quote for the customer.</p>
+            <p class="step-description">Enter the estimated costs and print details for this job to generate a quote for the customer.</p>
             <div class="form-body">
-              <div class="field">
-                <label class="field-label">Materials</label>
-                <MultiSelect
-                  v-model="quoteMaterials"
-                  :options="MATERIAL_OPTIONS"
-                  placeholder="Select material types…"
-                  display="chip"
-                  class="field-input"
-                />
-              </div>
-              <div class="unit-cost-row">
+              <div class="form-subsection">
+                <span class="form-subsection-label"><i class="mdi mdi-currency-usd" /> Costs</span>
                 <div class="field">
-                  <label class="field-label">Cost Per Unit</label>
-                  <InputNumber v-model="quotedCostPerUnit" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                  <label class="field-label">Materials</label>
+                  <MultiSelect
+                    v-model="quoteMaterials"
+                    :options="MATERIAL_OPTIONS"
+                    placeholder="Select material types…"
+                    display="chip"
+                    filter
+                    class="field-input"
+                  />
                 </div>
-                <div class="field unit-cost-qty">
-                  <label class="field-label">Quantity</label>
-                  <InputNumber v-model="quotedQuantity" :min="1" :max="99999" placeholder="1" class="field-input" />
+                <div class="unit-cost-row">
+                  <div class="field">
+                    <label class="field-label">Cost Per Unit</label>
+                    <InputNumber v-model="quotedCostPerUnit" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="$0.00" fluid />
+                  </div>
+                  <span class="unit-cost-op" aria-hidden="true">×</span>
+                  <div class="field unit-cost-qty">
+                    <label class="field-label">Quantity</label>
+                    <InputNumber v-model="quotedQuantity" :min="1" :max="99999" placeholder="1" fluid />
+                  </div>
+                  <span class="unit-cost-op" aria-hidden="true">=</span>
+                  <div class="field">
+                    <label class="field-label">Est. Material Cost</label>
+                    <InputNumber v-model="quotedMaterialCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="$0.00" fluid />
+                  </div>
+                </div>
+                <div class="quote-field-grid">
+                  <div class="field">
+                    <label class="field-label">Est. Labor / Design Fee</label>
+                    <InputNumber v-model="quotedLaborCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="$0.00" fluid />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Est. Setup Fee</label>
+                    <InputNumber v-model="quotedSetupFee" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="$0.00" fluid />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Discount</label>
+                    <InputNumber v-model="quotedDiscount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="$0.00" fluid />
+                  </div>
+                </div>
+                <!-- Line items -->
+                <div class="line-items-section">
+                  <div class="line-items-header">
+                    <span class="field-label">Additional Line Items</span>
+                    <Button label="Add Item" icon="mdi mdi-plus" size="small" severity="secondary" text @click="addLineItem" />
+                  </div>
+                  <div v-for="(item, index) in quoteLineItems" :key="index" class="line-item-row">
+                    <InputText v-model="item.label" placeholder="Description" class="line-item-label" />
+                    <InputNumber v-model="item.amount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="$0.00" class="line-item-amount" />
+                    <Button icon="mdi mdi-close" severity="danger" text size="small" @click="removeLineItem(index)" />
+                  </div>
+                </div>
+                <div class="invoice-total-preview">
+                  <span class="invoice-total-label">Estimated Total</span>
+                  <span class="invoice-total-value">${{ quoteTotal.toFixed(2) }}</span>
+                </div>
+              </div>
+
+              <div class="form-subsection">
+                <span class="form-subsection-label"><i class="mdi mdi-printer-3d" /> Print Estimates</span>
+                <div class="quote-field-grid">
+                  <div class="field">
+                    <label class="field-label">Est. Print Time</label>
+                    <InputNumber v-model="quotedPrintTimeHours" :min="0" :maxFractionDigits="1" suffix=" h" placeholder="0 h" fluid />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Est. Filament Usage</label>
+                    <InputNumber v-model="quotedFilamentGrams" :min="0" :maxFractionDigits="1" suffix=" g" placeholder="0 g" fluid />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Est. Lead Time</label>
+                    <InputNumber v-model="quotedLeadTimeDays" :min="0" :max="365" suffix=" days" placeholder="0 days" fluid />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-subsection">
+                <span class="form-subsection-label"><i class="mdi mdi-text-box-outline" /> Terms</span>
+                <div class="quote-field-grid quote-field-grid--wide">
+                  <div class="field">
+                    <label class="field-label">Valid Until (optional)</label>
+                    <DatePicker
+                      v-model="quoteExpiresAt"
+                      :min-date="new Date()"
+                      date-format="M d, yy"
+                      show-icon
+                      icon-display="input"
+                      show-button-bar
+                      placeholder="No expiration"
+                      fluid
+                    />
+                  </div>
                 </div>
                 <div class="field">
-                  <label class="field-label">Est. Material Cost</label>
-                  <InputNumber v-model="quotedMaterialCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
+                  <label class="field-label">Notes (optional)</label>
+                  <Textarea v-model="quoteNotes" placeholder="Additional notes for the quote…" class="field-input" rows="3" auto-resize />
                 </div>
-              </div>
-              <div class="invoice-cost-grid">
-                <div class="field">
-                  <label class="field-label">Est. Labor / Design Fee</label>
-                  <InputNumber v-model="quotedLaborCost" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
-                </div>
-                <div class="field">
-                  <label class="field-label">Est. Setup Fee</label>
-                  <InputNumber v-model="quotedSetupFee" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
-                </div>
-                <div class="field">
-                  <label class="field-label">Discount</label>
-                  <InputNumber v-model="quotedDiscount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="field-input" />
-                </div>
-              </div>
-              <!-- Line items -->
-              <div class="line-items-section">
-                <div class="line-items-header">
-                  <span class="field-label">Additional Line Items</span>
-                  <Button label="Add Item" icon="mdi mdi-plus" size="small" severity="secondary" text @click="addLineItem" />
-                </div>
-                <div v-for="(item, index) in quoteLineItems" :key="index" class="line-item-row">
-                  <InputText v-model="item.label" placeholder="Description" class="line-item-label" />
-                  <InputNumber v-model="item.amount" mode="currency" currency="USD" locale="en-US" :min="0" :minFractionDigits="2" placeholder="0.00" class="line-item-amount" />
-                  <Button icon="mdi mdi-close" severity="danger" text size="small" @click="removeLineItem(index)" />
-                </div>
-              </div>
-              <div class="invoice-total-preview">
-                <span class="invoice-total-label">Estimated Total</span>
-                <span class="invoice-total-value">${{ quoteTotal.toFixed(2) }}</span>
-              </div>
-              <div class="field">
-                <label class="field-label">Valid Until (optional)</label>
-                <input
-                  v-model="quoteExpiresAt"
-                  type="date"
-                  class="field-input date-input"
-                  :min="new Date().toISOString().split('T')[0]"
-                />
-              </div>
-              <div class="field">
-                <label class="field-label">Notes (optional)</label>
-                <Textarea v-model="quoteNotes" placeholder="Additional notes for the quote…" class="field-input" rows="3" auto-resize />
               </div>
             </div>
           </template>
@@ -867,6 +969,24 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
         <!-- Step 4: Design -->
         <template v-else-if="viewingStep === 4">
           <p class="step-description">Create or finalise the 3D design based on the documented requirements. Upload one or more glTF files — multiple files form an assembly, and each upload is kept as a new version.</p>
+
+          <div v-if="order.requirements || order.description" class="design-brief-panel">
+            <div class="design-brief-header">
+              <i class="mdi mdi-clipboard-text-outline design-brief-icon" />
+              <span>Design Brief</span>
+            </div>
+            <div class="design-brief-body">
+              <div v-if="order.description" class="metadata-row">
+                <span class="metadata-label">Request</span>
+                <span class="metadata-value">{{ order.description }}</span>
+              </div>
+              <div v-if="order.requirements" class="metadata-row">
+                <span class="metadata-label">Requirements</span>
+                <span class="metadata-value">{{ order.requirements }}</span>
+              </div>
+            </div>
+          </div>
+
           <div class="upload-area" :class="{ 'upload-area--active': isOnCurrentStep }">
             <i class="mdi mdi-cube-scan upload-icon" />
             <p class="upload-label">3D Design Files</p>
@@ -911,6 +1031,34 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
                 @click="partFileInput?.click()"
               />
             </div>
+          </div>
+
+          <div v-if="isOnCurrentStep || order.designNotes" class="design-notes-section">
+            <template v-if="isOnCurrentStep">
+              <div class="line-items-header">
+                <span class="field-label">Design Notes</span>
+                <Button
+                  label="Save Notes"
+                  icon="mdi mdi-content-save-outline"
+                  size="small"
+                  severity="secondary"
+                  text
+                  :loading="savingDesignNotes"
+                  @click="saveDesignNotes"
+                />
+              </div>
+              <Textarea
+                v-model="designNotes"
+                placeholder="Dimensions, tolerances, design decisions, customer feedback…"
+                class="field-input"
+                rows="3"
+                auto-resize
+              />
+            </template>
+            <template v-else>
+              <span class="field-label">Design Notes</span>
+              <p class="design-notes-text">{{ order.designNotes }}</p>
+            </template>
           </div>
 
           <FileVersionHistory
@@ -1252,7 +1400,7 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
                 <Button label="Accept Quote →" :loading="advancing" @click="handleAcceptQuote" />
               </template>
               <template v-else-if="order.status === ApiJobOrderStatus.Design">
-                <Button label="Complete Design →" :loading="advancing" @click="advanceStatus(ApiJobOrderStatus.Setup)" />
+                <Button label="Complete Design →" :loading="advancing" @click="completeDesign" />
               </template>
               <template v-else-if="order.status === ApiJobOrderStatus.Setup">
                 <span v-if="!order.mongoGcodeFileId" class="transition-info">
@@ -1799,21 +1947,6 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
 .transition-btns { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
 .transition-info { font-size: 0.8125rem; color: var(--ph-text-muted); font-style: italic; }
 
-/* ── Date input ──────────────────────────────────────────── */
-.date-input {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--ph-border);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  color: var(--ph-text);
-  font-size: 0.875rem;
-  color-scheme: dark;
-}
-.date-input:focus {
-  outline: none;
-  border-color: var(--ph-accent);
-}
-
 /* ── Invoice cost grid ───────────────────────────────────── */
 .invoice-cost-grid {
   display: grid;
@@ -1929,8 +2062,89 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
 
 .unit-cost-row {
   display: grid;
-  grid-template-columns: 1fr 100px 1fr;
+  grid-template-columns: 1fr auto 110px auto 1fr;
+  gap: 0.625rem;
+  align-items: end;
+}
+.unit-cost-op {
+  padding-bottom: 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ph-text-muted);
+  user-select: none;
+}
+@media (max-width: 640px) {
+  .unit-cost-row { grid-template-columns: 1fr; }
+  .unit-cost-op { display: none; }
+}
+
+/* ── Quote form subsections ──────────────────────────────── */
+.form-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--ph-border);
+  border-radius: 10px;
+}
+.form-subsection-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ph-text-muted);
+}
+.form-subsection-label > i { font-size: 0.85rem; color: var(--ph-accent); }
+.quote-field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
+}
+.quote-field-grid--wide { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 640px) {
+  .quote-field-grid, .quote-field-grid--wide { grid-template-columns: 1fr; }
+}
+
+/* ── Design step ─────────────────────────────────────────── */
+.design-brief-panel {
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+  background: rgba(6, 182, 212, 0.05);
+  border: 1px solid rgba(6, 182, 212, 0.18);
+  border-radius: 8px;
+}
+.design-brief-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #06b6d4;
+  margin-bottom: 0.75rem;
+}
+.design-brief-icon { font-size: 1rem; }
+.design-brief-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.design-brief-body .metadata-label { min-width: 100px; }
+.design-notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 1rem;
+}
+.design-notes-text {
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--ph-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 /* ── Upload version dialog ───────────────────────────────── */

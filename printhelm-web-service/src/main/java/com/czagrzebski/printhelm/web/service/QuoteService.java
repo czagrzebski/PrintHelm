@@ -122,6 +122,12 @@ public class QuoteService {
             doc.add(infoLine("Requirements", order.getRequirements(), labelFont, valueFont));
         if (order.getQuoteMaterials() != null && !order.getQuoteMaterials().isEmpty())
             doc.add(infoLine("Materials", String.join(", ", order.getQuoteMaterials()), labelFont, valueFont));
+        if (order.getQuotedPrintTimeHours() != null && order.getQuotedPrintTimeHours().compareTo(BigDecimal.ZERO) > 0)
+            doc.add(infoLine("Est. Print Time", formatHours(order.getQuotedPrintTimeHours()), labelFont, valueFont));
+        if (order.getQuotedFilamentGrams() != null && order.getQuotedFilamentGrams().compareTo(BigDecimal.ZERO) > 0)
+            doc.add(infoLine("Est. Filament Usage", stripTrailingZeros(order.getQuotedFilamentGrams()) + " g", labelFont, valueFont));
+        if (order.getQuotedLeadTimeDays() != null && order.getQuotedLeadTimeDays() > 0)
+            doc.add(infoLine("Est. Lead Time", order.getQuotedLeadTimeDays() + " business day" + (order.getQuotedLeadTimeDays() == 1 ? "" : "s"), labelFont, valueFont));
         if (order.getGcodeFilename() != null)
             doc.add(infoLine("GCode File", order.getGcodeFilename(), labelFont, valueFont));
 
@@ -309,5 +315,14 @@ public class QuoteService {
     private String formatMoney(BigDecimal amount) {
         if (amount == null) return "$0.00";
         return "$" + amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private String stripTrailingZeros(BigDecimal value) {
+        return value.stripTrailingZeros().toPlainString();
+    }
+
+    private String formatHours(BigDecimal hours) {
+        String h = stripTrailingZeros(hours);
+        return h + (BigDecimal.ONE.compareTo(hours) == 0 ? " hour" : " hours");
     }
 }

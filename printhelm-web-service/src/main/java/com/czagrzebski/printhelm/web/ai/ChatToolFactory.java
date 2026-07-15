@@ -1,6 +1,7 @@
 package com.czagrzebski.printhelm.web.ai;
 
 import com.czagrzebski.printhelm.web.repository.PrinterRepository;
+import com.czagrzebski.printhelm.web.service.AuditLogService;
 import com.czagrzebski.printhelm.web.service.PrintQueueService;
 import com.czagrzebski.printhelm.web.service.PrinterStateCache;
 import org.springframework.stereotype.Component;
@@ -16,20 +17,23 @@ public class ChatToolFactory {
     private final PrinterStateCache printerStateCache;
     private final PrinterRepository printerRepository;
     private final PrintQueueService printQueueService;
+    private final AuditLogService auditLogService;
 
     public ChatToolFactory(PrinterStateCache printerStateCache,
                            PrinterRepository printerRepository,
-                           PrintQueueService printQueueService) {
+                           PrintQueueService printQueueService,
+                           AuditLogService auditLogService) {
         this.printerStateCache = printerStateCache;
         this.printerRepository = printerRepository;
         this.printQueueService = printQueueService;
+        this.auditLogService = auditLogService;
     }
 
     public Object[] createTools(ChatRequestContext ctx) {
         return new Object[] {
                 new PrinterStateTool(printerStateCache, printerRepository, ctx),
-                new PrinterControlTool(printerRepository, ctx),
-                new PrintQueueTool(printQueueService, printerRepository, ctx),
+                new PrinterControlTool(printerRepository, ctx, auditLogService),
+                new PrintQueueTool(printQueueService, printerRepository, ctx, auditLogService),
         };
     }
 }

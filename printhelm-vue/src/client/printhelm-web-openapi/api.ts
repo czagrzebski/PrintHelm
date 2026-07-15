@@ -1355,6 +1355,30 @@ export interface ApiJobOrderResponse {
      * @memberof ApiJobOrderResponse
      */
     'quoteMaterials'?: Array<string>;
+    /**
+     * Estimated total print time in hours
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedPrintTimeHours'?: number;
+    /**
+     * Estimated filament usage in grams
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedFilamentGrams'?: number;
+    /**
+     * Estimated lead time in business days
+     * @type {number}
+     * @memberof ApiJobOrderResponse
+     */
+    'quotedLeadTimeDays'?: number;
+    /**
+     * Notes written during the design phase
+     * @type {string}
+     * @memberof ApiJobOrderResponse
+     */
+    'designNotes'?: string;
 }
 
 
@@ -2480,6 +2504,30 @@ export interface ApiUpdateJobOrderRequest {
      * @memberof ApiUpdateJobOrderRequest
      */
     'quoteMaterials'?: Array<string>;
+    /**
+     * Estimated total print time in hours
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedPrintTimeHours'?: number;
+    /**
+     * Estimated filament usage in grams
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedFilamentGrams'?: number;
+    /**
+     * Estimated lead time in business days
+     * @type {number}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'quotedLeadTimeDays'?: number;
+    /**
+     * Notes written during the design phase
+     * @type {string}
+     * @memberof ApiUpdateJobOrderRequest
+     */
+    'designNotes'?: string;
     /**
      * Cost of materials/filament used
      * @type {number}

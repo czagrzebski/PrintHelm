@@ -4,6 +4,7 @@ import com.czagrzebski.printhelm.model.ApiJobOrderResponse;
 import com.czagrzebski.printhelm.model.ApiProposedAction;
 import com.czagrzebski.printhelm.model.ApiProposedAction.ActionTypeEnum;
 import com.czagrzebski.printhelm.web.repository.PrinterRepository;
+import com.czagrzebski.printhelm.web.service.AuditLogService;
 import com.czagrzebski.printhelm.web.service.PrintQueueService;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -21,13 +22,16 @@ public class PrintQueueTool {
     private final PrintQueueService printQueueService;
     private final PrinterRepository printerRepository;
     private final ChatRequestContext ctx;
+    private final AuditLogService auditLogService;
 
     public PrintQueueTool(PrintQueueService printQueueService,
                           PrinterRepository printerRepository,
-                          ChatRequestContext ctx) {
+                          ChatRequestContext ctx,
+                          AuditLogService auditLogService) {
         this.printQueueService = printQueueService;
         this.printerRepository = printerRepository;
         this.ctx = ctx;
+        this.auditLogService = auditLogService;
     }
 
     @Tool(description = """
@@ -76,6 +80,8 @@ public class PrintQueueTool {
 
         ctx.status("Preparing action: " + action.getDescription());
         ctx.addAction(action);
+        auditLogService.record("AI_ACTION_PROPOSED", "Printer", printerId,
+                "AI assistant proposed: " + action.getDescription());
 
         return "Action proposed: \"" + action.getDescription() + "\". Awaiting explicit user confirmation — this will NOT execute automatically.";
     }

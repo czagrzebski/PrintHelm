@@ -80,9 +80,11 @@ function actionLabel(action?: string): string {
 
 function actionSeverity(action?: string) {
   if (!action) return 'secondary'
-  if (action.endsWith('DELETED') || action.endsWith('UNQUEUED')) return 'danger'
-  if (action.endsWith('CREATED') || action.endsWith('UPLOADED') || action === 'PRINT_STARTED') return 'success'
-  if (action.endsWith('UPDATED') || action.endsWith('REORDERED') || action.endsWith('RESET')) return 'info'
+  if (action.endsWith('DELETED') || action.endsWith('UNQUEUED') || action === 'PRINT_STOPPED') return 'danger'
+  if (action.endsWith('CREATED') || action.endsWith('UPLOADED') || action === 'PRINT_STARTED' || action === 'PRINT_RESUMED') return 'success'
+  if (action === 'PRINT_PAUSED' || action === 'AI_ACTION_PROPOSED') return 'warn'
+  if (action.endsWith('UPDATED') || action.endsWith('REORDERED') || action.endsWith('RESET')
+    || action.endsWith('_SET') || action === 'AXIS_JOGGED' || action === 'AXES_HOMED') return 'info'
   return 'secondary'
 }
 

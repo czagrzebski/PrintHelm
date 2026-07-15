@@ -3,6 +3,7 @@ package com.czagrzebski.printhelm.web.ai;
 import com.czagrzebski.printhelm.model.ApiProposedAction;
 import com.czagrzebski.printhelm.model.ApiProposedAction.ActionTypeEnum;
 import com.czagrzebski.printhelm.web.repository.PrinterRepository;
+import com.czagrzebski.printhelm.web.service.AuditLogService;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
@@ -17,10 +18,13 @@ public class PrinterControlTool {
 
     private final PrinterRepository printerRepository;
     private final ChatRequestContext ctx;
+    private final AuditLogService auditLogService;
 
-    public PrinterControlTool(PrinterRepository printerRepository, ChatRequestContext ctx) {
+    public PrinterControlTool(PrinterRepository printerRepository, ChatRequestContext ctx,
+                              AuditLogService auditLogService) {
         this.printerRepository = printerRepository;
         this.ctx = ctx;
+        this.auditLogService = auditLogService;
     }
 
     @Tool(description = "Propose pausing the current print job on a specific printer. The action is queued for user approval and will NOT execute until the user confirms.")
@@ -83,6 +87,8 @@ public class PrinterControlTool {
 
         ctx.status("Preparing action: " + action.getDescription());
         ctx.addAction(action);
+        auditLogService.record("AI_ACTION_PROPOSED", "Printer", printerId,
+                "AI assistant proposed: " + action.getDescription());
 
         return "Action proposed: \"" + action.getDescription() + "\". Awaiting explicit user confirmation — this will NOT execute automatically.";
     }
