@@ -16,9 +16,14 @@ test('login and reach dashboard', async ({ page }) => {
 
   if (externalApiOrigin && internalApiUrl) {
     await page.route(`${externalApiOrigin}/**`, async (route) => {
-      const rewritten = route.request().url().replace(externalApiOrigin, internalApiUrl)
-      const response = await route.fetch({ url: rewritten })
-      await route.fulfill({ response })
+      try {
+        const rewritten = route.request().url().replace(externalApiOrigin, internalApiUrl)
+        const response = await route.fetch({ url: rewritten })
+        await route.fulfill({ response })
+      } catch {
+        // Page/context may already be tearing down (e.g. background polling
+        // outliving the test) — nothing to fulfill in that case.
+      }
     })
   }
 
