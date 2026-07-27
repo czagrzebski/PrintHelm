@@ -5,6 +5,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 .env
+docker-compose.yml
 
 ### STS ###
 .apt_generated
@@ -36,3 +37,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Playwright ###
+playwright-tests/node_modules/
+playwright-tests/test-results/

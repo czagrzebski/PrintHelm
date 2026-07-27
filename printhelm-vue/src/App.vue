@@ -1,85 +1,121 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { ref, computed } from 'vue'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '@/stores/auth'
+import { api } from '@/api/Configuration'
+
+const authStore = useAuthStore()
+const toast = useToast()
+
+const mustChange = computed(() => !!authStore.accessToken && authStore.mustChangePassword)
+
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const changing = ref(false)
+
+async function submitPasswordChange() {
+  if (!newPassword.value || newPassword.value.length < 6) {
+    toast.add({ severity: 'warn', summary: 'Validation', detail: 'New password must be at least 6 characters.', life: 4000 })
+    return
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    toast.add({ severity: 'warn', summary: 'Validation', detail: 'Passwords do not match.', life: 4000 })
+    return
+  }
+  if (!currentPassword.value) {
+    toast.add({ severity: 'warn', summary: 'Validation', detail: 'Current password is required.', life: 4000 })
+    return
+  }
+  changing.value = true
+  try {
+    await api.put('/user/me/password', { currentPassword: currentPassword.value, newPassword: newPassword.value })
+    authStore.clearMustChangePassword()
+    currentPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
+    toast.add({ severity: 'success', summary: 'Password changed', detail: 'Your password has been updated.', life: 3000 })
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to change password. Check your current password.', life: 4000 })
+  } finally {
+    changing.value = false
+  }
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
+  <Toast />
   <RouterView />
+
+  <Dialog
+    :visible="mustChange"
+    :closable="false"
+    :modal="true"
+    header="Password Change Required"
+    :style="{ width: '420px' }"
+  >
+    <div class="force-change-body">
+      <p class="force-change-msg">
+        Your password must be changed before you can continue. Please set a new password below.
+      </p>
+
+      <div class="field">
+        <label class="field-label">Current Password <span class="required">*</span></label>
+        <Password v-model="currentPassword" :feedback="false" toggle-mask class="w-full" input-class="w-full" />
+      </div>
+      <div class="field">
+        <label class="field-label">New Password <span class="required">*</span></label>
+        <Password v-model="newPassword" :feedback="true" toggle-mask class="w-full" input-class="w-full" />
+      </div>
+      <div class="field">
+        <label class="field-label">Confirm New Password <span class="required">*</span></label>
+        <Password v-model="confirmPassword" :feedback="false" toggle-mask class="w-full" input-class="w-full" />
+      </div>
+    </div>
+
+    <template #footer>
+      <Button label="Change Password" :loading="changing" @click="submitPasswordChange" />
+    </template>
+  </Dialog>
 </template>
 
 <style scoped>
-header {
+.force-change-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+
+.force-change-msg {
+  font-size: 0.875rem;
+  color: var(--ph-text-muted);
+  margin: 0 0 0.5rem;
   line-height: 1.5;
-  max-height: 100vh;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
-nav {
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ph-text-muted);
+}
+
+.required {
+  color: #f87171;
+}
+
+.w-full {
   width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
 }
 </style>

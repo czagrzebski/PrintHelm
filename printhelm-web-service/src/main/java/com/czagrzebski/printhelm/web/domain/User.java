@@ -46,6 +46,9 @@ public class User {
     @Column(name="is_active")
     private boolean isActive;
 
+    @Column(name="must_change_password", nullable=true)
+    private Boolean mustChangePassword = false;
+
     public User() {}
 
     public User(String username, String passwordHash, String firstname, String lastname) {
@@ -109,5 +112,13 @@ public class User {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword != null && mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 }

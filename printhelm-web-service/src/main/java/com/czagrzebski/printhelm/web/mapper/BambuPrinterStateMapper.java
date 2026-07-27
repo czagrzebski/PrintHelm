@@ -1,26 +1,37 @@
 package com.czagrzebski.printhelm.web.mapper;
 
 import com.czagrzebski.printhelm.model.ApiFan;
+import com.czagrzebski.printhelm.model.ApiIpcam;
 import com.czagrzebski.printhelm.model.ApiLight;
 import com.czagrzebski.printhelm.model.ApiMaterial;
 import com.czagrzebski.printhelm.model.ApiMaterialSystem;
 import com.czagrzebski.printhelm.model.ApiPrinterState;
+import com.czagrzebski.printhelm.model.ApiUpgradeState;
+import com.czagrzebski.printhelm.model.ApiXcam;
 import com.czagrzebski.printhelm.web.domain.bambulab.BambuLabPrinter;
 import com.czagrzebski.printhelm.web.dto.bambulab.AmsDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.AmsItemDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.BambulabStateDTO;
+import com.czagrzebski.printhelm.web.dto.bambulab.IpcamDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.LightsReportDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.PrintDTO;
 import com.czagrzebski.printhelm.web.dto.bambulab.TrayDTO;
+import com.czagrzebski.printhelm.web.dto.bambulab.UpgradeStateDTO;
+import com.czagrzebski.printhelm.web.dto.bambulab.XcamDTO;
+import com.czagrzebski.printhelm.web.ai.BambuLabErrorRegistry;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public abstract class BambuPrinterStateMapper {
+
+    @Autowired
+    protected BambuLabErrorRegistry bambuLabErrorRegistry;
 
     @Mapping(target = "bedTemp", source = "stateDTO.print.bedTemper")
     @Mapping(target = "file", source = "stateDTO.print.file")
@@ -37,11 +48,61 @@ public abstract class BambuPrinterStateMapper {
     @Mapping(target = "totalLayers", source = "stateDTO.print.threeD.totalLayerNum")
     @Mapping(target = "fans", source = "stateDTO.print", qualifiedByName = "fans")
     @Mapping(target = "lights", source = "stateDTO.print.lightsReport")
+    @Mapping(target = "remainTime", source = "stateDTO.print.mcRemainingTime")
+    @Mapping(target = "gcodeState", source = "stateDTO.print.gcodeState")
+    @Mapping(target = "printType", source = "stateDTO.print.printType")
+    @Mapping(target = "taskId", source = "stateDTO.print.taskId")
+    @Mapping(target = "jobId", source = "stateDTO.print.jobId")
+    @Mapping(target = "projectId", source = "stateDTO.print.projectId")
+    @Mapping(target = "profileId", source = "stateDTO.print.profileId")
+    @Mapping(target = "modelId", source = "stateDTO.print.modelId")
+    @Mapping(target = "subtaskId", source = "stateDTO.print.subtaskId")
+    @Mapping(target = "sdcard", source = "stateDTO.print.sdcard")
+    @Mapping(target = "homeFlag", source = "stateDTO.print.homeFlag")
+    @Mapping(target = "spdLvl", source = "stateDTO.print.spdLvl")
+    @Mapping(target = "spdMag", source = "stateDTO.print.spdMag")
+    @Mapping(target = "printError", source = "stateDTO.print.printError")
+    @Mapping(target = "printErrorDescription", source = "stateDTO.print", qualifiedByName = "printErrorDescription")
+    @Mapping(target = "mcPrintErrorCode", source = "stateDTO.print", qualifiedByName = "mcPrintErrorCode")
+    @Mapping(target = "failReason", source = "stateDTO.print", qualifiedByName = "failReason")
+    @Mapping(target = "hmsErrors", source = "stateDTO.print", qualifiedByName = "hmsErrors")
+    @Mapping(target = "ipcam", source = "stateDTO.print.ipcam", qualifiedByName = "ipcam")
+    @Mapping(target = "xcam", source = "stateDTO.print.xcam", qualifiedByName = "xcam")
+    @Mapping(target = "upgradeState", source = "stateDTO.print.upgradeState", qualifiedByName = "upgradeState")
     public abstract ApiPrinterState bambuPrinterStateToPrinterState(BambulabStateDTO stateDTO);
+
+    @Named("printErrorDescription")
+    protected String getPrintErrorDescription(PrintDTO printDTO) {
+        return bambuLabErrorRegistry.decodePrintError(printDTO.getPrintError());
+    }
+
+    @Named("hmsErrors")
+    protected List<String> getHmsErrors(PrintDTO printDTO) {
+        return bambuLabErrorRegistry.decodeHmsList(printDTO.getHms());
+    }
+
+    @Named("mcPrintErrorCode")
+    protected String getMcPrintErrorCode(PrintDTO printDTO) {
+        String code = printDTO.getMcPrintErrorCode();
+        return (code == null || code.equals("0") || code.isBlank()) ? null : code;
+    }
+
+    @Named("failReason")
+    protected String getFailReason(PrintDTO printDTO) {
+        String reason = printDTO.getFailReason();
+        if (reason == null || reason.equals("0") || reason.isBlank()) return null;
+        try {
+            String decoded = bambuLabErrorRegistry.decodePrintError(Integer.parseInt(reason));
+            return decoded != null ? decoded : reason;
+        } catch (NumberFormatException e) {
+            return reason;
+        }
+    }
 
     @Named("state")
     protected String getStateFromMcStage(PrintDTO printDTO) {
-        return BambuLabPrinter.PrintStage.fromCode(printDTO.getStgCur()).getDescription();
+        BambuLabPrinter.PrintStage stage = BambuLabPrinter.PrintStage.fromCode(printDTO.getStgCur());
+        return stage != null ? stage.getDescription() : "Unknown (" + printDTO.getStgCur() + ")";
     }
 
     @Named("fans")
@@ -60,11 +121,57 @@ public abstract class BambuPrinterStateMapper {
         coolingFan.setName("Part Cooling Fan");
         coolingFan.setSpeed(printDTO.getCoolingFanSpeed());
 
+        var heatbreakFan = new ApiFan();
+        heatbreakFan.setName("Heatbreak");
+        heatbreakFan.setSpeed(printDTO.getHeatbreakFanSpeed());
+
         fans.add(bigFan1);
         fans.add(bigFan2);
         fans.add(coolingFan);
+        fans.add(heatbreakFan);
 
         return fans;
+    }
+
+    @Named("ipcam")
+    protected ApiIpcam bambuIpcamToApiIpcam(IpcamDTO ipcamDTO) {
+        if (ipcamDTO == null) return null;
+        ApiIpcam apiIpcam = new ApiIpcam();
+        apiIpcam.setResolution(ipcamDTO.getResolution());
+        apiIpcam.setRtspUrl(ipcamDTO.getRtspUrl());
+        apiIpcam.setTimelapse(ipcamDTO.getTimelapse());
+        apiIpcam.setIpcamRecord(ipcamDTO.getIpcamRecord());
+        apiIpcam.setIpcamDev(ipcamDTO.getIpcamDev());
+        return apiIpcam;
+    }
+
+    @Named("xcam")
+    protected ApiXcam bambuXcamToApiXcam(XcamDTO xcamDTO) {
+        if (xcamDTO == null) return null;
+        ApiXcam apiXcam = new ApiXcam();
+        apiXcam.setFirstLayerInspector(xcamDTO.isFirstLayerInspector());
+        apiXcam.setBuildplateMarkerDetector(xcamDTO.isBuildplateMarkerDetector());
+        apiXcam.setSpaghettiDetector(xcamDTO.isSpaghettiDetector());
+        apiXcam.setPrintingMonitor(xcamDTO.isPrintingMonitor());
+        apiXcam.setPrintHalt(xcamDTO.isPrintHalt());
+        apiXcam.setHaltPrintSensitivity(xcamDTO.getHaltPrintSensitivity());
+        apiXcam.setAllowSkipParts(xcamDTO.isAllowSkipParts());
+        return apiXcam;
+    }
+
+    @Named("upgradeState")
+    protected ApiUpgradeState bambuUpgradeStateToApiUpgradeState(UpgradeStateDTO upgradeStateDTO) {
+        if (upgradeStateDTO == null) return null;
+        ApiUpgradeState apiUpgradeState = new ApiUpgradeState();
+        apiUpgradeState.setStatus(upgradeStateDTO.getStatus());
+        apiUpgradeState.setProgress(upgradeStateDTO.getProgress());
+        apiUpgradeState.setOtaNewVersionNumber(upgradeStateDTO.getOtaNewVersionNumber());
+        apiUpgradeState.setAmsNewVersionNumber(upgradeStateDTO.getAmsNewVersionNumber());
+        apiUpgradeState.setAhbNewVersionNumber(upgradeStateDTO.getAhbNewVersionNumber());
+        apiUpgradeState.setExtNewVersionNumber(upgradeStateDTO.getExtNewVersionNumber());
+        apiUpgradeState.setMessage(upgradeStateDTO.getMessage());
+        apiUpgradeState.setForceUpgrade(upgradeStateDTO.isForceUpgrade());
+        return apiUpgradeState;
     }
 
     @Mapping(target = "name", source = "lightsReportDTO.node")
@@ -79,7 +186,7 @@ public abstract class BambuPrinterStateMapper {
             apiMaterialSystem.setHumidity(amsItemDTO.getHumidityRaw());
             apiMaterialSystem.setTemperature(amsItemDTO.getTemp());
             for(TrayDTO tray : amsItemDTO.getTray()) {
-                var selectedTray = (Integer.parseInt(amsItemDTO.getId()) * 4) + tray.getId();
+                var selectedTray = (Integer.parseInt(amsItemDTO.getId()) * 4) + Integer.parseInt(tray.getId());
                 ApiMaterial material = new ApiMaterial();
                 if(tray.getTraySubBrands() != null) {
                     material.setName(tray.getTraySubBrands());
@@ -87,7 +194,17 @@ public abstract class BambuPrinterStateMapper {
                 } else {
                     material.setName("Unknown Material");
                 }
-                material.setLoaded(amsDTO.getTrayNow().equals(selectedTray));
+                material.setLoaded(String.valueOf(selectedTray).equals(amsDTO.getTrayNow()));
+                material.setType(tray.getTrayType());
+                material.setRemain(tray.getRemain());
+                material.setTrayDiameter(tray.getTrayDiameter());
+                material.setTrayWeight(tray.getTrayWeight());
+                material.setTrayUuid(tray.getTrayUuid());
+                material.setNozzleTempMin(tray.getNozzleTempMin());
+                material.setNozzleTempMax(tray.getNozzleTempMax());
+                material.setRecommendedBedTemp(tray.getBedTemp());
+                material.setDryingTemp(tray.getDryingTemp());
+                material.setDryingTime(tray.getDryingTime());
                 materials.add(material);
             }
         }

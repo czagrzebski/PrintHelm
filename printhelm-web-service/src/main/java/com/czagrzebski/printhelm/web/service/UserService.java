@@ -7,11 +7,13 @@ import com.czagrzebski.printhelm.web.domain.User;
 import com.czagrzebski.printhelm.web.repository.RoleRepository;
 import com.czagrzebski.printhelm.web.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,19 +28,22 @@ public class UserService {
     private final JWTService jwtService;
     private final RoleRepository roleRepository;
     private final UserDetailsServiceImpl userDetailsService;
+    private final AuditLogService auditLogService;
 
     public UserService(final UserRepository userRepository,
                        final PasswordEncoder passwordEncoder,
                        final AuthenticationManager authenticationManager,
                        final JWTService jwtService,
                        final UserDetailsServiceImpl userDetailsService,
-                       final RoleRepository roleRepository) {
+                       final RoleRepository roleRepository,
+                       final AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.roleRepository = roleRepository;
+        this.auditLogService = auditLogService;
     }
 
     public AuthenticationDTO authenticateUser(String username, String password) {
@@ -59,7 +64,6 @@ public class UserService {
     }
 
     public AuthenticationDTO refreshToken(String refreshToken) {
-        // check for valid refresh token
         String username = jwtService.extractUsername(refreshToken, JWTService.TokenType.REFRESH);
         if (username == null) {
             throw new RuntimeException("Invalid refresh token");
@@ -67,14 +71,12 @@ public class UserService {
 
         try {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            // check if refresh token is valid
             if (!jwtService.validateToken(refreshToken, userDetails, JWTService.TokenType.REFRESH)) {
                 throw new RuntimeException("Invalid refresh token");
             }
             String newAccessToken = jwtService.generateToken(userDetails.getUsername(), JWTService.TokenType.ACCESS);
             String newRefreshToken = jwtService.generateToken(userDetails.getUsername(), JWTService.TokenType.REFRESH);
 
-            // Get the user
             User user = userRepository.findByUsername(userDetails.getUsername());
             var authentication = new AuthenticationDTO();
             authentication.setUsername(userDetails.getUsername());
@@ -88,7 +90,6 @@ public class UserService {
     }
 
     public User createUser(String username, String password, String firstName, String lastName, List<RoleDTO> rolesDTOList) {
-        // Check if the user already exists
         if (userRepository.findByUsername(username) != null) {
             throw new RuntimeException("User already exists");
         }
@@ -97,13 +98,11 @@ public class UserService {
         User newUser = new User(username, encodedPassword, firstName, lastName);
         newUser.setActive(true);
 
-        // Set roles
         Set<Role> roles = new HashSet<>();
-
         if (rolesDTOList != null && !rolesDTOList.isEmpty()) {
             for (RoleDTO roleDTO : rolesDTOList) {
                 Role role = roleRepository.findByRoleName(roleDTO.getRoleName());
-                if(role != null) {
+                if (role != null) {
                     roles.add(role);
                 } else {
                     throw new RuntimeException("Role not found: " + roleDTO.getRoleName());
@@ -112,7 +111,80 @@ public class UserService {
             newUser.setUserRoles(roles);
         }
         userRepository.save(newUser);
+        auditLogService.record("USER_CREATED", "User", newUser.getUserId(), username);
         return newUser;
     }
 
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+    }
+
+    public User getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username);
+        if (user == null) throw new RuntimeException("User not found: " + username);
+        return user;
+    }
+
+    @Transactional
+    public User updateUser(Long id, String username, String firstName, String lastName, Boolean isActive, List<RoleDTO> rolesDTOList) {
+        User user = getUserById(id);
+
+        if (username != null && !username.isBlank()) user.setUsername(username);
+        if (firstName != null) user.setFirstname(firstName);
+        if (lastName != null) user.setLastname(lastName);
+        if (isActive != null) user.setActive(isActive);
+
+        if (rolesDTOList != null) {
+            Set<Role> roles = new HashSet<>();
+            for (RoleDTO roleDTO : rolesDTOList) {
+                Role role = roleRepository.findByRoleName(roleDTO.getRoleName());
+                if (role != null) {
+                    roles.add(role);
+                } else {
+                    throw new RuntimeException("Role not found: " + roleDTO.getRoleName());
+                }
+            }
+            user.setUserRoles(roles);
+        }
+
+        User saved = userRepository.save(user);
+        auditLogService.record("USER_UPDATED", "User", id, saved.getUsername());
+        return saved;
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = getUserById(id);
+        userRepository.delete(user);
+        auditLogService.record("USER_DELETED", "User", id, user.getUsername());
+    }
+
+    @Transactional
+    public void changePassword(Long id, String currentPassword, String newPassword) {
+        User user = getUserById(id);
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BadCredentialsException("Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void adminResetPassword(Long id, String newPassword, boolean mustChangePassword) {
+        User user = getUserById(id);
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(mustChangePassword);
+        userRepository.save(user);
+        auditLogService.record("USER_PASSWORD_RESET", "User", id, user.getUsername());
+    }
+
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
 }

@@ -9,5 +9,9 @@ import org.mapstruct.Mapping;
 public interface UserResponseMapper {
 
     @Mapping(target = "roles", source = "userRoles")
+    @Mapping(target = "firstName", source = "firstname")
+    @Mapping(target = "lastName", source = "lastname")
+    @Mapping(target = "isActive", source = "isActive")
+    @Mapping(target = "mustChangePassword", source = "mustChangePassword")
     ApiUserResponse userToApiUserResponse(User user);
 }

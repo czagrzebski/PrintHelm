@@ -1,22 +1,22 @@
 package com.czagrzebski.printhelm.web.dto.bambulab;
 
 public class NetInfoDTO {
-    public int getIp() {
+    private long ip;
+    private long mask;
+
+    public long getIp() {
         return ip;
     }
 
-    public void setIp(int ip) {
+    public void setIp(long ip) {
         this.ip = ip;
     }
 
-    public int getMask() {
+    public long getMask() {
         return mask;
     }
 
-    public void setMask(int mask) {
+    public void setMask(long mask) {
         this.mask = mask;
     }
-
-    private int ip;
-    private int mask;
 }

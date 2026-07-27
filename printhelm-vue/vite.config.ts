@@ -15,4 +15,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  define: {
+    global: 'globalThis',
+  },
+  server: {
+    proxy: {
+      '/hls': {
+        target: 'http://localhost:8080',
+        rewrite: (path) => path.replace(/^\/hls/, '/api'),
+        changeOrigin: true,
+      },
+    },
+  },
 })
