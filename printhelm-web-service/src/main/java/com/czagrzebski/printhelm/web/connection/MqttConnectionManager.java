@@ -9,7 +9,7 @@ import com.czagrzebski.printhelm.web.util.DynamicTrustSSLUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -54,8 +54,9 @@ public class MqttConnectionManager {
         options.setUserName(mqttConfig.getUsername());
         options.setPassword(mqttConfig.getPassword() != null ? mqttConfig.getPassword().toCharArray() : null);
         options.setAutomaticReconnect(true);
+        options.setMaxReconnectDelay(60 * 1000); // cap exponential backoff between reconnect attempts at 60s
         options.setKeepAliveInterval(60);
-        options.setConnectionTimeout(60 * 30); // wait 30 minutes for the connection to be established
+        options.setConnectionTimeout(30); // wait 30 seconds for the initial connect handshake to complete
 
         try {
             var uri = new URI(mqttConfig.getBrokerUrl());
@@ -69,11 +70,33 @@ public class MqttConnectionManager {
             throw new RuntimeException(e);
         }
 
-        mqttClient.setCallback(new MqttCallback() {
+        final String stateTopic;
+
+        if(printer.getPrinterType() == PrinterType.BAMBULAB) {
+            stateTopic = mqttConfig.getTopic() + "/report";
+        } else {
+            stateTopic = "";
+        }
+
+        mqttClient.setCallback(new MqttCallbackExtended() {
             @Override
             public void connectionLost(Throwable throwable) {
-                logger.warn("Connection timed out for printer [ID={}] after 30 minutes. Manual reconnect is required!", printer.getPrinterId());
-                disconnect(printer.getPrinterId());
+                logger.warn("MQTT connection lost for printer [ID={}]. Paho will automatically attempt to reconnect.", printer.getPrinterId(), throwable);
+                // Do not tear down or remove the client here - options.setAutomaticReconnect(true)
+                // handles retrying the connection with exponential backoff. Removing the client from
+                // mqttClients would prevent connect() from ever being called again for this printer.
+            }
+
+            @Override
+            public void connectComplete(boolean reconnect, String serverURI) {
+                if (reconnect) {
+                    logger.info("Reconnected to MQTT broker for printer [ID={}], re-subscribing to topic={}", printer.getPrinterId(), stateTopic);
+                    try {
+                        mqttClient.subscribe(stateTopic);
+                    } catch (MqttException e) {
+                        logger.error("Failed to re-subscribe to topic={} for printer [ID={}] after reconnect", stateTopic, printer.getPrinterId(), e);
+                    }
+                }
             }
 
             @Override
@@ -87,14 +110,6 @@ public class MqttConnectionManager {
                 // No-op
             }
         });
-
-        String stateTopic = null;
-
-        if(printer.getPrinterType() == PrinterType.BAMBULAB) {
-            stateTopic = mqttConfig.getTopic() + "/report";
-        } else {
-            stateTopic = "";
-        }
 
         mqttClient.connect(options);
         mqttClient.subscribe(stateTopic);
@@ -114,14 +129,19 @@ public class MqttConnectionManager {
 
     public void disconnect(Long printerId) {
         MqttClient client = mqttClients.remove(printerId);
-        if (client != null && client.isConnected()) {
-            try {
+        if (client == null) return;
+
+        // Always disconnect/close, even if isConnected() is false - a client with
+        // automaticReconnect(true) can be mid-retry (disconnected) here, and skipping
+        // disconnect() would leave its background reconnect thread running forever.
+        try {
+            if (client.isConnected()) {
                 client.disconnect();
-                client.close();
-                logger.info("Disconnected MQTT client for printer [ID={}]", printerId);
-            } catch (MqttException e) {
-                logger.error("Error disconnecting MQTT client for printer [ID={}]", printerId, e);
             }
+            client.close();
+            logger.info("Disconnected MQTT client for printer [ID={}]", printerId);
+        } catch (MqttException e) {
+            logger.error("Error disconnecting MQTT client for printer [ID={}]", printerId, e);
         }
     }
 
