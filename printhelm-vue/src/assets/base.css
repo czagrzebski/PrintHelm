@@ -26,6 +26,15 @@
   --ph-gradient-brand: linear-gradient(120deg, #22d3ee 0%, #38bdf8 45%, #818cf8 100%);
 }
 
+/*
+ * Responsive breakpoints — no custom-media support in this build (plain CSS,
+ * no Sass/PostCSS), so these are documented here and copied as literal
+ * @media (max-width: Npx) values wherever used:
+ *   960px  — tablet: sidebar becomes a drawer, two-column layouts collapse
+ *   600px  — mobile: dialogs/grids tighten further, toolbars wrap
+ *   400-480px — small-phone: last-resort compaction
+ */
+
 *,
 *::before,
 *::after {

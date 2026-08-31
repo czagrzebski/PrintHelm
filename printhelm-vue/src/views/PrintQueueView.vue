@@ -337,6 +337,7 @@ onUnmounted(() => {
                    data-key="orderId"
                    empty-message="No jobs queued."
                    size="small"
+                   scrollable
                    :loading="loadingQueues[printer.printerId] ?? false"
                    @row-reorder="onRowReorder(printer.printerId, $event)">
           <Column row-reorder style="width: 2.5rem" />
@@ -382,7 +383,7 @@ onUnmounted(() => {
 
     <!-- Start dialog -->
     <Dialog v-model:visible="showStartDialog" header="Start Print Job"
-            modal :style="{ width: '460px' }" :closable="!starting">
+            modal :style="{ width: 'min(460px, 92vw)' }" :closable="!starting">
       <div class="form-body">
         <p class="start-info">
           Starting <strong>{{ startTargetJob?.assignedFilename }}</strong>
@@ -447,7 +448,7 @@ onUnmounted(() => {
 
     <!-- Remove dialog -->
     <Dialog v-model:visible="showRemoveDialog" header="Remove from Queue"
-            modal :style="{ width: '400px' }" :closable="!removing">
+            modal :style="{ width: 'min(400px, 92vw)' }" :closable="!removing">
       <div class="confirm-body">
         <i class="mdi mdi-alert-circle-outline confirm-icon" />
         <p>Remove job <strong>#{{ removeTargetJob?.orderId }}</strong> ({{ removeTargetJob?.customerName }}) from the queue? The job will return to READY_TO_PRINT.</p>
@@ -460,7 +461,7 @@ onUnmounted(() => {
     </Dialog>
     <!-- Reassign dialog -->
     <Dialog v-model:visible="showReassignDialog" header="Reassign Job"
-            modal :style="{ width: '400px' }" :closable="!reassigning">
+            modal :style="{ width: 'min(400px, 92vw)' }" :closable="!reassigning">
       <div class="form-body">
         <p class="start-info">
           Reassign job <strong>#{{ reassignTargetJob?.orderId }}</strong>

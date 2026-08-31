@@ -57,7 +57,7 @@ async function submitPasswordChange() {
     :closable="false"
     :modal="true"
     header="Password Change Required"
-    :style="{ width: '420px' }"
+    :style="{ width: 'min(420px, 92vw)' }"
   >
     <div class="force-change-body">
       <p class="force-change-msg">

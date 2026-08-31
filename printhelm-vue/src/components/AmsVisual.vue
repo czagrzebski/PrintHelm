@@ -422,10 +422,15 @@ const tempLine = computed(() => {
 .amsv {
   max-width: 560px;
   margin: 0 auto;
+  /* Slot geometry (SLOT_W) is fixed in JS, so below min-width the SVG
+     intentionally scrolls horizontally rather than shrinking labels
+     into illegibility. */
+  overflow-x: auto;
 }
 
 .amsv-svg {
   width: 100%;
+  min-width: 340px;
   height: auto;
   display: block;
 }
