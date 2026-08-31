@@ -505,7 +505,7 @@ onMounted(async () => {
               <Button label="Add Printer" icon="mdi mdi-plus" size="small" @click="openAddPrinter" />
             </div>
             <DataTable :value="printers" :loading="printersLoading" data-key="printerId"
-              empty-message="No printers configured." size="small">
+              empty-message="No printers configured." size="small" scrollable>
               <Column field="printerName" header="Name" style="min-width:140px" />
               <Column field="printerModel" header="Model" style="min-width:120px" />
               <Column header="Type" style="min-width:110px">
@@ -544,7 +544,7 @@ onMounted(async () => {
               <Button label="Add User" icon="mdi mdi-account-plus-outline" size="small" @click="openAddUser" />
             </div>
             <DataTable :value="users" :loading="usersLoading" data-key="userId"
-              empty-message="No users found." size="small">
+              empty-message="No users found." size="small" scrollable>
               <Column field="username" header="Username" style="min-width:130px" />
               <Column header="Name" style="min-width:150px">
                 <template #body="{ data }">
@@ -659,7 +659,7 @@ onMounted(async () => {
     <!-- ── Printer Add/Edit Dialog ── -->
     <Dialog v-model:visible="showPrinterDialog"
       :header="printerEditMode ? 'Edit Printer' : 'Add Printer'"
-      modal :style="{ width: '560px' }" :closable="!printerSaving">
+      modal :style="{ width: 'min(560px, 92vw)' }" :closable="!printerSaving">
       <div class="form-body">
         <div class="form-section-label">Basic Info</div>
         <div class="field">
@@ -716,7 +716,7 @@ onMounted(async () => {
 
     <!-- ── Printer Delete Dialog ── -->
     <Dialog v-model:visible="showDeletePrinterDialog" header="Delete Printer"
-      modal :style="{ width: '420px' }" :closable="!deletingPrinter">
+      modal :style="{ width: 'min(420px, 92vw)' }" :closable="!deletingPrinter">
       <div class="confirm-body">
         <i class="mdi mdi-alert-circle-outline confirm-icon" />
         <p>Delete <strong>{{ printerToDelete?.printerName }}</strong>? This will disconnect and remove all configuration.</p>
@@ -731,7 +731,7 @@ onMounted(async () => {
     <!-- ── User Add/Edit Dialog ── -->
     <Dialog v-model:visible="showUserDialog"
       :header="userEditMode ? 'Edit User' : 'Add User'"
-      modal :style="{ width: '500px' }" :closable="!userSaving">
+      modal :style="{ width: 'min(500px, 92vw)' }" :closable="!userSaving">
       <div class="form-body">
         <div class="field">
           <label class="field-label">Username <span class="required">*</span></label>
@@ -771,7 +771,7 @@ onMounted(async () => {
 
     <!-- ── User Delete Dialog ── -->
     <Dialog v-model:visible="showDeleteUserDialog" header="Delete User"
-      modal :style="{ width: '420px' }" :closable="!deletingUser">
+      modal :style="{ width: 'min(420px, 92vw)' }" :closable="!deletingUser">
       <div class="confirm-body">
         <i class="mdi mdi-alert-circle-outline confirm-icon" />
         <p>Delete user <strong>{{ userToDelete?.username }}</strong>? This action cannot be undone.</p>
@@ -785,7 +785,7 @@ onMounted(async () => {
 
     <!-- ── Reset Password Dialog ── -->
     <Dialog v-model:visible="showResetPasswordDialog" header="Reset Password"
-      modal :style="{ width: '420px' }" :closable="!resettingPassword">
+      modal :style="{ width: 'min(420px, 92vw)' }" :closable="!resettingPassword">
       <div class="form-body">
         <p class="reset-info">
           Reset password for <strong>{{ resetPasswordUsername }}</strong>.
@@ -933,6 +933,9 @@ onMounted(async () => {
 
 .field { display: flex; flex-direction: column; gap: 0.375rem; flex: 1; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 480px) {
+  .field-row { grid-template-columns: 1fr; }
+}
 .field-label { font-size: 0.8rem; font-weight: 500; color: var(--ph-text-muted); }
 .field-input { width: 100%; }
 

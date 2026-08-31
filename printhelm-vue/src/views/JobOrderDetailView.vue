@@ -1463,7 +1463,7 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
       v-model:visible="showUploadDialog"
       modal
       :header="uploadTarget === 'part' ? 'Upload 3D Design Version' : 'Upload GCode Version'"
-      :style="{ width: '440px' }"
+      :style="{ width: 'min(440px, 92vw)' }"
       :closable="!uploading"
       @hide="cancelUpload"
     >
@@ -1733,6 +1733,9 @@ onMounted(() => { fetchOrder(); fetchPrinterNames(); fetchVersions() })
 
 /* ── Info grid ───────────────────────────────────────────── */
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
+@media (max-width: 600px) {
+  .info-grid { grid-template-columns: 1fr; }
+}
 .info-card {
   display: flex;
   flex-direction: column;

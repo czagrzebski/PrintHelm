@@ -1574,6 +1574,12 @@ export function isViewableModel(filename?: string): boolean {
   min-height: 0;
 }
 
+@media (max-width: 960px) {
+  .mv-body {
+    flex-direction: column;
+  }
+}
+
 .mv-stage {
   flex: 1;
   position: relative;
@@ -1743,6 +1749,15 @@ export function isViewableModel(filename?: string): boolean {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 960px) {
+  .mv-panel {
+    width: 100%;
+    max-height: 40vh;
+    border-left: none;
+    border-top: 1px solid var(--ph-border);
+  }
 }
 
 .mv-section {

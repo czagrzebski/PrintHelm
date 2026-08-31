@@ -260,7 +260,7 @@ onMounted(() => {
     </div>
 
     <div class="table-card">
-      <DataTable :value="spools" :loading="loading" data-key="spoolId" size="small"
+      <DataTable :value="spools" :loading="loading" data-key="spoolId" size="small" scrollable
         empty-message="No spools yet — add your first spool to start tracking filament.">
         <Column header="Spool" style="min-width:200px">
           <template #body="{ data }">
@@ -318,7 +318,7 @@ onMounted(() => {
     </div>
 
     <Dialog v-model:visible="showDialog" :header="editMode ? 'Edit Spool' : 'Add Spool'"
-      modal :style="{ width: '520px' }" :draggable="false">
+      modal :style="{ width: 'min(520px, 92vw)' }" :draggable="false">
       <div class="form-body">
         <div class="field-grid">
           <div class="field">
@@ -395,7 +395,7 @@ onMounted(() => {
       </template>
     </Dialog>
 
-    <Dialog v-model:visible="showDeleteDialog" header="Delete Spool" modal :style="{ width: '420px' }" :draggable="false">
+    <Dialog v-model:visible="showDeleteDialog" header="Delete Spool" modal :style="{ width: 'min(420px, 92vw)' }" :draggable="false">
       <div class="confirm-body">
         <i class="mdi mdi-alert-circle-outline confirm-icon" />
         <p>
@@ -493,6 +493,9 @@ onMounted(() => {
 
 .form-body { display: flex; flex-direction: column; gap: 1rem; padding: 0.25rem 0; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 480px) {
+  .field-grid { grid-template-columns: 1fr; }
+}
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
 .field-label { font-size: 0.8rem; font-weight: 500; color: var(--ph-text-muted); }
 .field-input { width: 100%; }

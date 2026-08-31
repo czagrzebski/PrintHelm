@@ -133,7 +133,7 @@ onMounted(fetchOrders)
 
     <div class="table-card">
       <DataTable :value="orders" :loading="loading" data-key="orderId"
-        empty-message="No job orders yet." size="small">
+        empty-message="No job orders yet." size="small" scrollable>
         <Column field="orderId" header="ID" style="min-width:60px;max-width:80px" />
         <Column field="customerName" header="Customer" style="min-width:150px" />
         <Column header="Email" style="min-width:180px">
@@ -164,7 +164,7 @@ onMounted(fetchOrders)
 
     <!-- Create Dialog -->
     <Dialog v-model:visible="showCreateDialog" header="New Job Order"
-      modal :style="{ width: '520px' }" :closable="!creating">
+      modal :style="{ width: 'min(520px, 92vw)' }" :closable="!creating">
       <div class="form-body">
         <div class="field">
           <label class="field-label">Customer Name <span class="required">*</span></label>
@@ -188,7 +188,7 @@ onMounted(fetchOrders)
 
     <!-- Delete Dialog -->
     <Dialog v-model:visible="showDeleteDialog" header="Delete Job Order"
-      modal :style="{ width: '420px' }" :closable="!deleting">
+      modal :style="{ width: 'min(420px, 92vw)' }" :closable="!deleting">
       <div class="confirm-body">
         <i class="mdi mdi-alert-circle-outline confirm-icon" />
         <p>Delete order for <strong>{{ orderToDelete?.customerName }}</strong>? This cannot be undone.</p>

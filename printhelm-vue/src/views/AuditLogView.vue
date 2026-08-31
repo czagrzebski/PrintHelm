@@ -113,7 +113,7 @@ onMounted(fetchEntries)
     <div class="table-card">
       <DataTable :value="entries" :loading="loading" data-key="auditId" size="small" lazy paginator
         :rows="rows" :total-records="totalRecords" :first="page * rows"
-        :rows-per-page-options="[25, 50, 100]" @page="onPage"
+        :rows-per-page-options="[25, 50, 100]" @page="onPage" scrollable
         empty-message="No audit entries match the current filters.">
         <Column header="Time" style="min-width:180px">
           <template #body="{ data }">
@@ -177,6 +177,10 @@ onMounted(fetchEntries)
   animation: fade-up 0.32s ease-out 0.05s both;
 }
 .filter-item { min-width: 200px; }
+
+@media (max-width: 600px) {
+  .filter-item { min-width: 0; flex: 1 1 45%; }
+}
 
 .table-card {
   background: var(--ph-glass);

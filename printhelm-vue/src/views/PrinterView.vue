@@ -1377,7 +1377,7 @@ onUnmounted(() => {
       header="AI Diagnostic Report"
       :modal="true"
       :dismissable-mask="true"
-      :style="{ width: '560px' }"
+      :style="{ width: 'min(560px, 92vw)' }"
       class="diagnostic-dialog"
     >
       <div v-if="diagnosticLoading" class="diag-loading">
@@ -2074,6 +2074,12 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
+}
+
+@media (max-width: 400px) {
+  .temp-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .temp-card {
@@ -3035,6 +3041,13 @@ onUnmounted(() => {
   display: flex;
   gap: 1.5rem;
   align-items: flex-start;
+}
+
+@media (max-width: 600px) {
+  .move-grid {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 .move-xy, .move-z {

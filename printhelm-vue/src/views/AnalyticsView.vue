@@ -240,7 +240,7 @@ function printerGrams(stats: ApiPrinterAnalytics): string {
 
     <div class="table-card">
       <h3 class="card-title table-title">Printer utilization</h3>
-      <DataTable :value="printerStats" :loading="loading" data-key="printerId" size="small"
+      <DataTable :value="printerStats" :loading="loading" data-key="printerId" size="small" scrollable
         empty-message="No printers registered yet.">
         <Column field="printerName" header="Printer" style="min-width:160px" />
         <Column header="Completed" style="min-width:100px">

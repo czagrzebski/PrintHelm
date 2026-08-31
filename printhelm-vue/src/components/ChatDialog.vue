@@ -546,7 +546,7 @@ function formatSessionDate(dateStr: string | undefined): string {
   right: 0;
   top: 0;
   height: 100vh;
-  width: 500px;
+  width: min(500px, 100vw);
   z-index: 1000;
   background: var(--ph-glass-heavy);
   backdrop-filter: blur(var(--ph-blur));

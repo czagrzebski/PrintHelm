@@ -208,6 +208,15 @@ function formatDate(dateStr: string | undefined) {
   transform-origin: bottom left;
 }
 
+@media (max-width: 600px) {
+  .notif-panel {
+    width: min(360px, 90vw);
+    left: auto;
+    right: 0;
+    transform-origin: bottom right;
+  }
+}
+
 .panel-header {
   display: flex;
   align-items: center;
