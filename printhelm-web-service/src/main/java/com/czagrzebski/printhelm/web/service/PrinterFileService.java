@@ -51,7 +51,7 @@ public class PrinterFileService {
     public List<PrinterFileDTO> listFiles(long printerId) throws IOException {
         var config = resolveConfig(printerId);
         List<String> cmd = List.of(
-                "curl", "-k",
+                "curl", "-k", "--disable-epsv",
                 "-u", FTPS_USER + ":" + config.password(),
                 ftpsUrl(config.host(), "/")
         );
@@ -65,7 +65,7 @@ public class PrinterFileService {
         try {
             Files.copy(data, tmp, StandardCopyOption.REPLACE_EXISTING);
             List<String> cmd = List.of(
-                    "curl", "-k",
+                    "curl", "-k", "--disable-epsv",
                     "-u", FTPS_USER + ":" + config.password(),
                     "-T", tmp.toString(),
                     ftpsUrl(config.host(), "/" + filename)
@@ -82,7 +82,7 @@ public class PrinterFileService {
     public long getFileSize(long printerId, String filename) throws IOException {
         var config = resolveConfig(printerId);
         List<String> cmd = List.of(
-                "curl", "-k",
+                "curl", "-k", "--disable-epsv",
                 "-u", FTPS_USER + ":" + config.password(),
                 "--head", "--silent", "--show-error",
                 ftpsUrl(config.host(), "/" + filename)
@@ -99,7 +99,7 @@ public class PrinterFileService {
     public void streamFile(long printerId, String filename, OutputStream out) throws IOException {
         var config = resolveConfig(printerId);
         List<String> cmd = List.of(
-                "curl", "-k",
+                "curl", "-k", "--disable-epsv",
                 "-u", FTPS_USER + ":" + config.password(),
                 "--silent", "--show-error",
                 ftpsUrl(config.host(), "/" + filename)
@@ -133,7 +133,7 @@ public class PrinterFileService {
     public void deleteFile(long printerId, String filename) throws IOException {
         var config = resolveConfig(printerId);
         List<String> cmd = List.of(
-                "curl", "-k",
+                "curl", "-k", "--disable-epsv",
                 "-u", FTPS_USER + ":" + config.password(),
                 "-Q", "DELE " + filename,
                 ftpsUrl(config.host(), "/")
